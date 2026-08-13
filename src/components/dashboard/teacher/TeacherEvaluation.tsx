@@ -36,13 +36,6 @@ export default function TeacherEvaluation() {
     final: 40
   });
 
-  // Advanced Rules State
-  const [missingSubmissionRule, setMissingSubmissionRule] = useState("zero");
-  const [attendanceThreshold, setAttendanceThreshold] = useState("0");
-  const [passThreshold, setPassThreshold] = useState("40");
-  const [roundingRule, setRoundingRule] = useState("standard");
-  const [gradingScale, setGradingScale] = useState("standard");
-
   const totalMarks = Object.values(distribution).reduce((a, b) => Number(a) + Number(b), 0);
 
   const selectedClass = mockClassrooms.find(c => c.id === selectedClassId);
@@ -260,96 +253,6 @@ export default function TeacherEvaluation() {
                   </div>
                 )}
               </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Third Section: Advanced Rules */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-100 px-5 py-4">
-            <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
-              <Settings2 className="w-4 h-4 text-slate-500" />
-              Advanced Grading Rules
-            </h2>
-            <p className="text-[10px] text-slate-500 mt-1">Configure thresholds, rounding, and strict grading policies.</p>
-          </div>
-          
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* Grading Scale */}
-            <div className="space-y-3 p-4 border border-slate-100 bg-slate-50/50 rounded-xl">
-              <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Grading Scale</label>
-              <select 
-                value={gradingScale}
-                onChange={(e) => setGradingScale(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] outline-none focus:border-brand-dark bg-white"
-              >
-                <option value="standard">Standard A+ to F (80-100 = A+)</option>
-                <option value="strict">Strict A to F (90-100 = A)</option>
-                <option value="custom">Custom Scale</option>
-              </select>
-            </div>
-
-            {/* Missing Submissions */}
-            <div className="space-y-3 p-4 border border-slate-100 bg-slate-50/50 rounded-xl">
-              <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Missing Submissions</label>
-              <select 
-                value={missingSubmissionRule}
-                onChange={(e) => setMissingSubmissionRule(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] outline-none focus:border-brand-dark bg-white"
-              >
-                <option value="zero">Treat unexcused as Zero (0)</option>
-                <option value="ignore">Exclude from average calculation</option>
-              </select>
-            </div>
-
-            {/* Rounding Rule */}
-            <div className="space-y-3 p-4 border border-slate-100 bg-slate-50/50 rounded-xl">
-              <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Final Mark Rounding</label>
-              <select 
-                value={roundingRule}
-                onChange={(e) => setRoundingRule(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] outline-none focus:border-brand-dark bg-white"
-              >
-                <option value="standard">Standard (79.5 rounds to 80)</option>
-                <option value="floor">Floor (79.9 rounds to 79)</option>
-                <option value="ceiling">Ceiling (Always round up)</option>
-              </select>
-            </div>
-
-            {/* Attendance Threshold */}
-            <div className="space-y-3 p-4 border border-slate-100 bg-slate-50/50 rounded-xl">
-              <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Min. Attendance Threshold</label>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  min="0"
-                  max="100"
-                  value={attendanceThreshold}
-                  onChange={(e) => setAttendanceThreshold(e.target.value)}
-                  className="w-16 px-2 py-2 text-center border border-slate-200 rounded-lg text-[11px] outline-none focus:border-brand-dark bg-white"
-                />
-                <span className="text-[11px] text-slate-500">% required to pass</span>
-              </div>
-              <p className="text-[9px] text-slate-400">If student attendance is below this %, they auto-fail the course.</p>
-            </div>
-
-            {/* Final Exam Threshold */}
-            <div className="space-y-3 p-4 border border-slate-100 bg-slate-50/50 rounded-xl">
-              <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Final Exam Threshold</label>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  min="0"
-                  max="100"
-                  value={passThreshold}
-                  onChange={(e) => setPassThreshold(e.target.value)}
-                  className="w-16 px-2 py-2 text-center border border-slate-200 rounded-lg text-[11px] outline-none focus:border-brand-dark bg-white"
-                />
-                <span className="text-[11px] text-slate-500">% required to pass</span>
-              </div>
-              <p className="text-[9px] text-slate-400">Student must score this minimum % in Final Exam to pass the course.</p>
             </div>
 
           </div>

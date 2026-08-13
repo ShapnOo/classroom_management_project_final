@@ -75,7 +75,7 @@ export const adminMenu: MenuItem[] = [
     ]
   },
   { title: "Notifications", icon: Bell, href: "#" },
-  { title: "Settings", icon: Settings, href: "#" },
+  { title: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
   { title: "My Profile", icon: User, href: "#" },
 ];
 
