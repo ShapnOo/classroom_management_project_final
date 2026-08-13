@@ -72,9 +72,9 @@ export default function TeacherDashboard() {
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "My Classrooms", value: "5", icon: MonitorPlay, color: "text-blue-600", bg: "bg-blue-50", trend: "+1 active", trendColor: "text-blue-600" },
-          { label: "Total Students", value: "180", icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", trend: "+12 new", trendColor: "text-emerald-600" },
-          { label: "Today's Classes", value: "2", icon: Calendar, color: "text-amber-600", bg: "bg-amber-50", trend: "In 1 hr", trendColor: "text-amber-600" },
+          { label: "My Classrooms", value: String(myClassrooms.length), icon: MonitorPlay, color: "text-blue-600", bg: "bg-blue-50", trend: `${ongoingClassrooms} ongoing`, trendColor: "text-blue-600" },
+          { label: "Total Students", value: String(totalStudents), icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", trend: "Enrolled", trendColor: "text-emerald-600" },
+          { label: "Today's Classes", value: String(todaysSchedule.length), icon: Calendar, color: "text-amber-600", bg: "bg-amber-50", trend: todaysSchedule.length > 0 ? todaysSchedule[0].startTime : "None today", trendColor: "text-amber-600" },
           { label: "Pending Reviews", value: "12", icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50", trend: "3 urgent", trendColor: "text-red-500" },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden group hover:border-brand-dark/30 transition-colors">
@@ -132,9 +132,9 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Action Priority - Continue Class */}
+        {/* Action Priority - Up Next */}
         <div className="bg-brand-dark rounded-xl border border-slate-800 shadow-lg overflow-hidden flex flex-col text-white relative">
-          <div className="absolute top-0 right-0 p-20 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-0 p-20 bg-white/5 rounded-full blur-3xl" />
           
           <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
@@ -143,28 +143,32 @@ export default function TeacherDashboard() {
               </div>
               <h2 className="text-[11px] font-medium uppercase tracking-wider text-slate-200">Up Next</h2>
             </div>
-            <span className="text-[10px] font-medium bg-white/10 px-2 py-0.5 rounded-md text-white">Class #09</span>
+            {upNext && <span className="text-[10px] font-medium bg-white/10 px-2 py-0.5 rounded-md text-white">Week {upNext.week}</span>}
           </div>
           
           <div className="p-5 relative z-10 flex flex-col h-full justify-between">
-            <div>
-              <p className="text-[10px] font-medium mb-1.5 uppercase tracking-widest text-blue-300">Database Management</p>
-              <h3 className="text-xs font-medium mb-3">Normalization & BCNF</h3>
-              
-              <div className="bg-white/10 rounded-lg p-3 mb-4 backdrop-blur-sm border border-white/10">
-                <p className="text-[10px] text-slate-300 mb-1.5 uppercase tracking-wide font-medium">Remaining from last class</p>
-                <ul className="space-y-1.5">
-                  <li className="flex items-center gap-2 text-[11px] text-slate-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                    3NF Examples
-                  </li>
-                  <li className="flex items-center gap-2 text-[11px] text-slate-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                    Practical Problems
-                  </li>
-                </ul>
+            {upNext ? (
+              <div>
+                <p className="text-[10px] font-medium mb-1.5 uppercase tracking-widest text-blue-300">{upNext.course}</p>
+                <h3 className="text-xs font-medium mb-3">{upNext.topic}</h3>
+                
+                <div className="bg-white/10 rounded-lg p-3 mb-4 backdrop-blur-sm border border-white/10">
+                  <p className="text-[10px] text-slate-300 mb-1.5 uppercase tracking-wide font-medium">Key Concepts</p>
+                  <ul className="space-y-1.5">
+                    {upNext.subTopics.map((sub, i) => (
+                      <li key={i} className="flex items-center gap-2 text-[11px] text-slate-100">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                        {sub}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 text-center py-4">
+                <p className="text-[11px] text-slate-300">All topics completed!</p>
+              </div>
+            )}
             
             <button className="w-full bg-white hover:bg-slate-100 text-brand-dark font-medium py-2.5 px-4 rounded-lg text-[11px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20">
               <Play className="w-3.5 h-3.5 fill-brand-dark" />
@@ -185,27 +189,25 @@ export default function TeacherDashboard() {
               <Clock className="w-4 h-4 text-slate-500" />
               Today's Schedule
             </h2>
+            <span className="text-[10px] font-medium text-slate-500">{todaysSchedule.length} classes</span>
           </div>
           <div className="p-4 flex-1 space-y-4">
-            <div className="relative pl-4 border-l-2 border-brand-dark pb-2">
-              <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-brand-dark ring-4 ring-white"></div>
-              <div className="text-[10px] font-medium text-brand-dark mb-0.5">10:00 AM - 11:30 AM</div>
-              <h3 className="text-[13px] font-medium text-slate-900 mb-0.5">Database Management System</h3>
-              <p className="text-[11px] text-slate-500 font-medium mb-1.5">PGDIT Spring 2026 • 42 Students</p>
-              <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 w-fit px-2 py-0.5 rounded-md">
-                <MapPin className="w-3 h-3" /> Room 402
+            {todaysSchedule.length > 0 ? todaysSchedule.map((sched, i) => (
+              <div key={sched.id} className={`relative pl-4 border-l-2 ${i === 0 ? 'border-brand-dark pb-2' : 'border-slate-200'}`}>
+                <div className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ring-4 ring-white ${i === 0 ? 'bg-brand-dark' : 'bg-slate-300'}`} />
+                <div className={`text-[10px] font-medium mb-0.5 ${i === 0 ? 'text-brand-dark' : 'text-slate-500'}`}>{sched.startTime} - {sched.endTime}</div>
+                <h3 className="text-[13px] font-medium text-slate-900 mb-0.5">{sched.courseTitle}</h3>
+                <p className="text-[11px] text-slate-500 font-medium mb-1.5">{sched.batch} • {sched.students} Students</p>
+                <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 w-fit px-2 py-0.5 rounded-md">
+                  <MapPin className="w-3 h-3" /> {sched.room}
+                </div>
               </div>
-            </div>
-
-            <div className="relative pl-4 border-l-2 border-slate-200">
-              <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white"></div>
-              <div className="text-[10px] font-medium text-slate-500 mb-0.5">02:00 PM - 03:30 PM</div>
-              <h3 className="text-[13px] font-medium text-slate-900 mb-0.5">Software Engineering</h3>
-              <p className="text-[11px] text-slate-500 font-medium mb-1.5">PGDIT Spring 2026 • 38 Students</p>
-              <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 w-fit px-2 py-0.5 rounded-md">
-                <MapPin className="w-3 h-3" /> Room 305
+            )) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <p className="text-[11px] font-medium text-slate-700">No classes today</p>
+                <p className="text-[10px] text-slate-500 mt-1">Enjoy your day off!</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
