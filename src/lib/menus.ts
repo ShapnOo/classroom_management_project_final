@@ -85,11 +85,11 @@ export const teacherMenu: MenuItem[] = [
   { 
     title: "Class Sessions", icon: PlaySquare,
     submenu: [
-      { title: "Start Class", href: "#" },
-      { title: "Class History", href: "#" },
+      { title: "Start Class", href: "/dashboard/teacher/sessions/start" },
+      { title: "Class History", href: "/dashboard/teacher/sessions/history" },
     ]
   },
-  { title: "Course Continuity", icon: TrendingUp, href: "#" },
+  { title: "Course Continuity", icon: TrendingUp, href: "/dashboard/teacher/continuity" },
   { 
     title: "Course Materials", icon: FolderOpen,
     submenu: [
