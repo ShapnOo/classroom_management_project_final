@@ -252,7 +252,7 @@ export default function TeacherClassrooms() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-sm font-medium text-slate-900 tracking-tight">My Classrooms</h1>
+          
           <p className="text-[11px] text-slate-500 mt-0.5">Manage your active classes, materials, and student attendance.</p>
         </div>
         
@@ -486,8 +486,8 @@ export default function TeacherClassrooms() {
             
             <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-10">
               <div>
-                <h2 className="text-sm font-medium text-slate-900">Create New Classroom</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Setup a new class and assign students.</p>
+                <h2 className="text-xs font-medium text-slate-900">Create New Classroom</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Setup a new class and assign students.</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -501,57 +501,57 @@ export default function TeacherClassrooms() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Course Code <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. CSE-305" value={newClassroom.courseCode} onChange={e => setNewClassroom({...newClassroom, courseCode: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Course Code <span className="text-red-500">*</span></label>
+                  <input required type="text" placeholder="e.g. CSE-305" value={newClassroom.courseCode} onChange={e => setNewClassroom({...newClassroom, courseCode: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Course Title <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Database Systems" value={newClassroom.courseTitle} onChange={e => setNewClassroom({...newClassroom, courseTitle: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Course Title <span className="text-red-500">*</span></label>
+                  <input required type="text" placeholder="e.g. Database Systems" value={newClassroom.courseTitle} onChange={e => setNewClassroom({...newClassroom, courseTitle: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Program</label>
-                  <input type="text" placeholder="e.g. B.Sc. in Computer Science" value={newClassroom.program} onChange={e => setNewClassroom({...newClassroom, program: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Program</label>
+                  <input type="text" placeholder="e.g. B.Sc. in Computer Science" value={newClassroom.program} onChange={e => setNewClassroom({...newClassroom, program: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Batch & Section <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Spring 2026 - A" value={newClassroom.batch} onChange={e => setNewClassroom({...newClassroom, batch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Batch & Section <span className="text-red-500">*</span></label>
+                  <input required type="text" placeholder="e.g. Spring 2026 - A" value={newClassroom.batch} onChange={e => setNewClassroom({...newClassroom, batch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Room / Location</label>
-                  <input type="text" placeholder="e.g. Room 402, Bldg C" value={newClassroom.room} onChange={e => setNewClassroom({...newClassroom, room: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Room / Location</label>
+                  <input type="text" placeholder="e.g. Room 402, Bldg C" value={newClassroom.room} onChange={e => setNewClassroom({...newClassroom, room: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Weekly Schedule <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Mon, Wed • 10:00 AM - 11:30 AM" value={newClassroom.schedule} onChange={e => setNewClassroom({...newClassroom, schedule: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <label className="text-[11px] font-medium text-slate-700">Weekly Schedule <span className="text-red-500">*</span></label>
+                  <input required type="text" placeholder="e.g. Mon, Wed • 10:00 AM - 11:30 AM" value={newClassroom.schedule} onChange={e => setNewClassroom({...newClassroom, schedule: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Start Date <span className="text-red-500">*</span></label>
-                  <input required type="date" value={newClassroom.startDate} onChange={e => setNewClassroom({...newClassroom, startDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                  <label className="text-[11px] font-medium text-slate-700">Start Date <span className="text-red-500">*</span></label>
+                  <input required type="date" value={newClassroom.startDate} onChange={e => setNewClassroom({...newClassroom, startDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">End Date <span className="text-red-500">*</span></label>
-                  <input required type="date" value={newClassroom.endDate} onChange={e => setNewClassroom({...newClassroom, endDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                  <label className="text-[11px] font-medium text-slate-700">End Date <span className="text-red-500">*</span></label>
+                  <input required type="date" value={newClassroom.endDate} onChange={e => setNewClassroom({...newClassroom, endDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
                 </div>
               </div>
 
               {/* Student Selection Trigger */}
               <div className="space-y-1.5">
                 <div className="flex items-end justify-between mb-1">
-                  <label className="text-xs font-medium text-slate-700">Students</label>
+                  <label className="text-[11px] font-medium text-slate-700">Students</label>
                   <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
                     {newClassroom.studentList.length} Selected
                   </span>
                 </div>
                 
                 <div 
-                  className="w-full px-3 py-2 min-h-[38px] border border-slate-200 rounded-lg text-xs flex flex-wrap gap-1.5 cursor-pointer hover:border-brand-dark/50 hover:bg-slate-50 transition-colors bg-white"
+                  className="w-full px-3 py-2 min-h-[38px] border border-slate-200 rounded-lg text-[11px] flex flex-wrap gap-1.5 cursor-pointer hover:border-brand-dark/50 hover:bg-slate-50 transition-colors bg-white"
                   onClick={() => setIsStudentSelectionOpen(true)}
                 >
                   {newClassroom.studentList.length === 0 && (
@@ -590,13 +590,13 @@ export default function TeacherClassrooms() {
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                  className="px-4 py-2 text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="px-5 py-2 bg-brand-dark text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors shadow-sm"
+                  className="px-5 py-2 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
                 >
                   Create Classroom
                 </button>
@@ -638,14 +638,14 @@ export default function TeacherClassrooms() {
                   placeholder="Search by ID or Name..."
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
                 />
               </div>
               
               <select 
                 value={sessionFilter}
                 onChange={(e) => setSessionFilter(e.target.value)}
-                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-xs font-medium outline-none focus:border-brand-dark cursor-pointer w-32"
+                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-[11px] font-medium outline-none focus:border-brand-dark cursor-pointer w-32"
               >
                 <option value="All">All Sessions</option>
                 <option value="Spring 2026">Spring 2026</option>
@@ -656,7 +656,7 @@ export default function TeacherClassrooms() {
               <select 
                 value={batchFilter}
                 onChange={(e) => setBatchFilter(e.target.value)}
-                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-xs font-medium outline-none focus:border-brand-dark cursor-pointer w-28"
+                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-[11px] font-medium outline-none focus:border-brand-dark cursor-pointer w-28"
               >
                 <option value="All">All Batches</option>
                 <option value="Batch A">Batch A</option>
@@ -694,7 +694,7 @@ export default function TeacherClassrooms() {
                         </div>
                         
                         <div className="flex-1 flex flex-col">
-                          <span className="text-xs font-medium text-slate-900">{student.name}</span>
+                          <span className="text-[11px] font-medium text-slate-900">{student.name}</span>
                           <span className="text-[10px] text-slate-500">{student.id}</span>
                         </div>
                         
@@ -709,7 +709,7 @@ export default function TeacherClassrooms() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Users2 className="w-8 h-8 text-slate-300 mb-2" />
-                  <p className="text-xs font-medium text-slate-700">No students matched your filters</p>
+                  <p className="text-[11px] font-medium text-slate-700">No students matched your filters</p>
                   <p className="text-[10px] text-slate-500 mt-1">Try changing the session or batch.</p>
                 </div>
               )}
@@ -717,12 +717,12 @@ export default function TeacherClassrooms() {
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-100 bg-white flex items-center justify-between rounded-b-xl">
-              <span className="text-xs font-medium text-slate-700">
+              <span className="text-[11px] font-medium text-slate-700">
                 Total Selected: <span className="text-brand-dark bg-brand-dark/10 px-2 py-0.5 rounded">{newClassroom.studentList.length}</span>
               </span>
               <button 
                 onClick={() => setIsStudentSelectionOpen(false)}
-                className="px-5 py-2 bg-brand-dark text-white rounded-md text-xs font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
+                className="px-5 py-2 bg-brand-dark text-white rounded-md text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
               >
                 <Check className="w-3.5 h-3.5" />
                 Done Selecting

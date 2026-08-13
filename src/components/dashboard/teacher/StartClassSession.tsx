@@ -103,8 +103,8 @@ export default function StartClassSession() {
               <PlaySquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base font-medium text-slate-900 tracking-tight">Select Class to Start</h1>
-              <p className="text-xs text-slate-500 mt-0.5">Choose a class from your active schedule to log today's session.</p>
+              
+              <p className="text-[11px] text-slate-500 mt-0.5">Choose a class from your active schedule to log today's session.</p>
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function StartClassSession() {
                 {selectedClass?.code} • {selectedClass?.batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{selectedClass?.name}</h1>
+            
           </div>
         </div>
       </div>
@@ -220,8 +220,8 @@ export default function StartClassSession() {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-300"></div>
                 <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">Previous Session (Class #08)</p>
                 <h3 className="text-[13px] font-medium text-slate-900 mb-1">Entity-Relationship Model</h3>
-                <p className="text-xs text-slate-600 mb-3">Completed 100% • 05 Aug 2026</p>
-                <Link href="#" className="text-xs font-medium text-brand-dark hover:underline flex items-center gap-1">
+                <p className="text-[11px] text-slate-600 mb-3">Completed 100% • 05 Aug 2026</p>
+                <Link href="#" className="text-[11px] font-medium text-brand-dark hover:underline flex items-center gap-1">
                   View Notes <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
@@ -237,8 +237,8 @@ export default function StartClassSession() {
                 </div>
                 <p className="text-[10px] font-medium text-brand-dark uppercase tracking-wider mb-1">Recommended Next Topic</p>
                 <h3 className="text-[13px] font-medium text-slate-900 mb-1">Normalization (1NF to 3NF)</h3>
-                <p className="text-xs text-slate-600 mb-3">Based on your syllabus mapping.</p>
-                <button type="button" onClick={() => setTopic("Normalization (1NF to 3NF)")} className="text-xs font-medium text-brand-dark hover:underline flex items-center gap-1">
+                <p className="text-[11px] text-slate-600 mb-3">Based on your syllabus mapping.</p>
+                <button type="button" onClick={() => setTopic("Normalization (1NF to 3NF)")} className="text-[11px] font-medium text-brand-dark hover:underline flex items-center gap-1">
                   Use this Topic <CheckCircle2 className="w-3 h-3" />
                 </button>
               </div>
@@ -258,44 +258,44 @@ export default function StartClassSession() {
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Date</label>
+                  <label className="text-[11px] font-medium text-slate-700">Date</label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                    <input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
                   </div>
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Start Time</label>
+                  <label className="text-[11px] font-medium text-slate-700">Start Time</label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">End Time</label>
+                  <label className="text-[11px] font-medium text-slate-700">End Time</label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700">Topic Covered <span className="text-red-500">*</span></label>
+                <label className="text-[11px] font-medium text-slate-700">Topic Covered <span className="text-red-500">*</span></label>
                 <input required type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="What are you teaching today?" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] font-medium focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700">Session Summary / Notes</label>
-                <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Add private notes or summary of what was discussed..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none resize-none"></textarea>
+                <label className="text-[11px] font-medium text-slate-700">Session Summary / Notes</label>
+                <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Add private notes or summary of what was discussed..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none resize-none"></textarea>
               </div>
 
               {/* Progress Slider */}
               <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-slate-700">Overall Course Completion</label>
+                  <label className="text-[11px] font-medium text-slate-700">Overall Course Completion</label>
                   <span className="text-[13px] font-medium text-brand-dark">{progress}%</span>
                 </div>
                 <div className="relative pt-1">
@@ -317,7 +317,7 @@ export default function StartClassSession() {
               {/* Materials Attached */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-slate-700">Materials Used (Optional)</label>
+                  <label className="text-[11px] font-medium text-slate-700">Materials Used (Optional)</label>
                   <button type="button" className="text-[10px] font-medium text-brand-dark hover:underline">Browse Library</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -350,7 +350,7 @@ export default function StartClassSession() {
               <div className="flex justify-between items-end mt-3">
                 <div>
                   <p className="text-[11px] text-slate-300 font-medium mb-0.5">Students Present</p>
-                  <p className="text-lg font-medium leading-none">
+                  <p className="text-sm font-medium leading-none">
                     {Object.values(attendance).filter(a => a === 'Present').length} <span className="text-[13px] font-normal text-slate-400">/ {mockStudents.length}</span>
                   </p>
                 </div>
@@ -383,7 +383,7 @@ export default function StartClassSession() {
                         {student.profile}
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-900 leading-tight">{student.name}</p>
+                        <p className="text-[11px] font-medium text-slate-900 leading-tight">{student.name}</p>
                         <p className="text-[9px] text-slate-500">{student.id}</p>
                       </div>
                     </div>

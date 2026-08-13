@@ -79,9 +79,7 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-sm shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-emerald-500/10 text-emerald-700">
@@ -91,7 +89,7 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
                 {courseName} ({batch})
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{assignmentTitle}</h1>
+            
           </div>
         </div>
         
@@ -111,17 +109,17 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
         
         <div className="flex items-center gap-6">
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Due Date</p>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Due Date</p>
             <p className="text-[13px] font-medium text-slate-900">{dueDate}</p>
           </div>
           <div className="h-8 w-px bg-slate-200"></div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Max Marks</p>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Max Marks</p>
             <p className="text-[13px] font-medium text-slate-900">{maxMarks}</p>
           </div>
           <div className="h-8 w-px bg-slate-200"></div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Progress</p>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Progress</p>
             <p className="text-[13px] font-medium text-slate-900">
               <span className="text-emerald-600">{gradedCount}</span> Graded / {submittedCount} Submitted
             </p>
@@ -242,7 +240,7 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
                   <td colSpan={5} className="px-5 py-12 text-center">
                     <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                     <h3 className="text-[13px] font-medium text-slate-900">No students found</h3>
-                    <p className="text-xs text-slate-500 mt-1">Try adjusting your search query.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Try adjusting your search query.</p>
                   </td>
                 </tr>
               )}

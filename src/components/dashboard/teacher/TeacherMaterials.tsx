@@ -87,16 +87,14 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <FolderOpen className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Materials</h1>
+            
           </div>
         </div>
         
@@ -120,7 +118,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
             <button
               key={type}
               onClick={() => setSelectedFilter(type)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm ${
+              className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all shadow-sm ${
                 selectedFilter === type 
                   ? "bg-brand-dark text-white" 
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
@@ -159,13 +157,13 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 </button>
                 {/* Dropdown Mock */}
                 <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 shadow-lg rounded-lg overflow-hidden opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
-                  <button className="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Download
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                     <Edit2 className="w-3.5 h-3.5 text-slate-400" /> Rename
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
+                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
                     <Trash2 className="w-3.5 h-3.5 text-red-400" /> Delete
                   </button>
                 </div>
@@ -186,7 +184,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-medium text-slate-500">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-[11px] font-medium text-slate-500">
               <span className="text-brand-dark font-medium">{mat.classNo}</span>
               <span>{mat.date}</span>
             </div>
@@ -200,7 +198,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-xs font-medium text-slate-900 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-brand-dark" />
                 Upload Course Material
               </h2>
@@ -216,11 +214,11 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               
               {/* Target Class Context */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 block">Upload Destination</label>
+                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2 block">Upload Destination</label>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[13px] font-medium text-slate-900 line-clamp-1">{courseName}</p>
-                    <p className="text-xs font-medium text-slate-500">{batch}</p>
+                    <p className="text-[11px] font-medium text-slate-500">{batch}</p>
                   </div>
                 </div>
               </div>
@@ -239,8 +237,8 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                   <Upload className={`w-5 h-5 ${dragActive ? "text-brand-dark" : "text-slate-400"}`} />
                 </div>
                 <h3 className="text-[13px] font-medium text-slate-900 mb-1">Click to upload or drag and drop</h3>
-                <p className="text-xs text-slate-500 mb-4">PDF, PPTX, MP4, ZIP (Max 50MB)</p>
-                <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+                <p className="text-[11px] text-slate-500 mb-4">PDF, PPTX, MP4, ZIP (Max 50MB)</p>
+                <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 shadow-sm hover:bg-slate-50">
                   Select Files
                 </button>
               </div>
@@ -248,7 +246,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Material Type</label>
+                  <label className="text-[11px] font-medium text-slate-700">Material Type</label>
                   <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
                     {filterTypes.filter(t => t !== "All").map(type => (
                       <option key={type} value={type}>{type}</option>
@@ -256,7 +254,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Link to Session (Optional)</label>
+                  <label className="text-[11px] font-medium text-slate-700">Link to Session (Optional)</label>
                   <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
                     <option value="">None (General)</option>
                     <option value="class-9">Class #09</option>

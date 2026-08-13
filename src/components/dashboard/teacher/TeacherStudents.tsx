@@ -55,16 +55,14 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <Users className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Students</h1>
+            
           </div>
         </div>
         
@@ -81,7 +79,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
       {/* Filters and Search */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-dark font-medium text-xs shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-dark font-medium text-[11px] shadow-sm">
             {mockStudents.length}
           </div>
           <span className="text-[13px] font-medium text-slate-600">Total Enrolled</span>
@@ -120,7 +118,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
                         {/* Fallback to initials if no image is available (using initials in UI for simplicity) */}
-                        <span className="text-xs font-medium text-slate-500">
+                        <span className="text-[11px] font-medium text-slate-500">
                           {student.name.split(' ').map(n => n[0]).join('')}
                         </span>
                       </div>
@@ -158,7 +156,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
                   
                   {/* Assignments */}
                   <td className="px-5 py-3.5 text-center">
-                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-slate-100 text-xs font-medium text-slate-700">
+                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-slate-100 text-[11px] font-medium text-slate-700">
                       {student.assignments}
                     </span>
                   </td>
@@ -179,7 +177,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
                       <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-brand-dark border border-transparent hover:border-slate-200 hover:shadow-sm transition-all">
                         <MessageSquare className="w-4 h-4" />
                       </button>
-                      <button className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded text-xs font-medium hover:bg-slate-50 hover:text-brand-dark transition-colors shadow-sm">
+                      <button className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded text-[11px] font-medium hover:bg-slate-50 hover:text-brand-dark transition-colors shadow-sm">
                         Profile <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -192,7 +190,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
                   <td colSpan={5} className="px-5 py-12 text-center">
                     <GraduationCap className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                     <h3 className="text-[13px] font-medium text-slate-900">No students found</h3>
-                    <p className="text-xs text-slate-500 mt-1">Try adjusting your search query.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Try adjusting your search query.</p>
                   </td>
                 </tr>
               )}

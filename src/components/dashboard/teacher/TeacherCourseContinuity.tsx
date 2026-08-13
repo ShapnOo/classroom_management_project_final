@@ -49,16 +49,14 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <TrendingUp className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Continuity</h1>
+            
           </div>
         </div>
       </div>
@@ -72,12 +70,12 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
             <BarChart3 className="w-24 h-24" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <h3 className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4" /> Overall Course Progress
             </h3>
             <div className="flex items-end gap-2 mb-4">
-              <span className="text-4xl font-black text-slate-900 tracking-tighter leading-none">{progress}</span>
-              <span className="text-sm font-medium text-slate-400 mb-0.5">%</span>
+              <span className="text-4xl font-semibold text-slate-900 tracking-tighter leading-none">{progress}</span>
+              <span className="text-xs font-medium text-slate-400 mb-0.5">%</span>
             </div>
             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
               <div 
@@ -95,7 +93,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
             <Calendar className="w-24 h-24" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <h3 className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <Calendar className="w-4 h-4" /> Completion Forecast
             </h3>
             <div className="space-y-4 mt-2">
@@ -117,11 +115,11 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
             <BookMarked className="w-24 h-24 text-white" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-xs font-medium text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <h3 className="text-[11px] font-medium text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <AlertCircle className="w-4 h-4" /> Next Class Readiness
             </h3>
-            <h4 className="text-sm font-medium text-white leading-tight mb-2">Continue → BCNF Examples</h4>
-            <p className="text-xs text-slate-400 mb-4">Based on continuity from Class #18</p>
+            <h4 className="text-xs font-medium text-white leading-tight mb-2">Continue → BCNF Examples</h4>
+            <p className="text-[11px] text-slate-400 mb-4">Based on continuity from Class #18</p>
           </div>
           <Link 
             href="/dashboard/teacher/sessions/start"
@@ -152,18 +150,18 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
               <p className="text-[13px] font-medium text-slate-900 mb-3">Topic: Normalization (3NF & Intro to BCNF)</p>
               
               <div className="space-y-1.5 mb-3">
-                <p className="text-xs font-medium text-slate-500 border-b border-slate-100 pb-1 mb-2">Coverage Complete:</p>
+                <p className="text-[11px] font-medium text-slate-500 border-b border-slate-100 pb-1 mb-2">Coverage Complete:</p>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-xs font-medium text-slate-700">3NF</span>
+                  <span className="text-[11px] font-medium text-slate-700">3NF</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-xs font-medium text-slate-700">Functional Dependency</span>
+                  <span className="text-[11px] font-medium text-slate-700">Functional Dependency</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-xs font-medium text-slate-700">BCNF Introduction</span>
+                  <span className="text-[11px] font-medium text-slate-700">BCNF Introduction</span>
                 </div>
               </div>
             </div>
@@ -175,11 +173,11 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
               <div className="space-y-1.5">
                 <div className="flex items-start gap-2">
                   <div className="w-3.5 h-3.5 rounded-full border-2 border-brand-dark/40 mt-0.5 shrink-0"></div>
-                  <span className="text-xs font-medium text-slate-800">BCNF Examples</span>
+                  <span className="text-[11px] font-medium text-slate-800">BCNF Examples</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <div className="w-3.5 h-3.5 rounded-full border-2 border-brand-dark/40 mt-0.5 shrink-0"></div>
-                  <span className="text-xs font-medium text-slate-800">Practical Problems</span>
+                  <span className="text-[11px] font-medium text-slate-800">Practical Problems</span>
                 </div>
               </div>
             </div>
@@ -227,7 +225,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <span className={`text-xs font-medium ${topic.progress === 100 ? 'text-emerald-600' : 'text-brand-dark'}`}>
+                      <span className={`text-[11px] font-medium ${topic.progress === 100 ? 'text-emerald-600' : 'text-brand-dark'}`}>
                         {topic.progress}%
                       </span>
                     </td>

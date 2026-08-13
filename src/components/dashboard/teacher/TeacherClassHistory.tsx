@@ -95,12 +95,10 @@ export default function TeacherClassHistory() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <History className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">Class History</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Review previous sessions, topics covered, and course continuity.</p>
+            
+            <p className="text-[11px] text-slate-500 mt-0.5">Review previous sessions, topics covered, and course continuity.</p>
           </div>
         </div>
         
@@ -166,7 +164,7 @@ export default function TeacherClassHistory() {
               {mockHistory.map((session) => (
                 <tr key={session.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-5 py-4">
-                    <span className="inline-flex items-center justify-center px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium font-mono">
+                    <span className="inline-flex items-center justify-center px-2 py-1 bg-slate-100 text-slate-600 rounded text-[11px] font-medium font-mono">
                       {session.classNumber}
                     </span>
                   </td>

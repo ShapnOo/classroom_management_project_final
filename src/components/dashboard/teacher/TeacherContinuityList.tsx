@@ -43,18 +43,7 @@ export default function TeacherContinuityList() {
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <TrendingUp className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">Course Continuity</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Select a course to view detailed syllabus coverage and next class focus.</p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Course List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -83,8 +72,8 @@ export default function TeacherContinuityList() {
                 {/* Progress */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-slate-600">Course Progress</span>
-                    <span className="text-xs font-medium text-brand-dark">{course.progress}%</span>
+                    <span className="text-[11px] font-medium text-slate-600">Course Progress</span>
+                    <span className="text-[11px] font-medium text-brand-dark">{course.progress}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div 
@@ -99,7 +88,7 @@ export default function TeacherContinuityList() {
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-[10px] font-medium text-amber-800 uppercase tracking-wider mb-0.5">Next Class Focus</h4>
-                    <p className="text-xs font-medium text-amber-900 line-clamp-1">{course.nextTopic}</p>
+                    <p className="text-[11px] font-medium text-amber-900 line-clamp-1">{course.nextTopic}</p>
                   </div>
                 </div>
               </div>

@@ -124,7 +124,7 @@ export default function TeacherCourses() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-sm font-medium text-slate-900 tracking-tight">My Assigned Courses</h1>
+          
           <p className="text-[11px] text-slate-500 mt-0.5">Master definitions and syllabuses for the subjects you teach.</p>
         </div>
         
@@ -263,7 +263,7 @@ export default function TeacherCourses() {
                       <div className="flex items-center gap-3">
                         <div className={`w-1.5 h-10 rounded-full ${course.color}`}></div>
                         <div>
-                          <p className="font-medium text-slate-900 text-xs mb-0.5">{course.courseTitle}</p>
+                          <p className="font-medium text-slate-900 text-[11px] mb-0.5">{course.courseTitle}</p>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-medium text-slate-500">{course.courseCode}</span>
                             <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md uppercase ${course.lightColor} ${course.textColor}`}>

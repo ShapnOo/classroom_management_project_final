@@ -69,7 +69,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
                 {session.course} • {session.batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">
+            <h1 className="text-xs font-medium text-slate-900 tracking-tight">
               Class {session.classNumber} Details
             </h1>
           </div>
@@ -98,7 +98,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
             <div className="p-6 space-y-8">
               {/* Today's Coverage */}
               <div>
-                <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
                   Today's Coverage
                 </h3>
                 <ul className="space-y-3">
@@ -114,7 +114,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
               {/* Progress Bar */}
               <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-600">Overall Course Progress</span>
+                  <span className="text-[11px] font-medium text-slate-600">Overall Course Progress</span>
                   <span className="text-[13px] font-medium text-brand-dark">{session.progress}% Completed</span>
                 </div>
                 <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
@@ -127,7 +127,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
 
               {/* Remaining */}
               <div>
-                <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
                   Remaining Topics
                 </h3>
                 <ul className="space-y-3">
@@ -144,7 +144,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-medium text-amber-800 uppercase tracking-wider mb-1">Next Class Focus</h4>
+                  <h4 className="text-[11px] font-medium text-amber-800 uppercase tracking-wider mb-1">Next Class Focus</h4>
                   <p className="text-[13px] font-medium text-amber-900">{session.nextClassTopic}</p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
 
           {/* Teacher Notes */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6">
-            <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">
+            <h3 className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-3">
               Private Teacher Notes
             </h3>
             <p className="text-[13px] text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
@@ -178,7 +178,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
             
             <div className="p-5">
               <div className="flex items-end gap-2 mb-6">
-                <span className="text-3xl font-medium text-slate-900 leading-none">{session.attendance.present}</span>
+                <span className="text-sm font-medium text-slate-900 leading-none">{session.attendance.present}</span>
                 <span className="text-[13px] font-medium text-slate-500 mb-1">/ {session.attendance.total} Present</span>
               </div>
 
@@ -206,7 +206,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
                 </div>
               </div>
 
-              <button className="w-full mt-6 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 transition-colors">
+              <button className="w-full mt-6 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-medium rounded-lg border border-slate-200 transition-colors">
                 View Full Attendance List
               </button>
             </div>
@@ -229,7 +229,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
                       <FileText className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-900">{mat.name}</p>
+                      <p className="text-[11px] font-medium text-slate-900">{mat.name}</p>
                       <p className="text-[10px] text-slate-500">{mat.size}</p>
                     </div>
                   </div>

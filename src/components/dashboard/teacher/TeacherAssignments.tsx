@@ -85,16 +85,14 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <ListTodo className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Assignments</h1>
+            
           </div>
         </div>
         
@@ -112,7 +110,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
       {/* Filters and Search */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-dark font-medium text-xs shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-dark font-medium text-[11px] shadow-sm">
             {mockAssignments.length}
           </div>
           <span className="text-[13px] font-medium text-slate-600">Total Assignments</span>
@@ -152,7 +150,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                 </button>
               </div>
 
-              <h3 className="text-sm font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-4">
+              <h3 className="text-xs font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-4">
                 {asn.title}
               </h3>
 
@@ -171,10 +169,10 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
               {/* Progress Bar for Submissions */}
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" /> Submissions
                   </span>
-                  <span className="text-xs font-medium text-brand-dark">{asn.submitted}/{asn.total}</span>
+                  <span className="text-[11px] font-medium text-brand-dark">{asn.submitted}/{asn.total}</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div 
@@ -192,12 +190,12 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
             </div>
 
             <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-2">
-              <button className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition-colors shadow-sm">
+              <button className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-medium hover:bg-slate-100 transition-colors shadow-sm">
                 Edit
               </button>
               <Link 
                 href={`/dashboard/teacher/assignments/${courseId || 'cls-1'}/evaluate/${asn.id}`}
-                className="flex-1 py-2 bg-brand-dark text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors shadow-sm text-center"
+                className="flex-1 py-2 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center"
               >
                 Evaluate
               </Link>
@@ -212,7 +210,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-xs font-medium text-slate-900 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-brand-dark" />
                 Create New Assignment
               </h2>
@@ -231,13 +229,13 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                 <div>
                   <label className="text-[10px] font-medium text-brand-dark uppercase tracking-wider mb-1 block">Assigning to Classroom</label>
                   <p className="text-[13px] font-medium text-slate-900">{courseName}</p>
-                  <p className="text-xs font-medium text-slate-500">{batch} • {code}</p>
+                  <p className="text-[11px] font-medium text-slate-500">{batch} • {code}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Assignment Title <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-medium text-slate-700">Assignment Title <span className="text-red-500">*</span></label>
                   <input 
                     type="text" 
                     placeholder="e.g., ER Diagram Assignment"
@@ -248,7 +246,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700">Description & Instructions</label>
+                  <label className="text-[11px] font-medium text-slate-700">Description & Instructions</label>
                   <textarea 
                     rows={4}
                     placeholder="Enter detailed instructions for the students..."
@@ -260,7 +258,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700">Due Date <span className="text-red-500">*</span></label>
+                    <label className="text-[11px] font-medium text-slate-700">Due Date <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
@@ -272,7 +270,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700">Maximum Marks <span className="text-red-500">*</span></label>
+                    <label className="text-[11px] font-medium text-slate-700">Maximum Marks <span className="text-red-500">*</span></label>
                     <input 
                       type="number" 
                       value={maxMarks}
@@ -284,13 +282,13 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
 
                 {/* File Attachment Area */}
                 <div className="space-y-1.5 mt-2">
-                  <label className="text-xs font-medium text-slate-700">Attachments (Optional)</label>
+                  <label className="text-[11px] font-medium text-slate-700">Attachments (Optional)</label>
                   <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
                     <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-3">
                       <Paperclip className="w-4 h-4 text-slate-400" />
                     </div>
                     <p className="text-[13px] font-medium text-slate-900">Click to upload reference materials</p>
-                    <p className="text-xs text-slate-500 mt-1">PDF, DOCX, ZIP (Max 10MB)</p>
+                    <p className="text-[11px] text-slate-500 mt-1">PDF, DOCX, ZIP (Max 10MB)</p>
                   </div>
                 </div>
               </div>

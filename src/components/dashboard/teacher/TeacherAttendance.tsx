@@ -62,16 +62,14 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <ClipboardCheck className="w-5 h-5 text-white" />
-          </div>
+          
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Attendance Report</h1>
+            
           </div>
         </div>
         
@@ -92,8 +90,8 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
             <Users className="w-6 h-6 text-brand-dark" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Total Students</p>
-            <h3 className="text-lg font-medium text-slate-900">42</h3>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Total Students</p>
+            <h3 className="text-sm font-medium text-slate-900">42</h3>
           </div>
         </div>
 
@@ -102,8 +100,8 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
             <ClipboardCheck className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Avg. Attendance</p>
-            <h3 className="text-lg font-medium text-slate-900">92%</h3>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Avg. Attendance</p>
+            <h3 className="text-sm font-medium text-slate-900">92%</h3>
           </div>
         </div>
 
@@ -112,8 +110,8 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
             <AlertCircle className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Low Attendance</p>
-            <h3 className="text-lg font-medium text-slate-900">4 <span className="text-[13px] font-medium text-slate-500 normal-case">Students</span></h3>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Low Attendance</p>
+            <h3 className="text-sm font-medium text-slate-900">4 <span className="text-[13px] font-medium text-slate-500 normal-case">Students</span></h3>
           </div>
         </div>
       </div>
@@ -254,7 +252,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
                   <tr key={cls.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-4">
                       <p className="text-[13px] font-medium text-slate-900">{cls.id.replace('cls-', 'Class #')}</p>
-                      <p className="text-xs text-slate-500">{cls.date}</p>
+                      <p className="text-[11px] text-slate-500">{cls.date}</p>
                     </td>
                     <td className="px-5 py-4 text-[13px] font-medium text-slate-700">
                       {cls.topic}

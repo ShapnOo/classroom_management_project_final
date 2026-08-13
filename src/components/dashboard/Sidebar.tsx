@@ -69,7 +69,7 @@ export default function Sidebar() {
                         <Link
                           key={sidx}
                           href={sub.href}
-                          className="block px-3 py-1.5 text-xs font-medium text-slate-500 rounded-md hover:text-brand-dark hover:bg-slate-50 transition-colors"
+                          className="block px-3 py-1.5 text-[11px] font-medium text-slate-500 rounded-md hover:text-brand-dark hover:bg-slate-50 transition-colors"
                         >
                           {sub.title}
                         </Link>

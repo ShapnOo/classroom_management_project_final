@@ -38,19 +38,6 @@ const mockCourses = [
 export default function TeacherMaterialsList() {
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <FolderOpen className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-base font-medium text-slate-900 tracking-tight">Course Materials</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Select a course to view, manage, and upload materials.</p>
-          </div>
-        </div>
-      </div>
 
       {/* Course List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -74,7 +61,7 @@ export default function TeacherMaterialsList() {
                 <FolderOpen className="w-8 h-8 text-slate-300 shrink-0 group-hover:text-brand-dark/20 transition-colors" />
               </div>
               
-              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-500">
+              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-slate-500">
                 <div className="flex items-center gap-1.5">
                   <Files className="w-3.5 h-3.5" />
                   {course.fileCount} Files

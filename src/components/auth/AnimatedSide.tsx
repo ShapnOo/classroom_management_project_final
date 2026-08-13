@@ -20,7 +20,7 @@ export default function AnimatedSide() {
           className="mb-12 text-center"
         >
           <h2 className="text-4xl font-medium mb-4">Empowering Education</h2>
-          <p className="text-primary-100 text-base leading-relaxed">
+          <p className="text-primary-100 text-xs leading-relaxed">
             Classroom Management brings administrators, teachers, and students together in one seamless platform for a better learning experience.
           </p>
         </motion.div>
