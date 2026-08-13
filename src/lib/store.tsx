@@ -6,7 +6,7 @@ import React, {
 import type {
   Session, Department, Program, Batch, Student, Teacher,
   Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
-  ClassroomView,
+  ClassroomView, ClassSession, AttendanceRecord, GradeRecord,
 } from "./types";
 import { CLASSROOM_COLORS } from "./types";
 import {
@@ -30,6 +30,9 @@ type AppState = {
   schedules: ClassSchedule[];
   assignments: Assignment[];
   tests: Test[];
+  classSessions: ClassSession[];
+  attendanceRecords: AttendanceRecord[];
+  gradeRecords: GradeRecord[];
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -71,6 +74,18 @@ type AppActions = {
   addTest: (t: Omit<Test, "id">) => void;
   updateTest: (id: string, t: Partial<Test>) => void;
   deleteTest: (id: string) => void;
+  // Class Sessions
+  addClassSession: (s: Omit<ClassSession, "id">) => void;
+  updateClassSession: (id: string, s: Partial<ClassSession>) => void;
+  deleteClassSession: (id: string) => void;
+  // Attendance Records
+  addAttendanceRecord: (r: Omit<AttendanceRecord, "id">) => void;
+  updateAttendanceRecord: (id: string, r: Partial<AttendanceRecord>) => void;
+  upsertAttendance: (sessionId: string, classroomId: string, studentId: string, status: AttendanceRecord["status"]) => void;
+  // Grade Records
+  addGradeRecord: (r: Omit<GradeRecord, "id">) => void;
+  updateGradeRecord: (id: string, r: Partial<GradeRecord>) => void;
+  upsertGradeRecord: (data: Omit<GradeRecord, "id">) => void;
   // Derived helpers
   getClassroomView: (classroomId: string) => ClassroomView | null;
   getMyClassroomViews: () => ClassroomView[];
@@ -101,6 +116,9 @@ const initialState: AppState = {
   schedules: seedSchedules,
   assignments: seedAssignments,
   tests: seedTests,
+  classSessions: [],
+  attendanceRecords: [],
+  gradeRecords: [],
 };
 
 function loadState(): AppState {
@@ -212,6 +230,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     update("tests", prev => prev.map(x => x.id === id ? { ...x, ...t } : x));
   const deleteTest = (id: string) =>
     update("tests", prev => prev.filter(x => x.id !== id));
+
+  // ── ClassSession CRUD ──
+  const addClassSession = (s: Omit<ClassSession, "id">) =>
+    update("classSessions", prev => [...prev, { ...s, id: genId() }]);
+  const updateClassSession = (id: string, s: Partial<ClassSession>) =>
+    update("classSessions", prev => prev.map(x => x.id === id ? { ...x, ...s } : x));
+  const deleteClassSession = (id: string) =>
+    update("classSessions", prev => prev.filter(x => x.id !== id));
+
+  // ── Attendance CRUD ──
+  const addAttendanceRecord = (r: Omit<AttendanceRecord, "id">) =>
+    update("attendanceRecords", prev => [...prev, { ...r, id: genId() }]);
+  const updateAttendanceRecord = (id: string, r: Partial<AttendanceRecord>) =>
+    update("attendanceRecords", prev => prev.map(x => x.id === id ? { ...x, ...r } : x));
+  // Upsert: update existing or create new attendance for a student in a session
+  const upsertAttendance = (
+    sessionId: string, classroomId: string, studentId: string,
+    status: AttendanceRecord["status"]
+  ) => {
+    setState(s => {
+      const existing = s.attendanceRecords.find(
+        r => r.sessionId === sessionId && r.studentId === studentId
+      );
+      if (existing) {
+        return { ...s, attendanceRecords: s.attendanceRecords.map(r =>
+          r.id === existing.id ? { ...r, status } : r
+        )};
+      }
+      return { ...s, attendanceRecords: [
+        ...s.attendanceRecords,
+        { id: genId(), sessionId, classroomId, studentId, status }
+      ]};
+    });
+  };
+
+  // ── Grade Records ──
+  const addGradeRecord = (r: Omit<GradeRecord, "id">) =>
+    update("gradeRecords", prev => [...prev, { ...r, id: genId() }]);
+  const updateGradeRecord = (id: string, r: Partial<GradeRecord>) =>
+    update("gradeRecords", prev => prev.map(x => x.id === id ? { ...x, ...r } : x));
+  const upsertGradeRecord = (data: Omit<GradeRecord, "id">) => {
+    setState(s => {
+      const existing = s.gradeRecords.find(r =>
+        r.classroomId === data.classroomId &&
+        r.studentId === data.studentId &&
+        r.assignmentId === data.assignmentId &&
+        r.testId === data.testId
+      );
+      if (existing) {
+        return { ...s, gradeRecords: s.gradeRecords.map(r =>
+          r.id === existing.id ? { ...r, ...data } : r
+        )};
+      }
+      return { ...s, gradeRecords: [...s.gradeRecords, { ...data, id: genId() }] };
+    });
+  };
 
   // ── Derived: build a fully enriched ClassroomView ──
   const buildView = useCallback((cls: Classroom): ClassroomView | null => {

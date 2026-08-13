@@ -115,11 +115,49 @@ export type Test = {
   id: string;
   classroomId: string;
   title: string;
+  description?: string;
   testDate: string;
+  duration?: string; // e.g. "1h 30m"
   totalMarks: number;
   status: "Active" | "Upcoming" | "Completed";
   submissions: number;
 };
+
+/**
+ * A single conducted class session.
+ * Created when teacher starts a class and marks attendance.
+ */
+export type ClassSession = {
+  id: string;
+  classroomId: string;
+  date: string;              // ISO date string
+  topicCovered: string;      // which syllabus topic was taught
+  notes?: string;
+  duration: string;          // e.g. "1h 30m"
+  conductedAt: string;       // timestamp
+};
+
+/** Attendance record for one student in one session */
+export type AttendanceRecord = {
+  id: string;
+  sessionId: string;
+  classroomId: string;
+  studentId: string;
+  status: "present" | "absent" | "late";
+};
+
+/** Marks/score for one student on an assignment or test */
+export type GradeRecord = {
+  id: string;
+  classroomId: string;
+  studentId: string;
+  assignmentId?: string;
+  testId?: string;
+  obtainedMarks: number;
+  totalMarks: number;
+  remarks?: string;
+};
+
 
 // ─── Derived View Types ─────────────────────────────────────────────────────
 
