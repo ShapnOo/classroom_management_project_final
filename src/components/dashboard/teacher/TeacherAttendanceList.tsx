@@ -50,7 +50,7 @@ export default function TeacherAttendanceList() {
             <ClipboardCheck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">Attendance Manager</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">Attendance Manager</h1>
             <p className="text-xs text-slate-500 mt-0.5">Select a class to take or review attendance records.</p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function TeacherAttendanceList() {
               </div>
               
               <div className="flex items-start justify-between gap-2 mb-4">
-                <h3 className="text-sm font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2">
+                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2">
                   {course.name}
                 </h3>
                 <ClipboardCheck className="w-8 h-8 text-slate-300 shrink-0 group-hover:text-brand-dark/20 transition-colors" />

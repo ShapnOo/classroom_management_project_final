@@ -124,7 +124,7 @@ export default function TeacherCourses() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-base font-medium text-slate-900 tracking-tight">My Assigned Courses</h1>
+          <h1 className="text-sm font-medium text-slate-900 tracking-tight">My Assigned Courses</h1>
           <p className="text-[11px] text-slate-500 mt-0.5">Master definitions and syllabuses for the subjects you teach.</p>
         </div>
         
@@ -329,7 +329,7 @@ export default function TeacherCourses() {
                 <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wider uppercase mb-1.5 ${selectedCourse.lightColor} ${selectedCourse.textColor}`}>
                   {selectedCourse.courseCode} • {selectedCourse.credits} Credits
                 </span>
-                <h2 className="text-sm font-medium text-slate-900">{selectedCourse.courseTitle}</h2>
+                <h2 className="text-[13px] font-medium text-slate-900">{selectedCourse.courseTitle}</h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">{selectedCourse.department}</p>
               </div>
               <button 

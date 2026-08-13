@@ -94,7 +94,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Assignments</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Assignments</h1>
           </div>
         </div>
         
@@ -152,7 +152,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
                 </button>
               </div>
 
-              <h3 className="text-base font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-4">
+              <h3 className="text-sm font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-4">
                 {asn.title}
               </h3>
 
@@ -212,7 +212,7 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-base font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-brand-dark" />
                 Create New Assignment
               </h2>

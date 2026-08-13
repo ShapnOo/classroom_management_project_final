@@ -69,7 +69,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
                 {session.course} • {session.batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">
               Class {session.classNumber} Details
             </h1>
           </div>
@@ -89,7 +89,7 @@ export default function TeacherClassSessionView({ sessionId }: TeacherClassSessi
           
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-100 px-5 py-4">
-              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-brand-dark" />
                 Course Continuity & Coverage
               </h2>

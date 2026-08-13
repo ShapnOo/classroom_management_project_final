@@ -103,7 +103,7 @@ export default function StartClassSession() {
               <PlaySquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-medium text-slate-900 tracking-tight">Select Class to Start</h1>
+              <h1 className="text-base font-medium text-slate-900 tracking-tight">Select Class to Start</h1>
               <p className="text-xs text-slate-500 mt-0.5">Choose a class from your active schedule to log today's session.</p>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function StartClassSession() {
                 {selectedClass?.code} • {selectedClass?.batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{selectedClass?.name}</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{selectedClass?.name}</h1>
           </div>
         </div>
       </div>
@@ -248,7 +248,7 @@ export default function StartClassSession() {
           {/* Today's Session Form */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-100 px-5 py-4">
-              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-brand-dark" />
                 Today's Session Details (Class #09)
               </h2>
@@ -343,14 +343,14 @@ export default function StartClassSession() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden sticky top-6">
             
             <div className="bg-slate-900 text-white p-4">
-              <h2 className="text-sm font-medium flex items-center gap-2">
+              <h2 className="text-[13px] font-medium flex items-center gap-2">
                 <Users2 className="w-4 h-4 opacity-80" />
                 Take Attendance
               </h2>
               <div className="flex justify-between items-end mt-3">
                 <div>
                   <p className="text-[11px] text-slate-300 font-medium mb-0.5">Students Present</p>
-                  <p className="text-xl font-medium leading-none">
+                  <p className="text-lg font-medium leading-none">
                     {Object.values(attendance).filter(a => a === 'Present').length} <span className="text-[13px] font-normal text-slate-400">/ {mockStudents.length}</span>
                   </p>
                 </div>

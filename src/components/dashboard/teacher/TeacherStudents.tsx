@@ -64,7 +64,7 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Students</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Students</h1>
           </div>
         </div>
         

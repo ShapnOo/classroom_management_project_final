@@ -50,7 +50,7 @@ export default function TeacherContinuityList() {
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">Course Continuity</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">Course Continuity</h1>
             <p className="text-xs text-slate-500 mt-0.5">Select a course to view detailed syllabus coverage and next class focus.</p>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function TeacherContinuityList() {
                 </span>
               </div>
               
-              <h3 className="text-sm font-medium text-slate-900 mb-1 group-hover:text-brand-dark transition-colors line-clamp-1">
+              <h3 className="text-[13px] font-medium text-slate-900 mb-1 group-hover:text-brand-dark transition-colors line-clamp-1">
                 {course.name}
               </h3>
               

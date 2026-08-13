@@ -7,7 +7,7 @@ export default function Topbar() {
         <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="text-sm font-semibold text-brand-dark">Dashboard</h1>
+        <h1 className="text-[13px] font-medium text-brand-dark">Dashboard</h1>
       </div>
       
       <div className="flex items-center gap-4">
@@ -18,7 +18,7 @@ export default function Topbar() {
           <input
             type="text"
             placeholder="Search..."
-            className="pl-9 pr-4 py-1.5 w-64 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder:text-slate-400"
+            className="pl-9 pr-4 py-1.5 w-64 bg-slate-50 border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder:text-slate-400"
           />
         </div>
         
@@ -27,7 +27,7 @@ export default function Topbar() {
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
         </button>
         
-        <div className="h-8 w-8 rounded-full bg-brand-dark text-white flex items-center justify-center text-xs font-semibold shadow-sm cursor-pointer ml-2">
+        <div className="h-8 w-8 rounded-full bg-brand-dark text-white flex items-center justify-center text-xs font-medium shadow-sm cursor-pointer ml-2">
           AD
         </div>
       </div>

@@ -252,7 +252,7 @@ export default function TeacherClassrooms() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-base font-medium text-slate-900 tracking-tight">My Classrooms</h1>
+          <h1 className="text-sm font-medium text-slate-900 tracking-tight">My Classrooms</h1>
           <p className="text-[11px] text-slate-500 mt-0.5">Manage your active classes, materials, and student attendance.</p>
         </div>
         
@@ -486,7 +486,7 @@ export default function TeacherClassrooms() {
             
             <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-10">
               <div>
-                <h2 className="text-base font-medium text-slate-900">Create New Classroom</h2>
+                <h2 className="text-sm font-medium text-slate-900">Create New Classroom</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Setup a new class and assign students.</p>
               </div>
               <button 
@@ -615,7 +615,7 @@ export default function TeacherClassrooms() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
               <div>
-                <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
                   <Users2 className="w-4 h-4 text-brand-dark" />
                   Select Students
                 </h2>

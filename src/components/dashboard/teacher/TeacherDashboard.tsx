@@ -48,7 +48,7 @@ export default function TeacherDashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <p className="text-xs font-medium text-slate-500 mb-0.5">{currentDate}</p>
-          <h1 className="text-lg font-medium text-slate-900 tracking-tight">Good morning, Dr. Rahman! 👋</h1>
+          <h1 className="text-base font-medium text-slate-900 tracking-tight">Good morning, Dr. Rahman! 👋</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Here is what's happening in your classrooms today.</p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -80,7 +80,7 @@ export default function TeacherDashboard() {
               </span>
             </div>
             <div>
-              <p className="text-xl font-medium text-slate-900 leading-none mb-1">{stat.value}</p>
+              <p className="text-lg font-medium text-slate-900 leading-none mb-1">{stat.value}</p>
               <p className="text-xs font-medium text-slate-500">{stat.label}</p>
             </div>
             <div className="absolute -bottom-4 -right-4 text-slate-50 opacity-50 group-hover:scale-110 transition-transform">
@@ -142,7 +142,7 @@ export default function TeacherDashboard() {
           <div className="p-5 relative z-10 flex flex-col h-full justify-between">
             <div>
               <p className="text-[10px] font-medium mb-1.5 uppercase tracking-widest text-blue-300">Database Management</p>
-              <h3 className="text-base font-medium mb-3">Normalization & BCNF</h3>
+              <h3 className="text-sm font-medium mb-3">Normalization & BCNF</h3>
               
               <div className="bg-white/10 rounded-lg p-3 mb-4 backdrop-blur-sm border border-white/10">
                 <p className="text-[10px] text-slate-300 mb-1.5 uppercase tracking-wide font-medium">Remaining from last class</p>

@@ -37,7 +37,7 @@ export default function Sidebar() {
           <GraduationCap className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="font-bold text-sm text-brand-dark leading-tight">Classroom Management</h2>
+          <h2 className="font-medium text-[13px] text-brand-dark leading-tight">Classroom Management</h2>
           <p className="text-[10px] text-slate-500 font-medium">{panelName}</p>
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function Sidebar() {
                 <div>
                   <button
                     onClick={() => toggleExpand(menu.title)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 text-[13px] font-medium text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {menu.icon && <menu.icon className="w-4 h-4 text-slate-400" />}
@@ -80,7 +80,7 @@ export default function Sidebar() {
               ) : (
                 <Link
                   href={menu.href || "#"}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-brand-dark transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-brand-dark transition-colors"
                 >
                   {menu.icon && <menu.icon className="w-4 h-4 text-slate-400" />}
                   <span>{menu.title}</span>
@@ -95,7 +95,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-200 shrink-0">
         <Link 
           href="/auth/login" 
-          className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 text-[13px] font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           <span>Log Out</span>

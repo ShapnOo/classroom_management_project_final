@@ -47,8 +47,8 @@ export default function LoginForm() {
         <div className="bg-brand-dark p-3 rounded-xl mb-4">
           <GraduationCap className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-xl font-medium text-foreground">Welcome back</h1>
+        <p className="text-[13px] text-slate-500 mt-1">
           Sign in to your Classroom Management workspace
         </p>
       </div>
@@ -61,7 +61,7 @@ export default function LoginForm() {
               key={r}
               type="button"
               onClick={() => autofill(r)}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+              className={`flex-1 py-2 text-[13px] font-medium rounded-md transition-all ${
                 role === r
                   ? "bg-white text-foreground shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
@@ -77,7 +77,7 @@ export default function LoginForm() {
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-[13px]">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <p>{error}</p>
           </div>
@@ -95,7 +95,7 @@ export default function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@campus.edu"
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
               />
             </div>
@@ -117,7 +117,7 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
               />
             </div>
@@ -125,7 +125,7 @@ export default function LoginForm() {
 
           <button
             type="submit"
-            className="w-full bg-brand-dark hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition-all flex items-center justify-center mt-6"
+            className="w-full bg-brand-dark hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-[13px] transition-all flex items-center justify-center mt-6"
           >
             Sign in as {role}
           </button>

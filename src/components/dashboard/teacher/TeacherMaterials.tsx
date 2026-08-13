@@ -96,7 +96,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Materials</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Materials</h1>
           </div>
         </div>
         
@@ -200,7 +200,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-base font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-brand-dark" />
                 Upload Course Material
               </h2>

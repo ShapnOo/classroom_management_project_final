@@ -91,7 +91,7 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
                 {courseName} ({batch})
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{assignmentTitle}</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{assignmentTitle}</h1>
           </div>
         </div>
         

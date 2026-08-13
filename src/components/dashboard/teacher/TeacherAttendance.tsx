@@ -71,7 +71,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Attendance Report</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Attendance Report</h1>
           </div>
         </div>
         
@@ -93,7 +93,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Total Students</p>
-            <h3 className="text-xl font-medium text-slate-900">42</h3>
+            <h3 className="text-lg font-medium text-slate-900">42</h3>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Avg. Attendance</p>
-            <h3 className="text-xl font-medium text-slate-900">92%</h3>
+            <h3 className="text-lg font-medium text-slate-900">92%</h3>
           </div>
         </div>
 
@@ -113,7 +113,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Low Attendance</p>
-            <h3 className="text-xl font-medium text-slate-900">4 <span className="text-[13px] font-medium text-slate-500 normal-case">Students</span></h3>
+            <h3 className="text-lg font-medium text-slate-900">4 <span className="text-[13px] font-medium text-slate-500 normal-case">Students</span></h3>
           </div>
         </div>
       </div>

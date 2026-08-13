@@ -19,8 +19,8 @@ export default function AnimatedSide() {
           transition={{ duration: 0.8 }}
           className="mb-12 text-center"
         >
-          <h2 className="text-4xl font-bold mb-4">Empowering Education</h2>
-          <p className="text-primary-100 text-lg leading-relaxed">
+          <h2 className="text-4xl font-medium mb-4">Empowering Education</h2>
+          <p className="text-primary-100 text-base leading-relaxed">
             Classroom Management brings administrators, teachers, and students together in one seamless platform for a better learning experience.
           </p>
         </motion.div>

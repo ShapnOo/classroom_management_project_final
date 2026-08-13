@@ -58,7 +58,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Continuity</h1>
+            <h1 className="text-base font-medium text-slate-900 tracking-tight">{courseName} Continuity</h1>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
             </h3>
             <div className="flex items-end gap-2 mb-4">
               <span className="text-4xl font-black text-slate-900 tracking-tighter leading-none">{progress}</span>
-              <span className="text-base font-medium text-slate-400 mb-0.5">%</span>
+              <span className="text-sm font-medium text-slate-400 mb-0.5">%</span>
             </div>
             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
               <div 
@@ -120,7 +120,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
             <h3 className="text-xs font-medium text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <AlertCircle className="w-4 h-4" /> Next Class Readiness
             </h3>
-            <h4 className="text-base font-medium text-white leading-tight mb-2">Continue → BCNF Examples</h4>
+            <h4 className="text-sm font-medium text-white leading-tight mb-2">Continue → BCNF Examples</h4>
             <p className="text-xs text-slate-400 mb-4">Based on continuity from Class #18</p>
           </div>
           <Link 
@@ -138,7 +138,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
         {/* Continuity Engine Display (What was covered last) */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
           <div className="bg-slate-50 border-b border-slate-100 px-5 py-4">
-            <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
               <History className="w-4 h-4 text-brand-dark" />
               Continuity Engine
             </h2>
@@ -190,7 +190,7 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
           <div className="bg-slate-50 border-b border-slate-100 px-5 py-4 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
+              <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-brand-dark" />
                 Topic Progress
               </h2>
