@@ -94,15 +94,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Students", icon: Users, href: "/dashboard/teacher/students" },
   { title: "Attendance", icon: ClipboardCheck, href: "/dashboard/teacher/attendance" },
   { title: "Assignments", icon: ListTodo, href: "/dashboard/teacher/assignments" },
-  { 
-    title: "Class Tests", icon: FileText,
-    submenu: [
-      { title: "Test List", href: "#" },
-      { title: "Create Test", href: "#" },
-      { title: "Enter Marks", href: "#" },
-      { title: "Results", href: "#" },
-    ]
-  },
+  { title: "Class Tests", icon: FileText, href: "/dashboard/teacher/tests" },
   { title: "Announcements", icon: Bell, href: "#" },
   { title: "Calendar", icon: CalendarDays, href: "#" },
   { 

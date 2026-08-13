@@ -166,6 +166,51 @@ export default function TeacherClassrooms() {
     totalClasses: 24
   });
 
+  interface DaySchedule {
+    day: number;
+    startTime: string;
+    endTime: string;
+  }
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const [selectedDays, setSelectedDays] = useState<DaySchedule[]>([]);
+
+
+  
+  useEffect(() => {
+    if (newClassroom.startDate && newClassroom.endDate && selectedDays.length > 0) {
+      const start = new Date(newClassroom.startDate);
+      const end = new Date(newClassroom.endDate);
+      let count = 0;
+      
+      let current = new Date(start);
+      while (current <= end) {
+        if (selectedDays.some(d => d.day === current.getDay())) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      
+      const formatTime = (timeStr: string) => {
+        if (!timeStr) return "";
+        const [h, m] = timeStr.split(":");
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const formattedHour = hour % 12 || 12;
+        return `${formattedHour}:${m} ${ampm}`;
+      };
+
+      const scheduleStrs = selectedDays.map(d => `${DAYS[d.day]} ${formatTime(d.startTime)}-${formatTime(d.endTime)}`);
+      const scheduleStr = scheduleStrs.join(', ');
+      
+      setNewClassroom(prev => ({
+        ...prev,
+        totalClasses: count,
+        schedule: scheduleStr
+      }));
+    }
+  }, [newClassroom.startDate, newClassroom.endDate, selectedDays]);
+
+
   const filteredClassrooms = classrooms.filter(cls => {
     const matchesSearch = cls.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           cls.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
@@ -375,9 +420,12 @@ export default function TeacherClassrooms() {
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-3 gap-1.5 mt-auto pt-3 border-t border-slate-100">
-                  <Link href={`/dashboard/teacher/classrooms/${cls.id}`} className={`col-span-3 mb-1.5 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-medium rounded shadow-sm transition-colors ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-brand-dark text-white hover:bg-slate-800'}`}>
+                  <Link 
+                    href={cls.status === 'completed' ? `/dashboard/teacher/classrooms/${cls.id}/archive` : `/dashboard/teacher/sessions/start?classId=${cls.id}`} 
+                    className={`col-span-3 mb-1.5 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-medium rounded shadow-sm transition-colors ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-brand-dark text-white hover:bg-slate-800'}`}
+                  >
                     {cls.status === 'completed' ? <FolderOpen className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                    {cls.status === 'completed' ? 'View Archive' : 'Enter Classroom'}
+                    {cls.status === 'completed' ? 'View Archive' : 'Start Session'}
                   </Link>
                   
                   <button className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
@@ -517,7 +565,13 @@ export default function TeacherClassrooms() {
 
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-slate-700">Batch & Section <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Spring 2026 - A" value={newClassroom.batch} onChange={e => setNewClassroom({...newClassroom, batch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <select required value={newClassroom.batch} onChange={e => setNewClassroom({...newClassroom, batch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none bg-white text-slate-700">
+                    <option value="" disabled>Select Batch & Section</option>
+                    <option value="Spring 2026 - A">Spring 2026 - A</option>
+                    <option value="Spring 2026 - B">Spring 2026 - B</option>
+                    <option value="Fall 2025 - A">Fall 2025 - A</option>
+                    <option value="Fall 2025 - B">Fall 2025 - B</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -525,9 +579,53 @@ export default function TeacherClassrooms() {
                   <input type="text" placeholder="e.g. Room 402, Bldg C" value={newClassroom.room} onChange={e => setNewClassroom({...newClassroom, room: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[11px] font-medium text-slate-700">Weekly Schedule <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Mon, Wed • 10:00 AM - 11:30 AM" value={newClassroom.schedule} onChange={e => setNewClassroom({...newClassroom, schedule: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+                  <div className="flex flex-col gap-3 p-3 border border-slate-200 rounded-lg bg-slate-50">
+                    <div className="flex items-center gap-2 justify-between flex-wrap">
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => {
+                        const isSelected = selectedDays.some(d => d.day === idx);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedDays(selectedDays.filter(d => d.day !== idx));
+                              } else {
+                                setSelectedDays([...selectedDays, { day: idx, startTime: "10:00", endTime: "11:30" }]);
+                              }
+                            }}
+                            className={`w-8 h-8 rounded-full text-[11px] font-medium flex items-center justify-center transition-colors ${isSelected ? 'bg-brand-dark text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {selectedDays.length > 0 && (
+                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                        {selectedDays.map(d => (
+                          <div key={d.day} className="flex items-center gap-3">
+                            <div className="w-16 text-[11px] font-medium text-slate-700">{DAYS[d.day]}</div>
+                            <div className="flex-1 flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-lg">
+                              <span className="text-[10px] text-slate-400 font-medium w-8">From</span>
+                              <input type="time" required value={d.startTime} onChange={e => {
+                                setSelectedDays(selectedDays.map(sd => sd.day === d.day ? { ...sd, startTime: e.target.value } : sd));
+                              }} className="text-[11px] outline-none bg-transparent w-full text-slate-700" />
+                            </div>
+                            <div className="flex-1 flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-lg">
+                              <span className="text-[10px] text-slate-400 font-medium w-8">To</span>
+                              <input type="time" required value={d.endTime} onChange={e => {
+                                setSelectedDays(selectedDays.map(sd => sd.day === d.day ? { ...sd, endTime: e.target.value } : sd));
+                              }} className="text-[11px] outline-none bg-transparent w-full text-slate-700" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
