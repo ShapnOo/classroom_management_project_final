@@ -50,7 +50,7 @@ export const adminMenu: MenuItem[] = [
     title: "Classroom Management", icon: MonitorPlay,
     submenu: [
       { title: "All Classrooms", href: "#" },
-      { title: "Class Schedules", href: "#" },
+      { title: "Class Schedules", href: "/dashboard/admin/academic/schedules" },
     ]
   },
   { 

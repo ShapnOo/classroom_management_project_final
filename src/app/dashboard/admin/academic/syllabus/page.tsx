@@ -10,16 +10,17 @@ import { DataTable } from "@/components/ui/DataTable";
 
 type SyllabusItem = {
   id: string;
-  topic: string;
   course: string;
+  topic: string;
   week: number;
-  status: "Draft" | "Published" | "Archived";
+  subTopics: string[];
+  status: "Published" | "Draft" | "Archived";
 };
 
 const initialSyllabus: SyllabusItem[] = [
-  { id: "1", topic: "Introduction & Environment Setup", course: "CS101 (Batch 28)", week: 1, status: "Published" },
-  { id: "2", topic: "Basic Data Types & Variables", course: "CS101 (Batch 28)", week: 2, status: "Published" },
-  { id: "3", topic: "Functions and Limits", course: "MTH201 (Batch 28)", week: 1, status: "Draft" },
+  { id: "1", course: "CS101", topic: "Variables and Data Types", week: 1, subTopics: ["Primitive Types", "Variable Scope", "Constants"], status: "Published" },
+  { id: "2", course: "MTH201", topic: "Limits and Continuity", week: 1, subTopics: ["Delta-Epsilon Definition", "One-sided Limits"], status: "Published" },
+  { id: "3", course: "CS101", topic: "Control Structures", week: 2, subTopics: ["If/Else Statements", "Loops (For, While)"], status: "Draft" },
 ];
 
 export default function SyllabusPage() {
@@ -39,14 +40,20 @@ export default function SyllabusPage() {
   });
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 animate-in fade-in duration-500">
       <PageHeader 
         title="Course Syllabus" 
-        description="Manage topics and syllabus items for your courses."
+        description="Define and manage topics and modules for each course."
+      />
+
+      <SearchInput 
+        placeholder="Search syllabus topics..." 
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
         actionButton={
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm"
+            className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Topic
@@ -54,16 +61,8 @@ export default function SyllabusPage() {
         }
       />
 
-      <SearchInput 
-        placeholder="Search syllabus by topic or course..." 
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        totalCount={syllabusItems.length}
-        totalLabel="Syllabus Topics"
-      />
-
       <DataTable 
-        columns={["Topic / Module", "Course", "Schedule", "Status", "Actions"]}
+        columns={["Topic Title", "Key Concepts", "Course", "Schedule", "Status", "Actions"]}
         isEmpty={filteredItems.length === 0}
         emptyStateIcon={ListTodo}
         emptyStateTitle="No syllabus topics found"
@@ -77,6 +76,16 @@ export default function SyllabusPage() {
                   <ListTodo className="w-3.5 h-3.5" />
                 </div>
                 <span className="font-medium text-[11px] text-slate-900">{item.topic}</span>
+              </div>
+            </td>
+            <td className="px-5 py-4">
+              <div className="flex flex-col gap-1">
+                {item.subTopics.map((sub, i) => (
+                  <span key={i} className="text-[10px] text-slate-500 flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    {sub}
+                  </span>
+                ))}
               </div>
             </td>
             <td className="px-5 py-4 text-[11px] font-medium text-slate-600">{item.course}</td>
@@ -123,6 +132,20 @@ export default function SyllabusPage() {
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Topic Title</label>
             <input type="text" placeholder="e.g. Variables and Functions" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-medium text-slate-700 flex justify-between items-center">
+              Key Concepts (Sub-topics)
+              <span className="text-[10px] text-brand-dark cursor-pointer hover:underline flex items-center gap-1">
+                <Plus className="w-3 h-3" /> Add Concept
+              </span>
+            </label>
+            <div className="space-y-2">
+              <input type="text" placeholder="e.g. Primitive Types" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
+              <input type="text" placeholder="e.g. Variable Scope" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
+            </div>
+            <p className="text-[10px] text-slate-500 pt-1">These concepts will be checked off by the teacher during class.</p>
           </div>
 
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">

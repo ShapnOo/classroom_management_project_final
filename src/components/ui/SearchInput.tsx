@@ -2,11 +2,10 @@ import React from "react";
 import { Search } from "lucide-react";
 
 interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  totalCount?: number;
-  totalLabel?: string;
+  actionButton?: React.ReactNode;
 }
 
-export function SearchInput({ totalCount, totalLabel, className, ...props }: SearchInputProps) {
+export function SearchInput({ actionButton, className, ...props }: SearchInputProps) {
   return (
     <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3 justify-between items-center w-full">
       <div className="relative w-full sm:w-80">
@@ -17,11 +16,9 @@ export function SearchInput({ totalCount, totalLabel, className, ...props }: Sea
           {...props}
         />
       </div>
-      {totalCount !== undefined && (
-        <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium whitespace-nowrap">
-          <span className="bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 text-[10px]">
-            {totalCount} {totalLabel || "Total Items"}
-          </span>
+      {actionButton && (
+        <div className="flex items-center w-full sm:w-auto">
+          {actionButton}
         </div>
       )}
     </div>

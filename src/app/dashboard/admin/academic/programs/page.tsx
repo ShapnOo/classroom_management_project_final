@@ -34,27 +34,25 @@ export default function ProgramsPage() {
   );
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 animate-in fade-in duration-500">
       <PageHeader 
         title="Academic Programs" 
-        description="Manage degree and diploma programs offered by departments."
+        description="Manage the degree programs offered by each department."
+      />
+
+      <SearchInput 
+        placeholder="Search programs..." 
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
         actionButton={
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm"
+            className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Program
           </button>
         }
-      />
-
-      <SearchInput 
-        placeholder="Search programs by name, code, or department..." 
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        totalCount={programs.length}
-        totalLabel="Programs"
       />
 
       <DataTable 
