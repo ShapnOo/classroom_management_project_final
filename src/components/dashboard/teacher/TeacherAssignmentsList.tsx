@@ -1,10 +1,10 @@
 "use client";
 
 import { 
-  TrendingUp, 
+  ListTodo,
   ArrowRight,
-  Calendar,
-  AlertCircle
+  FileCheck,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 
@@ -15,31 +15,28 @@ const mockCourses = [
     name: "Database Management Systems", 
     batch: "Spring 2026", 
     code: "CSE-305",
-    progress: 68,
-    classesCompleted: 18,
-    nextTopic: "Continue → BCNF Examples"
+    activeAssignments: 2,
+    pendingSubmissions: 12
   },
   { 
     id: "cls-2", 
     name: "Software Engineering", 
     batch: "Spring 2026", 
     code: "CSE-412",
-    progress: 74,
-    classesCompleted: 15,
-    nextTopic: "Agile Methodologies (Scrum)"
+    activeAssignments: 1,
+    pendingSubmissions: 5
   },
   { 
     id: "cls-3", 
     name: "Computer Networks", 
     batch: "Fall 2025", 
     code: "CSE-301",
-    progress: 92,
-    classesCompleted: 24,
-    nextTopic: "Network Security Overview"
+    activeAssignments: 0,
+    pendingSubmissions: 0
   }
 ];
 
-export default function TeacherContinuityList() {
+export default function TeacherAssignmentsList() {
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -47,11 +44,11 @@ export default function TeacherContinuityList() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark to-slate-800 flex items-center justify-center shadow-sm shrink-0">
-            <TrendingUp className="w-5 h-5 text-white" />
+            <ListTodo className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-medium text-slate-900 tracking-tight">Course Continuity</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Select a course to view detailed syllabus coverage and next class focus.</p>
+            <h1 className="text-lg font-medium text-slate-900 tracking-tight">Assignments</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Select a class to manage and create assignments.</p>
           </div>
         </div>
       </div>
@@ -71,36 +68,21 @@ export default function TeacherContinuityList() {
                 </span>
               </div>
               
-              <h3 className="text-sm font-medium text-slate-900 mb-1 group-hover:text-brand-dark transition-colors line-clamp-1">
-                {course.name}
-              </h3>
-              
-              <div className="flex items-center gap-2 text-slate-500 text-[11px] font-medium mb-6">
-                <Calendar className="w-3.5 h-3.5" /> {course.classesCompleted} Sessions Completed
+              <div className="flex items-start justify-between gap-2 mb-4">
+                <h3 className="text-sm font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2">
+                  {course.name}
+                </h3>
+                <ListTodo className="w-8 h-8 text-slate-300 shrink-0 group-hover:text-brand-dark/20 transition-colors" />
               </div>
               
-              <div className="mt-auto space-y-4">
-                {/* Progress */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-slate-600">Course Progress</span>
-                    <span className="text-xs font-medium text-brand-dark">{course.progress}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-brand-dark rounded-full transition-all duration-1000" 
-                      style={{ width: `${course.progress}%` }}
-                    ></div>
-                  </div>
+              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-medium">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <FileCheck className="w-3.5 h-3.5" />
+                  {course.activeAssignments} Active
                 </div>
-
-                {/* Next Topic */}
-                <div className="bg-amber-50 border border-amber-200/50 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-[10px] font-medium text-amber-800 uppercase tracking-wider mb-0.5">Next Class Focus</h4>
-                    <p className="text-xs font-medium text-amber-900 line-clamp-1">{course.nextTopic}</p>
-                  </div>
+                <div className={`flex items-center gap-1.5 font-medium ${course.pendingSubmissions > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
+                  <Clock className="w-3.5 h-3.5" />
+                  {course.pendingSubmissions} to Grade
                 </div>
               </div>
 
@@ -108,10 +90,10 @@ export default function TeacherContinuityList() {
             
             <div className="p-4 border-t border-slate-100 bg-slate-50/50">
               <Link 
-                href={`/dashboard/teacher/continuity/${course.id}`}
+                href={`/dashboard/teacher/assignments/${course.id}`}
                 className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-[13px] font-medium hover:bg-slate-100 hover:text-brand-dark transition-colors shadow-sm group-hover:border-brand-dark/30"
               >
-                View Details <ArrowRight className="w-4 h-4" />
+                Manage Assignments <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>

@@ -92,18 +92,18 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
                 {code} • {batch}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">{courseName} Materials</h1>
+            <h1 className="text-lg font-medium text-slate-900 tracking-tight">{courseName} Materials</h1>
           </div>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-dark text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0"
           >
             <Upload className="w-4 h-4" />
             Upload Material
@@ -120,7 +120,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
             <button
               key={type}
               onClick={() => setSelectedFilter(type)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm ${
                 selectedFilter === type 
                   ? "bg-brand-dark text-white" 
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
@@ -139,7 +139,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
             placeholder="Search materials..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-sm"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-sm"
           />
         </div>
         
@@ -173,21 +173,21 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
             </div>
             
             <div className="mb-4 flex-1">
-              <h3 className="text-sm font-bold text-slate-900 line-clamp-2 mb-1 group-hover:text-brand-dark transition-colors" title={mat.name}>
+              <h3 className="text-[13px] font-medium text-slate-900 line-clamp-2 mb-1 group-hover:text-brand-dark transition-colors" title={mat.name}>
                 {mat.name}
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
                   {mat.type}
                 </span>
-                <span className="text-[10px] font-bold text-slate-400">
+                <span className="text-[10px] font-medium text-slate-400">
                   {mat.size}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-medium text-slate-500">
-              <span className="text-brand-dark font-bold">{mat.classNo}</span>
+              <span className="text-brand-dark font-medium">{mat.classNo}</span>
               <span>{mat.date}</span>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-base font-medium text-slate-900 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-brand-dark" />
                 Upload Course Material
               </h2>
@@ -216,10 +216,10 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               
               {/* Target Class Context */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Upload Destination</label>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 block">Upload Destination</label>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-slate-900 line-clamp-1">{courseName}</p>
+                    <p className="text-[13px] font-medium text-slate-900 line-clamp-1">{courseName}</p>
                     <p className="text-xs font-medium text-slate-500">{batch}</p>
                   </div>
                 </div>
@@ -238,9 +238,9 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-4">
                   <Upload className={`w-5 h-5 ${dragActive ? "text-brand-dark" : "text-slate-400"}`} />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 mb-1">Click to upload or drag and drop</h3>
+                <h3 className="text-[13px] font-medium text-slate-900 mb-1">Click to upload or drag and drop</h3>
                 <p className="text-xs text-slate-500 mb-4">PDF, PPTX, MP4, ZIP (Max 50MB)</p>
-                <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50">
+                <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50">
                   Select Files
                 </button>
               </div>
@@ -248,16 +248,16 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Material Type</label>
-                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
+                  <label className="text-xs font-medium text-slate-700">Material Type</label>
+                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
                     {filterTypes.filter(t => t !== "All").map(type => (
                       <option key={type} value={type}>{type}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Link to Session (Optional)</label>
-                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
+                  <label className="text-xs font-medium text-slate-700">Link to Session (Optional)</label>
+                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
                     <option value="">None (General)</option>
                     <option value="class-9">Class #09</option>
                     <option value="class-8">Class #08</option>
@@ -271,7 +271,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                className="px-4 py-2.5 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-200 transition-colors"
               >
                 Cancel
               </button>
@@ -280,7 +280,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                   alert("Material uploaded successfully!");
                   setIsModalOpen(false);
                 }}
-                className="px-6 py-2.5 bg-brand-dark text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                className="px-6 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
               >
                 Upload File
               </button>

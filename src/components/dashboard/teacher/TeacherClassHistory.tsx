@@ -81,11 +81,11 @@ export default function TeacherClassHistory() {
   const getStatusBadge = (status: string) => {
     switch(status) {
       case "Completed":
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm"><CheckCircle2 className="w-3 h-3" /> Completed</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm"><CheckCircle2 className="w-3 h-3" /> Completed</span>;
       case "Partial":
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm"><Clock className="w-3 h-3" /> Partial</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 shadow-sm"><Clock className="w-3 h-3" /> Partial</span>;
       default:
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">{status}</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">{status}</span>;
     }
   };
 
@@ -99,7 +99,7 @@ export default function TeacherClassHistory() {
             <History className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Class History</h1>
+            <h1 className="text-lg font-medium text-slate-900 tracking-tight">Class History</h1>
             <p className="text-xs text-slate-500 mt-0.5">Review previous sessions, topics covered, and course continuity.</p>
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function TeacherClassHistory() {
         <div className="flex items-center gap-3">
           <Link 
             href="/dashboard/teacher/sessions/start"
-            className="inline-flex items-center justify-center px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-brand-dark hover:border-brand-dark/30 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center px-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-dark hover:border-brand-dark/30 transition-colors shadow-sm"
           >
             Start New Class
           </Link>
@@ -123,7 +123,7 @@ export default function TeacherClassHistory() {
             placeholder="Search by topic..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400"
           />
         </div>
         
@@ -132,7 +132,7 @@ export default function TeacherClassHistory() {
             <select 
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark cursor-pointer shadow-sm"
+              className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-lg text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark cursor-pointer shadow-sm"
             >
               <option value="All Courses">All Courses</option>
               {mockCourses.map(course => (
@@ -153,7 +153,7 @@ export default function TeacherClassHistory() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
                 <th className="px-5 py-4 w-20">Class</th>
                 <th className="px-5 py-4">Date</th>
                 <th className="px-5 py-4">Topic & Course</th>
@@ -162,11 +162,11 @@ export default function TeacherClassHistory() {
                 <th className="px-5 py-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
+            <tbody className="divide-y divide-slate-100 text-[13px]">
               {mockHistory.map((session) => (
                 <tr key={session.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-5 py-4">
-                    <span className="inline-flex items-center justify-center px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold font-mono">
+                    <span className="inline-flex items-center justify-center px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium font-mono">
                       {session.classNumber}
                     </span>
                   </td>
@@ -182,11 +182,11 @@ export default function TeacherClassHistory() {
                         <BookOpen className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 group-hover:text-brand-dark transition-colors">{session.topic}</p>
+                        <p className="font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{session.topic}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[11px] text-slate-500 font-medium">{session.course}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase tracking-wide">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase tracking-wide">
                             {session.batch}
                           </span>
                         </div>
@@ -196,7 +196,7 @@ export default function TeacherClassHistory() {
                   <td className="px-5 py-4">
                     <div className="flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-600">{session.progress}% Complete</span>
+                        <span className="text-[11px] font-medium text-slate-600">{session.progress}% Complete</span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div 

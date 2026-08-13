@@ -124,7 +124,7 @@ export default function TeacherCourses() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">My Assigned Courses</h1>
+          <h1 className="text-base font-medium text-slate-900 tracking-tight">My Assigned Courses</h1>
           <p className="text-[11px] text-slate-500 mt-0.5">Master definitions and syllabuses for the subjects you teach.</p>
         </div>
         
@@ -181,10 +181,10 @@ export default function TeacherCourses() {
                 {/* Title Area */}
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase mb-1.5 ${course.lightColor} ${course.textColor}`}>
+                    <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wider uppercase mb-1.5 ${course.lightColor} ${course.textColor}`}>
                       {course.courseCode} • {course.type}
                     </span>
-                    <h3 className="text-[13px] font-bold text-slate-900 leading-tight group-hover:text-brand-dark transition-colors">
+                    <h3 className="text-[13px] font-medium text-slate-900 leading-tight group-hover:text-brand-dark transition-colors">
                       {course.courseTitle}
                     </h3>
                   </div>
@@ -197,15 +197,15 @@ export default function TeacherCourses() {
                 <div className="grid grid-cols-2 gap-2 mb-3 flex-1">
                   <div className="bg-slate-50 rounded p-2 border border-slate-100">
                     <span className="block text-[9px] text-slate-500 font-medium mb-0.5">Credits</span>
-                    <span className="text-[11px] font-bold text-slate-800">{course.credits}</span>
+                    <span className="text-[11px] font-medium text-slate-800">{course.credits}</span>
                   </div>
                   <div className="bg-slate-50 rounded p-2 border border-slate-100">
                     <span className="block text-[9px] text-slate-500 font-medium mb-0.5">Semester</span>
-                    <span className="text-[11px] font-bold text-slate-800">{course.semester}</span>
+                    <span className="text-[11px] font-medium text-slate-800">{course.semester}</span>
                   </div>
                   <div className="bg-slate-50 rounded p-2 border border-slate-100 col-span-2">
                     <span className="block text-[9px] text-slate-500 font-medium mb-0.5">Department</span>
-                    <span className="text-[11px] font-bold text-slate-800">{course.department}</span>
+                    <span className="text-[11px] font-medium text-slate-800">{course.department}</span>
                   </div>
                 </div>
 
@@ -216,7 +216,7 @@ export default function TeacherCourses() {
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] text-slate-600 font-medium">Currently Teaching</p>
-                    <p className="text-[11px] font-bold text-slate-900">{course.activeBatches} Active {course.activeBatches === 1 ? 'Batch' : 'Batches'}</p>
+                    <p className="text-[11px] font-medium text-slate-900">{course.activeBatches} Active {course.activeBatches === 1 ? 'Batch' : 'Batches'}</p>
                   </div>
                 </div>
 
@@ -224,14 +224,14 @@ export default function TeacherCourses() {
                 <div className="flex items-center gap-2 mt-auto pt-1">
                   <button 
                     onClick={() => setSelectedCourse(course)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-slate-200 text-slate-700 rounded text-[11px] font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-slate-200 text-slate-700 rounded text-[11px] font-medium hover:bg-slate-50 transition-colors shadow-sm"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     View Syllabus
                   </button>
                   <Link 
                     href="/dashboard/teacher/classrooms"
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-brand-dark text-white rounded text-[11px] font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-brand-dark text-white rounded text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
                   >
                     Go to Classes
                   </Link>
@@ -249,7 +249,7 @@ export default function TeacherCourses() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
                   <th className="px-4 py-2.5">Course Information</th>
                   <th className="px-4 py-2.5">Academic Details</th>
                   <th className="px-4 py-2.5">Teaching Status</th>
@@ -263,10 +263,10 @@ export default function TeacherCourses() {
                       <div className="flex items-center gap-3">
                         <div className={`w-1.5 h-10 rounded-full ${course.color}`}></div>
                         <div>
-                          <p className="font-bold text-slate-900 text-xs mb-0.5">{course.courseTitle}</p>
+                          <p className="font-medium text-slate-900 text-xs mb-0.5">{course.courseTitle}</p>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-slate-500">{course.courseCode}</span>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase ${course.lightColor} ${course.textColor}`}>
+                            <span className="text-[10px] font-medium text-slate-500">{course.courseCode}</span>
+                            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md uppercase ${course.lightColor} ${course.textColor}`}>
                               {course.type}
                             </span>
                           </div>
@@ -274,27 +274,27 @@ export default function TeacherCourses() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-700">{course.department}</p>
+                      <p className="font-medium text-slate-700">{course.department}</p>
                       <p className="text-[10px] text-slate-500">{course.semester} • {course.credits} Credits</p>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <PlaySquare className="w-3.5 h-3.5 text-brand-dark" />
-                        <span className="font-semibold text-slate-700">{course.activeBatches} Active Batches</span>
+                        <span className="font-medium text-slate-700">{course.activeBatches} Active Batches</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button 
                           onClick={() => setSelectedCourse(course)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 text-slate-600 rounded text-[10px] font-medium hover:bg-slate-50 transition-colors shadow-sm"
                         >
                           <FileText className="w-3 h-3" />
                           Syllabus
                         </button>
                         <Link 
                           href="/dashboard/teacher/classrooms"
-                          className="inline-flex items-center px-2.5 py-1.5 bg-brand-dark text-white rounded text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                          className="inline-flex items-center px-2.5 py-1.5 bg-brand-dark text-white rounded text-[10px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
                         >
                           Batches
                         </Link>
@@ -313,7 +313,7 @@ export default function TeacherCourses() {
           <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-2">
             <BookOpen className="w-4 h-4 text-slate-400" />
           </div>
-          <h3 className="text-[11px] font-bold text-slate-900 mb-0.5">No courses found</h3>
+          <h3 className="text-[11px] font-medium text-slate-900 mb-0.5">No courses found</h3>
           <p className="text-[10px] text-slate-500">You are not assigned to any courses matching that search.</p>
         </div>
       )}
@@ -326,10 +326,10 @@ export default function TeacherCourses() {
             {/* Modal Header */}
             <div className={`p-4 md:p-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/50 rounded-t-xl`}>
               <div>
-                <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase mb-1.5 ${selectedCourse.lightColor} ${selectedCourse.textColor}`}>
+                <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-medium tracking-wider uppercase mb-1.5 ${selectedCourse.lightColor} ${selectedCourse.textColor}`}>
                   {selectedCourse.courseCode} • {selectedCourse.credits} Credits
                 </span>
-                <h2 className="text-base font-bold text-slate-900">{selectedCourse.courseTitle}</h2>
+                <h2 className="text-sm font-medium text-slate-900">{selectedCourse.courseTitle}</h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">{selectedCourse.department}</p>
               </div>
               <button 
@@ -344,14 +344,14 @@ export default function TeacherCourses() {
             <div className="p-4 md:p-5 overflow-y-auto">
               <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
                 <ListTodo className="w-4 h-4 text-brand-dark" />
-                <h3 className="text-sm font-bold text-slate-800">Course Syllabus</h3>
+                <h3 className="text-[13px] font-medium text-slate-800">Course Syllabus</h3>
               </div>
 
               <div className="space-y-3">
                 {selectedCourse.syllabus.map((topic, idx) => (
                   <div key={idx} className="flex gap-3 items-start group">
                     <div className="flex flex-col items-center mt-0.5">
-                      <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500 group-hover:bg-brand-dark group-hover:text-white group-hover:border-brand-dark transition-colors">
+                      <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-medium text-slate-500 group-hover:bg-brand-dark group-hover:text-white group-hover:border-brand-dark transition-colors">
                         {idx + 1}
                       </div>
                       {idx !== selectedCourse.syllabus.length - 1 && (
@@ -371,7 +371,7 @@ export default function TeacherCourses() {
               <span className="text-[10px] text-slate-500 font-medium">Total {selectedCourse.syllabus.length} Modules</span>
               <button 
                 onClick={() => setSelectedCourse(null)}
-                className="px-5 py-1.5 bg-brand-dark text-white rounded-md text-[11px] font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                className="px-5 py-1.5 bg-brand-dark text-white rounded-md text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
               >
                 Close
               </button>
