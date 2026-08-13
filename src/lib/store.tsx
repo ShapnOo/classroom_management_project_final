@@ -59,7 +59,7 @@ type AppActions = {
   updateSyllabusTopic: (id: string, t: Partial<SyllabusTopic>) => void;
   deleteSyllabusTopic: (id: string) => void;
   // Classrooms
-  addClassroom: (c: Omit<Classroom, "id">) => void;
+  addClassroom: (c: Omit<Classroom, "id">) => string;
   updateClassroom: (id: string, c: Partial<Classroom>) => void;
   deleteClassroom: (id: string) => void;
   // Schedules
@@ -200,8 +200,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     update("syllabusTopics", prev => prev.filter(x => x.id !== id));
 
   // ── Classroom CRUD ──
-  const addClassroom = (c: Omit<Classroom, "id">) =>
-    update("classrooms", prev => [...prev, { ...c, id: genId() }]);
+  const addClassroom = (c: Omit<Classroom, "id">) => {
+    const id = genId();
+    update("classrooms", prev => [...prev, { ...c, id }]);
+    return id;
+  };
   const updateClassroom = (id: string, c: Partial<Classroom>) =>
     update("classrooms", prev => prev.map(x => x.id === id ? { ...x, ...c } : x));
   const deleteClassroom = (id: string) =>
@@ -374,6 +377,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addSchedule, updateSchedule, deleteSchedule,
     addAssignment, updateAssignment, deleteAssignment,
     addTest, updateTest, deleteTest,
+    addClassSession, updateClassSession, deleteClassSession,
+    addAttendanceRecord, updateAttendanceRecord, upsertAttendance,
+    addGradeRecord, updateGradeRecord, upsertGradeRecord,
     getClassroomView, getMyClassroomViews, getAllClassroomViews,
     getTodaysSchedule, getUpNextTopic,
   };

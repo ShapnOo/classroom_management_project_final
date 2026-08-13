@@ -1,469 +1,298 @@
 "use client";
 
-import { 
-  PlaySquare, 
-  ChevronDown, 
-  CheckCircle2, 
-  History, 
-  ArrowRight,
-  Clock,
-  Calendar,
-  FileText,
-  Users2,
-  Check,
-  X,
-  AlertCircle,
-  Save,
-  BookOpen,
-  ArrowLeft,
-  CalendarDays,
-  MoreVertical
+import {
+  PlaySquare, CheckCircle2, History, ArrowRight, Clock,
+  Calendar, Users2, Check, X, AlertCircle, Save,
+  BookOpen, ArrowLeft, CalendarDays, ChevronDown, ListTodo, Mic
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useStore } from "@/lib/store";
+import type { AttendanceRecord } from "@/lib/types";
 
-// Mock Data
-const mockClassrooms = [
-  { 
-    id: "cls-1", 
-    name: "Database Management Systems", 
-    batch: "Spring 2026 - A", 
-    code: "CSE-305",
-    time: "10:00 AM - 11:30 AM",
-    room: "Room 402",
-    progress: 68,
-    color: "bg-blue-500",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-700"
-  },
-  { 
-    id: "cls-2", 
-    name: "Software Engineering", 
-    batch: "Spring 2026 - B", 
-    code: "CSE-412",
-    time: "02:00 PM - 03:30 PM",
-    room: "Room 305",
-    progress: 74,
-    color: "bg-emerald-500",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-700"
-  }
-];
-
-const mockStudents = [
-  { id: "STD-001", name: "Mainul Hasan", profile: "MH" },
-  { id: "STD-002", name: "Waliullah Ovi", profile: "WO" },
-  { id: "STD-003", name: "Rahim Uddin", profile: "RU" },
-  { id: "STD-004", name: "Karim Ahmed", profile: "KA" },
-  { id: "STD-005", name: "Sarah Khan", profile: "SK" },
-];
-
-const mockMaterials = [
-  "Lecture Slides (PDF)", "Code Examples (ZIP)", "Topic Overview (Doc)"
-];
+type AttendanceStatus = AttendanceRecord["status"];
 
 export default function StartClassSession() {
   const searchParams = useSearchParams();
-  const urlClassId = searchParams?.get('classId');
-  
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(urlClassId || null);
-  
-  // Sync if URL param changes
+  const preselectedId = searchParams?.get("classId") ?? "";
+
+  const {
+    getMyClassroomViews, syllabusTopics,
+    addClassSession, upsertAttendance, updateClassroom,
+    classSessions, attendanceRecords
+  } = useStore();
+
+  const myClassrooms = getMyClassroomViews();
+
+  const [selectedId, setSelectedId]   = useState(preselectedId || (myClassrooms[0]?.classroom.id ?? ""));
+  const [step, setStep]               = useState<"pick" | "session" | "done">("pick");
+  const [topic, setTopic]             = useState("");
+  const [notes, setNotes]             = useState("");
+  const [duration, setDuration]       = useState("1h 30m");
+  const [attendance, setAttendance]   = useState<Record<string, AttendanceStatus>>({});
+  const [saved, setSaved]             = useState(false);
+  const [newSessionId, setNewSessionId] = useState<string | null>(null);
+
+  const selectedView = myClassrooms.find(v => v.classroom.id === selectedId);
+  const myTopics     = selectedView ? syllabusTopics.filter(t => t.courseId === selectedView.course.id) : [];
+
+  // Pre-fill attendance as "present" when classroom selected
   useEffect(() => {
-    if (urlClassId) setSelectedClassId(urlClassId);
-  }, [urlClassId]);
-  const [topic, setTopic] = useState("3NF and BCNF Examples");
-  const [description, setDescription] = useState("Exploring practical examples of Third Normal Form and Boyce-Codd Normal Form.");
-  const [progress, setProgress] = useState(68);
-  const [startTime, setStartTime] = useState("10:00");
-  const [endTime, setEndTime] = useState("11:30");
-  const [meetingLink, setMeetingLink] = useState("");
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  
-  // Attendance State
-  const [attendance, setAttendance] = useState<Record<string, "Present" | "Absent" | "Late">>(() => {
-    const initial: Record<string, "Present" | "Absent" | "Late"> = {};
-    mockStudents.forEach(s => initial[s.id] = "Present"); // Default all present
-    return initial;
-  });
+    if (selectedView) {
+      const initial: Record<string, AttendanceStatus> = {};
+      selectedView.students.forEach(s => { initial[s.id] = "present"; });
+      setAttendance(initial);
+    }
+  }, [selectedId]);
 
-  const selectedClass = mockClassrooms.find(c => c.id === selectedClassId);
+  // Sessions for this classroom (history)
+  const myPastSessions = classSessions
+    .filter(s => s.classroomId === selectedId)
+    .sort((a, b) => b.conductedAt.localeCompare(a.conductedAt));
 
-  const markAll = (status: "Present" | "Absent" | "Late") => {
-    const next: Record<string, "Present" | "Absent" | "Late"> = {};
-    mockStudents.forEach(s => next[s.id] = status);
+  const toggleStatus = (studentId: string) => {
+    setAttendance(prev => {
+      const cur = prev[studentId] ?? "present";
+      const next: AttendanceStatus = cur === "present" ? "absent" : cur === "absent" ? "late" : "present";
+      return { ...prev, [studentId]: next };
+    });
+  };
+
+  const markAll = (status: AttendanceStatus) => {
+    const next: Record<string, AttendanceStatus> = {};
+    selectedView?.students.forEach(s => { next[s.id] = status; });
     setAttendance(next);
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate save
-    alert(`Class Session Saved Successfully!\n\nTopic: ${topic}\nProgress: ${progress}%\nAttendance: ${Object.values(attendance).filter(a => a === 'Present').length}/${mockStudents.length} Present`);
-    setSelectedClassId(null); // Go back to list after saving
+  const presentCount = Object.values(attendance).filter(s => s === "present").length;
+  const absentCount  = Object.values(attendance).filter(s => s === "absent").length;
+  const lateCount    = Object.values(attendance).filter(s => s === "late").length;
+
+  const handleSave = () => {
+    if (!selectedView || !topic) return;
+    const sessionId = Date.now().toString(36);
+    addClassSession({
+      classroomId: selectedId,
+      date: new Date().toISOString().split("T")[0],
+      topicCovered: topic,
+      notes,
+      duration,
+      conductedAt: new Date().toISOString(),
+    });
+    // Save attendance
+    Object.entries(attendance).forEach(([studentId, status]) => {
+      upsertAttendance(sessionId, selectedId, studentId, status);
+    });
+    // Increment completed count
+    updateClassroom(selectedId, {
+      classesCompleted: selectedView.classroom.classesCompleted + 1
+    });
+    setNewSessionId(sessionId);
+    setSaved(true);
+    setStep("done");
   };
 
-  if (!selectedClassId) {
+  if (step === "done") {
     return (
-      <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
-        
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-brand-dark flex items-center justify-center shadow-sm shrink-0">
-              <PlaySquare className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              
-              <p className="text-[11px] text-slate-500 mt-0.5">Choose a class from your active schedule to log today's session.</p>
-            </div>
-          </div>
+      <div className="max-w-xl mx-auto py-10 px-4 text-center space-y-6 animate-in fade-in duration-500">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto shadow-md">
+          <CheckCircle2 className="w-8 h-8 text-emerald-600" />
         </div>
-
-        {/* Classroom List View */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-                  <th className="px-5 py-3">Course / Batch</th>
-                  <th className="px-5 py-3">Schedule</th>
-                  <th className="px-5 py-3">Course Progress</th>
-                  <th className="px-5 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-[11px]">
-                {mockClassrooms.map((cls) => (
-                  <tr key={cls.id} className="hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => setSelectedClassId(cls.id)}>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-10 rounded-full ${cls.color}`}></div>
-                        <div>
-                          <p className="font-medium text-slate-900 text-[13px] mb-0.5 group-hover:text-brand-dark transition-colors">{cls.name}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[10px] font-medium text-slate-500">{cls.code}</span>
-                            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded uppercase ${cls.lightColor} ${cls.textColor}`}>
-                              {cls.batch}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-medium text-slate-700">{cls.time}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-500 text-[10px]">
-                        <Users2 className="w-3 h-3" />
-                        <span>{mockStudents.length} Students enrolled</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 w-48">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${cls.color} rounded-full`} 
-                            style={{ width: `${cls.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-[10px] font-medium text-slate-600">{cls.progress}%</span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 mt-1">Ready for Class #09</p>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedClassId(cls.id); }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark text-white rounded-md text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
-                      >
-                        <PlaySquare className="w-3.5 h-3.5 fill-current" />
-                        Start Session
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div>
+          <h2 className="text-[15px] font-semibold text-slate-900">Session Saved!</h2>
+          <p className="text-[12px] text-slate-500 mt-1">Attendance has been recorded for <strong>{presentCount}</strong> present, <strong>{absentCount}</strong> absent, <strong>{lateCount}</strong> late.</p>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left space-y-2">
+          <div className="flex justify-between text-[11px]"><span className="text-slate-500">Course</span><span className="font-medium text-slate-800">{selectedView?.course.title}</span></div>
+          <div className="flex justify-between text-[11px]"><span className="text-slate-500">Topic</span><span className="font-medium text-slate-800">{topic}</span></div>
+          <div className="flex justify-between text-[11px]"><span className="text-slate-500">Duration</span><span className="font-medium text-slate-800">{duration}</span></div>
+          <div className="flex justify-between text-[11px]"><span className="text-slate-500">Students Present</span><span className="font-medium text-emerald-700">{presentCount}/{selectedView?.students.length}</span></div>
+        </div>
+        <div className="flex gap-3 justify-center">
+          <button onClick={() => { setStep("pick"); setSaved(false); setTopic(""); setNotes(""); }} className="px-4 py-2 text-[11px] font-medium bg-brand-dark text-white rounded-lg hover:bg-slate-800 transition-colors shadow-sm">
+            Start Another Session
+          </button>
+          <Link href="/dashboard/teacher/attendance" className="px-4 py-2 text-[11px] font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+            View Attendance
+          </Link>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-right-4 duration-300">
-      
-      {/* Page Header (Form View) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setSelectedClassId(null)}
-            className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded uppercase ${selectedClass?.lightColor} ${selectedClass?.textColor}`}>
-                {selectedClass?.code} • {selectedClass?.batch}
-              </span>
-            </div>
-            
+  if (step === "pick") {
+    return (
+      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+        <div className="pb-4 border-b border-slate-200">
+          <h1 className="text-[13px] font-medium text-slate-900">Start Class Session</h1>
+          <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to conduct a session and mark attendance.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {myClassrooms.filter(v => v.classroom.status === "ongoing").map(({ classroom: cls, course, batch, students, colors, progress, schedules }) => {
+            const todayPastCount = classSessions.filter(s => s.classroomId === cls.id && s.date === new Date().toISOString().split("T")[0]).length;
+            return (
+              <button key={cls.id} onClick={() => { setSelectedId(cls.id); setStep("session"); }} className="bg-white border border-slate-200 rounded-xl p-5 text-left hover:border-brand-dark/40 hover:shadow-md transition-all group">
+                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
+                  {todayPastCount > 0 && <span className="text-[9px] font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">{todayPastCount} done today</span>}
+                </div>
+                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors leading-snug mt-1">{course.title}</h3>
+                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {students.length} students</p>
+                <div className="mt-3 flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500">{cls.classesCompleted}/{cls.totalClasses} classes</span>
+                  <span className={`font-medium ${colors.text}`}>{progress}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-1">
+                  <div className={`h-full ${colors.color}`} style={{ width: `${progress}%` }} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {myClassrooms.filter(v => v.classroom.status === "ongoing").length === 0 && (
+          <div className="py-12 text-center text-[12px] text-slate-500 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+            No ongoing classrooms. Admin must set classroom status to &quot;ongoing&quot;.
           </div>
+        )}
+
+        {/* History Section */}
+        {myPastSessions.length > 0 && (
+          <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+              <History className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-[11px] font-medium text-slate-700 uppercase tracking-wide">Recent Sessions</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {myPastSessions.slice(0, 5).map(sess => {
+                const view = myClassrooms.find(v => v.classroom.id === sess.classroomId);
+                const sessAttendance = attendanceRecords.filter(r => r.sessionId === sess.id);
+                const present = sessAttendance.filter(r => r.status === "present").length;
+                return (
+                  <div key={sess.id} className="px-5 py-3 flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><CalendarDays className="w-3.5 h-3.5 text-slate-500" /></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-slate-900 truncate">{sess.topicCovered}</p>
+                      <p className="text-[10px] text-slate-500">{view?.course.code} • {new Date(sess.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    </div>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded whitespace-nowrap">{present} present</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Step: session — attend + topic
+  const cls = selectedView!;
+  return (
+    <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+      <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+        <button onClick={() => setStep("pick")} className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${cls.colors.light} ${cls.colors.text}`}>{cls.course.code}</span>
+            <span className="text-[10px] text-slate-500">{cls.batch.name}</span>
+          </div>
+          <h1 className="text-[13px] font-semibold text-slate-900 mt-0.5">{cls.course.title}</h1>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Continuity & Session Details */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Continuity Context (Previous Class) */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <History className="w-4 h-4 text-slate-500" />
-              <h2 className="text-[13px] font-medium text-slate-800 uppercase tracking-wide">Course Continuity</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Session Details */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+            <h2 className="text-[11px] font-medium text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Session Info</h2>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-700">Topic Covered <span className="text-red-500">*</span></label>
+              <select value={topic} onChange={e => setTopic(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
+                <option value="">Select topic from syllabus</option>
+                {myTopics.map(t => (
+                  <option key={t.id} value={t.topic}>{t.topic} (Week {t.week})</option>
+                ))}
+                <option value="Other / Custom">Other / Custom Topic</option>
+              </select>
+              {topic === "Other / Custom" && (
+                <input type="text" placeholder="Type custom topic..." onChange={e => setTopic(e.target.value)} className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
+              )}
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Last Class */}
-              <div className="bg-white rounded-lg p-4 border border-slate-100 shadow-sm relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-300"></div>
-                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">Previous Session (Class #08)</p>
-                <h3 className="text-[13px] font-medium text-slate-900 mb-1">Entity-Relationship Model</h3>
-                <p className="text-[11px] text-slate-600 mb-3">Completed 100% • 05 Aug 2026</p>
-                <Link href="#" className="text-[11px] font-medium text-brand-dark hover:underline flex items-center gap-1">
-                  View Notes <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-
-              {/* Recommended Next */}
-              <div className="bg-white rounded-lg p-4 border border-brand-dark/20 shadow-sm relative overflow-hidden group">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-dark"></div>
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-dark opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-dark"></span>
-                  </span>
-                </div>
-                <p className="text-[10px] font-medium text-brand-dark uppercase tracking-wider mb-1">Recommended Next Topic</p>
-                <h3 className="text-[13px] font-medium text-slate-900 mb-1">Normalization (1NF to 3NF)</h3>
-                <p className="text-[11px] text-slate-600 mb-3">Based on your syllabus mapping.</p>
-                <button type="button" onClick={() => setTopic("Normalization (1NF to 3NF)")} className="text-[11px] font-medium text-brand-dark hover:underline flex items-center gap-1">
-                  Use this Topic <CheckCircle2 className="w-3 h-3" />
-                </button>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-700">Duration</label>
+              <select value={duration} onChange={e => setDuration(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
+                {["30m","45m","1h","1h 15m","1h 30m","2h"].map(d => <option key={d}>{d}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-700">Notes (Optional)</label>
+              <textarea rows={3} placeholder="Any notes about this session..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all resize-none" />
             </div>
           </div>
 
-          {/* Today's Session Form */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-100 px-5 py-4">
-              <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-brand-dark" />
-                Today's Session Details (Class #09)
-              </h2>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Present", count: presentCount, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+              { label: "Absent",  count: absentCount,  color: "text-red-600",     bg: "bg-red-50 border-red-200" },
+              { label: "Late",    count: lateCount,    color: "text-amber-600",   bg: "bg-amber-50 border-amber-200" },
+            ].map(s => (
+              <div key={s.label} className={`rounded-xl border p-3 text-center ${s.bg}`}>
+                <p className={`text-[18px] font-bold ${s.color}`}>{s.count}</p>
+                <p className="text-[9px] text-slate-600 font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={handleSave} disabled={!topic} className="w-full flex items-center justify-center gap-2 py-3 bg-brand-dark text-white font-medium text-[12px] rounded-xl hover:bg-slate-800 transition-colors shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+            <Save className="w-4 h-4" /> Save Session & Attendance
+          </button>
+        </div>
+
+        {/* Right: Attendance List */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users2 className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-[11px] font-medium text-slate-700 uppercase tracking-wide">Mark Attendance</span>
+              <span className="text-[10px] text-slate-500">({cls.students.length} students)</span>
             </div>
-            
-            <div className="p-5 space-y-5">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Date</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+            <div className="flex gap-1.5">
+              <button onClick={() => markAll("present")} className="text-[10px] font-medium px-2 py-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">All Present</button>
+              <button onClick={() => markAll("absent")} className="text-[10px] font-medium px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">All Absent</button>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto">
+            {cls.students.map((student, idx) => {
+              const status = attendance[student.id] ?? "present";
+              return (
+                <div key={student.id} className={`px-4 py-2.5 flex items-center gap-3 transition-colors ${status === "absent" ? "bg-red-50/50" : status === "late" ? "bg-amber-50/50" : ""}`}>
+                  <span className="text-[10px] text-slate-400 font-medium w-5 text-right shrink-0">{idx + 1}</span>
+                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600 shrink-0">
+                    {student.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                   </div>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Start Time</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-slate-900 truncate">{student.name}</p>
+                    <p className="text-[9px] text-slate-500">{student.rollNo}</p>
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">End Time</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-slate-700">Topic Covered <span className="text-red-500">*</span></label>
-                <input required type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="What are you teaching today?" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] font-medium focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-              </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-slate-700">Video Meeting Link (Optional)</label>
-                <input type="url" value={meetingLink} onChange={e => setMeetingLink(e.target.value)} placeholder="e.g. https://meet.google.com/abc-defg-hij" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-slate-700">Session Summary / Notes</label>
-                <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="Add private notes or summary of what was discussed..." className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none resize-none"></textarea>
-              </div>
-
-              {/* Progress Slider */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-slate-700">Overall Course Completion</label>
-                  <span className="text-[13px] font-medium text-brand-dark">{progress}%</span>
-                </div>
-                <div className="relative pt-1">
-                  <input 
-                    type="range" 
-                    min="0" max="100" 
-                    value={progress} 
-                    onChange={e => setProgress(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-dark" 
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1.5 font-medium">
-                    <span>0% (Start)</span>
-                    <span>50% (Midterm)</span>
-                    <span>100% (Final)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Materials Attached */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-slate-700">Materials Used (Optional)</label>
-                  <button type="button" className="text-[10px] font-medium text-brand-dark hover:underline">Browse Library</button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {mockMaterials.map((mat, idx) => {
-                    const isSelected = selectedMaterials.includes(mat);
-                    return (
-                      <button 
-                        key={idx} 
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedMaterials(selectedMaterials.filter(m => m !== mat));
-                          } else {
-                            setSelectedMaterials([...selectedMaterials, mat]);
-                          }
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border rounded-md text-[11px] font-medium shadow-sm transition-colors ${isSelected ? 'bg-brand-dark border-brand-dark text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                      >
-                        <FileText className={`w-3 h-3 ${isSelected ? 'text-white/80' : 'text-slate-400'}`} />
-                        {mat}
-                        {isSelected && <Check className="w-3 h-3 ml-0.5 text-emerald-400" />}
-                      </button>
-                    );
-                  })}
-                  <button type="button" className="inline-flex items-center justify-center px-3 py-1.5 bg-slate-50 border border-slate-200 border-dashed text-slate-500 hover:text-brand-dark hover:border-brand-dark hover:bg-brand-dark/5 transition-colors rounded-md text-[11px] font-medium">
-                    + Attach File
+                  <button onClick={() => toggleStatus(student.id)} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border min-w-[80px] justify-center ${
+                    status === "present" ? "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200" :
+                    status === "absent"  ? "bg-red-100  text-red-700  border-red-200  hover:bg-red-200" :
+                                          "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
+                  }`}>
+                    {status === "present" ? <Check className="w-3 h-3" /> : status === "absent" ? <X className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                    {status}
                   </button>
                 </div>
-              </div>
-
-            </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* Right Column: Attendance */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden sticky top-6">
-            
-            <div className="bg-slate-900 text-white p-4">
-              <h2 className="text-[13px] font-medium flex items-center gap-2">
-                <Users2 className="w-4 h-4 opacity-80" />
-                Take Attendance
-              </h2>
-              <div className="flex justify-between items-end mt-3">
-                <div>
-                  <p className="text-[11px] text-slate-300 font-medium mb-0.5">Students Present</p>
-                  <p className="text-sm font-medium leading-none">
-                    {Object.values(attendance).filter(a => a === 'Present').length} <span className="text-[13px] font-normal text-slate-400">/ {mockStudents.length}</span>
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <span className="px-2 py-1 bg-white/10 rounded text-[10px] font-medium text-white/80 border border-white/10">
-                    {Object.values(attendance).filter(a => a === 'Late').length} Late
-                  </span>
-                  <span className="px-2 py-1 bg-red-500/20 rounded text-[10px] font-medium text-red-200 border border-red-500/20">
-                    {Object.values(attendance).filter(a => a === 'Absent').length} Absent
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <span className="text-[11px] font-medium text-slate-600">Quick Actions</span>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => markAll("Present")} className="text-[10px] font-medium text-brand-dark hover:underline">Mark All Present</button>
-                <span className="text-slate-300">|</span>
-                <button type="button" onClick={() => markAll("Absent")} className="text-[10px] font-medium text-slate-500 hover:underline">All Absent</button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-2">
-              <div className="space-y-1.5">
-                {mockStudents.map(student => (
-                  <div key={student.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-medium text-slate-600 shrink-0">
-                        {student.profile}
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium text-slate-900 leading-tight">{student.name}</p>
-                        <p className="text-[9px] text-slate-500">{student.id}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex bg-slate-100 rounded-md p-0.5 shrink-0">
-                      <button 
-                        type="button"
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: "Present"}))}
-                        className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${attendance[student.id] === 'Present' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                      >
-                        P
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: "Late"}))}
-                        className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${attendance[student.id] === 'Late' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                      >
-                        L
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: "Absent"}))}
-                        className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${attendance[student.id] === 'Absent' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                      >
-                        A
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-slate-100 bg-white">
-              <button 
-                type="submit" 
-                className="w-full flex items-center justify-center gap-2 py-3 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
-              >
-                <Save className="w-4 h-4" />
-                Save & Complete Class
-              </button>
-              <p className="text-center text-[10px] text-slate-400 mt-2 font-medium flex items-center justify-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                This will finalize the session and update student portals.
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-      </form>
+      </div>
     </div>
   );
 }

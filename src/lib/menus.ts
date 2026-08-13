@@ -56,11 +56,11 @@ export const adminMenu: MenuItem[] = [
   { 
     title: "Academic Activities", icon: BookOpen,
     submenu: [
-      { title: "Class Sessions", href: "#" },
-      { title: "Attendance", href: "#" },
+      { title: "Class Sessions", href: "/dashboard/admin/academic/class-sessions" },
+      { title: "Attendance", href: "/dashboard/admin/academic/attendance" },
       { title: "Assignments", href: "/dashboard/admin/academic/assignments" },
       { title: "Class Tests", href: "/dashboard/admin/academic/tests" },
-      { title: "Results", href: "#" },
+      { title: "Results", href: "/dashboard/admin/academic/results" },
     ]
   },
   { title: "Announcements", icon: Bell, href: "#" },

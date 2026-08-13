@@ -22,7 +22,8 @@ const EMPTY: Form = {
 export default function AdminClassrooms() {
   const {
     classrooms, courses, batches, sessions, teachers, students,
-    addClassroom, updateClassroom, deleteClassroom
+    addClassroom, updateClassroom, deleteClassroom,
+    addSchedule, updateSchedule, deleteSchedule
   } = useStore();
   const allViews = useStore().getAllClassroomViews();
 
@@ -32,6 +33,8 @@ export default function AdminClassrooms() {
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Classroom | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+
+  const [schedules, setSchedules] = useState<{ id?: string; day: string; startTime: string; endTime: string }[]>([]);
 
   const filtered = allViews.filter(v => {
     const matchSearch =
@@ -46,17 +49,29 @@ export default function AdminClassrooms() {
   const openAdd = () => {
     setEditing(null);
     setForm({ ...EMPTY, colorIndex: classrooms.length % CLASSROOM_COLORS.length });
+    setSchedules([{ day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM" }]);
     setIsOpen(true);
   };
   const openEdit = (cls: Classroom) => {
     setEditing(cls);
     setForm({ courseId: cls.courseId, batchId: cls.batchId, teacherId: cls.teacherId, room: cls.room, startDate: cls.startDate, endDate: cls.endDate, status: cls.status, classesCompleted: cls.classesCompleted, totalClasses: cls.totalClasses, colorIndex: cls.colorIndex });
+    const clsSchedules = useStore.getState().schedules.filter(s => s.classroomId === cls.id);
+    setSchedules(clsSchedules.map(s => ({ id: s.id, day: s.day, startTime: s.startTime, endTime: s.endTime })));
     setIsOpen(true);
   };
   const handleSave = () => {
     if (!form.courseId || !form.batchId || !form.teacherId || !form.room) return;
-    if (editing) updateClassroom(editing.id, form);
-    else addClassroom(form);
+    let clsId = editing?.id;
+    if (editing) {
+      updateClassroom(editing.id, form);
+      // For simplicity on edit, we delete old and recreate to avoid complex diffing
+      const oldSchedules = useStore.getState().schedules.filter(s => s.classroomId === editing.id);
+      oldSchedules.forEach(s => deleteSchedule(s.id));
+    } else {
+      clsId = addClassroom(form);
+    }
+    // Add all schedules
+    schedules.forEach(s => addSchedule({ classroomId: clsId!, day: s.day, startTime: s.startTime, endTime: s.endTime, room: form.room }));
     setIsOpen(false);
   };
 
@@ -235,7 +250,7 @@ export default function AdminClassrooms() {
       )}
 
       {/* Create / Edit Classroom Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Classroom" : "Create Classroom"}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Classroom" : "Create Classroom"} maxWidth="max-w-xl"
         footer={<>
           <button onClick={() => setIsOpen(false)} className="px-3 py-2 text-[11px] font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
           <button onClick={handleSave} className="px-3 py-2 text-[11px] font-medium text-white bg-brand-dark hover:bg-brand-dark/90 rounded-lg shadow-sm transition-all">{editing ? "Update" : "Create Classroom"}</button>
@@ -313,7 +328,78 @@ export default function AdminClassrooms() {
               </div>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500">After creating the classroom, go to <strong>Schedules</strong> to set class days/times.</p>
+          
+          <div className="space-y-2 pt-3 border-t border-slate-100 mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-800 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-brand-dark" /> Class Schedules</label>
+                <p className="text-[10px] text-slate-500 mt-0.5">Define weekly meeting times. These will appear in the teacher's schedule.</p>
+              </div>
+              <button type="button" onClick={() => setSchedules(s => [...s, { day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM" }])} className="text-[11px] font-medium bg-brand-dark/5 text-brand-dark px-2.5 py-1.5 rounded-md hover:bg-brand-dark/10 transition-colors flex items-center gap-1">
+                <Plus className="w-3 h-3" /> Add Time
+              </button>
+            </div>
+            
+            <div className="space-y-2.5">
+              {schedules.length === 0 ? (
+                <div className="text-center py-4 bg-slate-50 border border-slate-200 border-dashed rounded-lg">
+                  <p className="text-[11px] text-slate-500">No schedules added yet.</p>
+                </div>
+              ) : (
+                schedules.map((sch, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center bg-slate-50/50 p-2 rounded-lg border border-slate-200 shadow-sm group hover:border-brand-dark/30 transition-colors">
+                    <div className="flex-1 w-full">
+                      <select value={sch.day} onChange={e => setSchedules(s => s.map((x, i) => i === idx ? { ...x, day: e.target.value } : x))} className="w-full px-3 py-2 rounded-md border border-slate-200 text-[11px] font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
+                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
+                          <option key={day}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 w-full sm:w-auto bg-white border border-slate-200 rounded-md px-2 focus-within:ring-2 focus-within:ring-brand-dark/20 focus-within:border-brand-dark transition-all">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <input type="time" value={sch.startTime.replace(/ AM| PM/, "").replace(/(\d+):(\d+).*/, (match, h, m) => {
+                        let hh = parseInt(h);
+                        if (sch.startTime.includes("PM") && hh !== 12) hh += 12;
+                        if (sch.startTime.includes("AM") && hh === 12) hh = 0;
+                        return `${hh.toString().padStart(2, "0")}:${m}`;
+                      }) || "10:00"} onChange={e => {
+                        if(!e.target.value) return;
+                        const [h, m] = e.target.value.split(":");
+                        const hh = parseInt(h);
+                        const ampm = hh >= 12 ? "PM" : "AM";
+                        const h12 = hh % 12 || 12;
+                        setSchedules(s => s.map((x, i) => i === idx ? { ...x, startTime: `${h12}:${m} ${ampm}` } : x));
+                      }} className="w-[85px] py-2 text-[11px] font-medium text-slate-700 focus:outline-none bg-transparent" />
+                    </div>
+                    
+                    <span className="text-[10px] font-medium text-slate-400 hidden sm:block">to</span>
+                    
+                    <div className="flex items-center gap-2 w-full sm:w-auto bg-white border border-slate-200 rounded-md px-2 focus-within:ring-2 focus-within:ring-brand-dark/20 focus-within:border-brand-dark transition-all">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <input type="time" value={sch.endTime.replace(/ AM| PM/, "").replace(/(\d+):(\d+).*/, (match, h, m) => {
+                        let hh = parseInt(h);
+                        if (sch.endTime.includes("PM") && hh !== 12) hh += 12;
+                        if (sch.endTime.includes("AM") && hh === 12) hh = 0;
+                        return `${hh.toString().padStart(2, "0")}:${m}`;
+                      }) || "11:30"} onChange={e => {
+                        if(!e.target.value) return;
+                        const [h, m] = e.target.value.split(":");
+                        const hh = parseInt(h);
+                        const ampm = hh >= 12 ? "PM" : "AM";
+                        const h12 = hh % 12 || 12;
+                        setSchedules(s => s.map((x, i) => i === idx ? { ...x, endTime: `${h12}:${m} ${ampm}` } : x));
+                      }} className="w-[85px] py-2 text-[11px] font-medium text-slate-700 focus:outline-none bg-transparent" />
+                    </div>
+                    
+                    <button type="button" onClick={() => setSchedules(s => s.filter((_, i) => i !== idx))} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-100 sm:opacity-50 sm:group-hover:opacity-100 ml-auto sm:ml-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </Modal>
     </div>
