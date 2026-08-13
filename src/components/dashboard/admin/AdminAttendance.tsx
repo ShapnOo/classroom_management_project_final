@@ -8,7 +8,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 
-interface TeacherAttendanceProps {
+interface AdminAttendanceProps {
   courseId?: string; // classroomId
 }
 
@@ -23,16 +23,15 @@ function statusColor(p: number) {
   return { bg: "bg-red-100", text: "text-red-700", label: "Critical" };
 }
 
-export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) {
-  const { getMyClassroomViews, classSessions, attendanceRecords } = useStore();
-  const myClassrooms = getMyClassroomViews();
+export default function AdminAttendance({ courseId }: AdminAttendanceProps) {
+  const { getAllClassroomViews, classSessions, attendanceRecords } = useStore();
+  const allClassrooms = getAllClassroomViews();
 
   const [activeTab, setActiveTab] = useState<"students" | "sessions">("students");
   const [search, setSearch] = useState("");
 
   // If a classroomId is provided, show that classroom's attendance
-  // Otherwise show classroom picker
-  const view = courseId ? myClassrooms.find(v => v.classroom.id === courseId) : null;
+  const view = courseId ? allClassrooms.find(v => v.classroom.id === courseId) : null;
 
   // ── CLASSROOM PICKER ──────────────────────────────────────────────────────
   if (!courseId || !view) {
@@ -43,18 +42,18 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to view detailed attendance records.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myClassrooms.map(({ classroom: cls, course, batch, students, colors }) => {
+          {allClassrooms.map(({ classroom: cls, course, batch, students, colors, teacher }) => {
             const sessions = classSessions.filter(s => s.classroomId === cls.id);
             const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && r.status === "present").length;
             const totalMarked  = attendanceRecords.filter(r => r.classroomId === cls.id).length;
             const classAvg = pct(totalPresent, totalMarked);
             const sc = statusColor(classAvg);
             return (
-              <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
+              <Link key={cls.id} href={`/dashboard/admin/academic/attendance/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
                 <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
                 <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {students.length} students</p>
+                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • Teacher: {teacher.name}</p>
                 <div className="mt-4 flex items-center justify-between">
                   <div className="text-[10px] text-slate-500">{sessions.length} sessions conducted</div>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
@@ -100,7 +99,7 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
     <div className="space-y-4 animate-in fade-in duration-500 pb-12">
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
-        <Link href="/dashboard/teacher/attendance" className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm shrink-0">
+        <Link href="/dashboard/admin/academic/attendance" className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
