@@ -163,7 +163,12 @@ export default function TeacherClassrooms() {
     startDate: "",
     endDate: "",
     studentList: [] as string[],
-    totalClasses: 24
+    totalClasses: 24,
+    hasMidterm: true,
+    hasFinal: true,
+    classworkMarks: 30,
+    midtermMarks: 30,
+    finalMarks: 40
   });
 
   interface DaySchedule {
@@ -287,7 +292,8 @@ export default function TeacherClassrooms() {
     setClassrooms([created, ...classrooms]);
     setIsModalOpen(false);
     setNewClassroom({
-      courseCode: "", courseTitle: "", program: "", batch: "", room: "", schedule: "", startDate: "", endDate: "", studentList: [], totalClasses: 24
+      courseCode: "", courseTitle: "", program: "", batch: "", room: "", schedule: "", startDate: "", endDate: "", studentList: [], totalClasses: 24,
+      hasMidterm: true, hasFinal: true, classworkMarks: 30, midtermMarks: 30, finalMarks: 40
     });
   };
 
@@ -639,8 +645,75 @@ export default function TeacherClassrooms() {
                 </div>
               </div>
 
+              {/* Initial Grading Policy Setup */}
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-semibold text-slate-900">Initial Grading Policy</h3>
+                    <p className="text-[10px] text-slate-500">Set up the initial mark distribution (can be changed later).</p>
+                  </div>
+                  <div className={`text-[10px] font-bold px-2 py-1 rounded ${Number(newClassroom.classworkMarks) + Number(newClassroom.hasMidterm ? newClassroom.midtermMarks : 0) + Number(newClassroom.hasFinal ? newClassroom.finalMarks : 0) === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    Total: {Number(newClassroom.classworkMarks) + Number(newClassroom.hasMidterm ? newClassroom.midtermMarks : 0) + Number(newClassroom.hasFinal ? newClassroom.finalMarks : 0)}/100
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Classwork */}
+                  <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <label className="text-[11px] font-medium text-slate-700">Classwork Marks</label>
+                    <p className="text-[9px] text-slate-500 mb-2">(CT, Assignments, Attendance)</p>
+                    <input 
+                      type="number" 
+                      value={newClassroom.classworkMarks} 
+                      onChange={e => setNewClassroom({...newClassroom, classworkMarks: Number(e.target.value)})} 
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" 
+                    />
+                  </div>
+
+                  {/* Midterm */}
+                  <div className={`space-y-1.5 p-3 border rounded-lg transition-colors ${newClassroom.hasMidterm ? 'bg-slate-50 border-slate-200' : 'bg-white border-dashed border-slate-200 opacity-60'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] font-medium text-slate-700">Midterm Exam</label>
+                      <input 
+                        type="checkbox" 
+                        checked={newClassroom.hasMidterm} 
+                        onChange={e => setNewClassroom({...newClassroom, hasMidterm: e.target.checked, midtermMarks: e.target.checked ? 30 : 0})}
+                        className="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/20"
+                      />
+                    </div>
+                    <input 
+                      type="number" 
+                      disabled={!newClassroom.hasMidterm}
+                      value={newClassroom.midtermMarks} 
+                      onChange={e => setNewClassroom({...newClassroom, midtermMarks: Number(e.target.value)})} 
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700 disabled:bg-slate-100" 
+                    />
+                  </div>
+
+                  {/* Final Exam */}
+                  <div className={`space-y-1.5 p-3 border rounded-lg transition-colors ${newClassroom.hasFinal ? 'bg-slate-50 border-slate-200' : 'bg-white border-dashed border-slate-200 opacity-60'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] font-medium text-slate-700">Final Exam</label>
+                      <input 
+                        type="checkbox" 
+                        checked={newClassroom.hasFinal} 
+                        onChange={e => setNewClassroom({...newClassroom, hasFinal: e.target.checked, finalMarks: e.target.checked ? 40 : 0})}
+                        className="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/20"
+                      />
+                    </div>
+                    <input 
+                      type="number" 
+                      disabled={!newClassroom.hasFinal}
+                      value={newClassroom.finalMarks} 
+                      onChange={e => setNewClassroom({...newClassroom, finalMarks: Number(e.target.value)})} 
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700 disabled:bg-slate-100" 
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Student Selection Trigger */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 pt-4 border-t border-slate-100">
                 <div className="flex items-end justify-between mb-1">
                   <label className="text-[11px] font-medium text-slate-700">Students</label>
                   <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
