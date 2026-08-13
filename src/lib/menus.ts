@@ -92,7 +92,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Course Continuity", icon: TrendingUp, href: "/dashboard/teacher/continuity" },
   { title: "Course Materials", icon: FolderOpen, href: "/dashboard/teacher/materials" },
   { title: "Students", icon: Users, href: "/dashboard/teacher/students" },
-  { title: "Attendance", icon: ClipboardCheck, href: "#" },
+  { title: "Attendance", icon: ClipboardCheck, href: "/dashboard/teacher/attendance" },
   { 
     title: "Assignments", icon: ListTodo,
     submenu: [
