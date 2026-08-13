@@ -90,13 +90,7 @@ export const teacherMenu: MenuItem[] = [
     ]
   },
   { title: "Course Continuity", icon: TrendingUp, href: "/dashboard/teacher/continuity" },
-  { 
-    title: "Course Materials", icon: FolderOpen,
-    submenu: [
-      { title: "Materials", href: "#" },
-      { title: "Upload Material", href: "#" },
-    ]
-  },
+  { title: "Course Materials", icon: FolderOpen, href: "/dashboard/teacher/materials" },
   { title: "Students", icon: Users, href: "#" },
   { title: "Attendance", icon: ClipboardCheck, href: "#" },
   { 
