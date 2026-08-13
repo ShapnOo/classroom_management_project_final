@@ -38,8 +38,8 @@ export const adminMenu: MenuItem[] = [
   { 
     title: "Academic Management", icon: GraduationCap,
     submenu: [
-      { title: "Departments", href: "#" },
-      { title: "Programs", href: "#" },
+      { title: "Departments", href: "/dashboard/admin/academic/departments" },
+      { title: "Programs", href: "/dashboard/admin/academic/programs" },
       { title: "Sessions", href: "/dashboard/admin/academic/sessions" },
       { title: "Batches", href: "/dashboard/admin/academic/batches" },
       { title: "Courses", href: "/dashboard/admin/academic/courses" },
