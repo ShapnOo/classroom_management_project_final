@@ -81,7 +81,7 @@ export const adminMenu: MenuItem[] = [
 export const teacherMenu: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard/teacher" },
   { title: "My Classrooms", icon: MonitorPlay, href: "/dashboard/teacher/classrooms" },
-  { title: "My Courses", icon: BookOpen, href: "#" },
+  { title: "My Courses", icon: BookOpen, href: "/dashboard/teacher/courses" },
   { 
     title: "Class Sessions", icon: PlaySquare,
     submenu: [
