@@ -1,301 +1,25 @@
 "use client";
 
 import { 
-  Users, 
-  MapPin, 
-  Clock, 
-  Play, 
-  FolderOpen, 
-  ClipboardCheck,
-  Search,
-  Filter,
-  MoreVertical,
-  CalendarDays,
-  BookOpen,
-  LayoutGrid,
-  List as ListIcon,
-  Plus,
-  X,
-  ChevronDown,
-  Check,
-  Users2
+  Users, Clock, Play, FolderOpen, ClipboardCheck,
+  Search, MoreVertical, CalendarDays, BookOpen, LayoutGrid,
+  List as ListIcon, Info
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
-
-const initialMockClassrooms = [
-  {
-    id: "cls-1",
-    courseCode: "CSE-305",
-    courseTitle: "Database Management Systems",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - A",
-    room: "Room 402, Bldg C",
-    schedule: "Mon, Wed • 10:00 AM - 11:30 AM",
-    startDate: "2026-01-15",
-    endDate: "2026-05-20",
-    students: 42,
-    studentList: ["STD-001", "STD-002", "STD-003", "STD-004", "STD-005"], // Mocked
-    classesCompleted: 18,
-    totalClasses: 26,
-    progress: 68,
-    color: "bg-blue-500",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-2",
-    courseCode: "CSE-412",
-    courseTitle: "Software Engineering",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - B",
-    room: "Room 305, Bldg A",
-    schedule: "Tue, Thu • 02:00 PM - 03:30 PM",
-    startDate: "2026-01-16",
-    endDate: "2026-05-22",
-    students: 38,
-    studentList: ["STD-006", "STD-007", "STD-008", "STD-009"], // Mocked
-    classesCompleted: 15,
-    totalClasses: 20,
-    progress: 74,
-    color: "bg-emerald-500",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-3",
-    courseCode: "CSE-101",
-    courseTitle: "Introduction to Computer Science",
-    program: "B.Sc. CS",
-    batch: "Fall 2025 - A",
-    room: "Room 201, Bldg B",
-    schedule: "Mon, Wed • 08:00 AM - 09:30 AM",
-    startDate: "2025-08-15",
-    endDate: "2025-12-20",
-    students: 50,
-    studentList: ["STD-010", "STD-011", "STD-012"], // Mocked
-    classesCompleted: 24,
-    totalClasses: 24,
-    progress: 100,
-    color: "bg-slate-500",
-    lightColor: "bg-slate-50",
-    textColor: "text-slate-700",
-    status: "completed"
-  },
-  {
-    id: "cls-4",
-    courseCode: "CSE-425",
-    courseTitle: "Artificial Intelligence",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - A",
-    room: "Lab 2, Bldg D",
-    schedule: "Mon, Wed • 12:00 PM - 01:30 PM",
-    startDate: "2026-01-15",
-    endDate: "2026-05-20",
-    students: 35,
-    studentList: ["STD-013", "STD-014", "STD-015"], // Mocked
-    classesCompleted: 8,
-    totalClasses: 24,
-    progress: 33,
-    color: "bg-purple-500",
-    lightColor: "bg-purple-50",
-    textColor: "text-purple-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-5",
-    courseCode: "CSE-201",
-    courseTitle: "Data Structures",
-    program: "B.Sc. CS",
-    batch: "Fall 2026 - C",
-    room: "Room 101, Bldg B",
-    schedule: "Fri • 09:00 AM - 12:00 PM",
-    startDate: "2026-08-15",
-    endDate: "2026-12-20",
-    students: 45,
-    studentList: ["STD-016", "STD-017"], // Mocked
-    classesCompleted: 0,
-    totalClasses: 24,
-    progress: 0,
-    color: "bg-amber-500",
-    lightColor: "bg-amber-50",
-    textColor: "text-amber-700",
-    status: "upcoming"
-  },
-];
-
-const availableStudents = [
-  { id: "STD-001", name: "Mainul Hasan", batch: "Batch A", session: "Spring 2026" },
-  { id: "STD-002", name: "Waliullah Ovi", batch: "Batch A", session: "Spring 2026" },
-  { id: "STD-003", name: "Rahim Uddin", batch: "Batch B", session: "Spring 2026" },
-  { id: "STD-004", name: "Karim Ahmed", batch: "Batch B", session: "Spring 2026" },
-  { id: "STD-005", name: "Tahmid Rahman", batch: "Batch A", session: "Fall 2025" },
-  { id: "STD-006", name: "Sarah Khan", batch: "Batch C", session: "Fall 2025" },
-  { id: "STD-007", name: "John Doe", batch: "Batch A", session: "Fall 2026" },
-  { id: "STD-008", name: "Alice Smith", batch: "Batch B", session: "Fall 2026" },
-  { id: "STD-009", name: "Bob Johnson", batch: "Batch C", session: "Spring 2026" },
-  { id: "STD-010", name: "Emma Wilson", batch: "Batch A", session: "Spring 2026" },
-];
+import { useState } from "react";
+import { myClassrooms } from "@/lib/mockData";
 
 export default function TeacherClassrooms() {
-  const [classrooms, setClassrooms] = useState(initialMockClassrooms);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isStudentSelectionOpen, setIsStudentSelectionOpen] = useState(false);
-  
-  // Student selection filters
-  const [studentSearch, setStudentSearch] = useState("");
-  const [batchFilter, setBatchFilter] = useState("All");
-  const [sessionFilter, setSessionFilter] = useState("All");
-
-  const [newClassroom, setNewClassroom] = useState({
-    courseCode: "",
-    courseTitle: "",
-    program: "",
-    batch: "",
-    room: "",
-    schedule: "",
-    startDate: "",
-    endDate: "",
-    studentList: [] as string[],
-    totalClasses: 24,
-    hasMidterm: true,
-    hasFinal: true,
-    classworkMarks: 30,
-    midtermMarks: 30,
-    finalMarks: 40
-  });
-
-  interface DaySchedule {
-    day: number;
-    startTime: string;
-    endTime: string;
-  }
-  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const [selectedDays, setSelectedDays] = useState<DaySchedule[]>([]);
-
-
-  
-  useEffect(() => {
-    if (newClassroom.startDate && newClassroom.endDate && selectedDays.length > 0) {
-      const start = new Date(newClassroom.startDate);
-      const end = new Date(newClassroom.endDate);
-      let count = 0;
-      
-      let current = new Date(start);
-      while (current <= end) {
-        if (selectedDays.some(d => d.day === current.getDay())) {
-          count++;
-        }
-        current.setDate(current.getDate() + 1);
-      }
-      
-      const formatTime = (timeStr: string) => {
-        if (!timeStr) return "";
-        const [h, m] = timeStr.split(":");
-        const hour = parseInt(h);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const formattedHour = hour % 12 || 12;
-        return `${formattedHour}:${m} ${ampm}`;
-      };
-
-      const scheduleStrs = selectedDays.map(d => `${DAYS[d.day]} ${formatTime(d.startTime)}-${formatTime(d.endTime)}`);
-      const scheduleStr = scheduleStrs.join(', ');
-      
-      setNewClassroom(prev => ({
-        ...prev,
-        totalClasses: count,
-        schedule: scheduleStr
-      }));
-    }
-  }, [newClassroom.startDate, newClassroom.endDate, selectedDays]);
-
-
-  const filteredClassrooms = classrooms.filter(cls => {
+  const filteredClassrooms = myClassrooms.filter(cls => {
     const matchesSearch = cls.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           cls.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || cls.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  const filteredStudents = availableStudents.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
-                          student.id.toLowerCase().includes(studentSearch.toLowerCase());
-    const matchesBatch = batchFilter === "All" || student.batch === batchFilter;
-    const matchesSession = sessionFilter === "All" || student.session === sessionFilter;
-    return matchesSearch && matchesBatch && matchesSession;
-  });
-
-  const toggleStudent = (studentId: string) => {
-    setNewClassroom(prev => {
-      const isSelected = prev.studentList.includes(studentId);
-      if (isSelected) {
-        return { ...prev, studentList: prev.studentList.filter(id => id !== studentId) };
-      } else {
-        return { ...prev, studentList: [...prev.studentList, studentId] };
-      }
-    });
-  };
-
-  const selectAllFiltered = () => {
-    setNewClassroom(prev => {
-      const currentIds = new Set(prev.studentList);
-      filteredStudents.forEach(s => currentIds.add(s.id));
-      return { ...prev, studentList: Array.from(currentIds) };
-    });
-  };
-
-  const deselectAllFiltered = () => {
-    setNewClassroom(prev => {
-      const filteredIds = new Set(filteredStudents.map(s => s.id));
-      return { ...prev, studentList: prev.studentList.filter(id => !filteredIds.has(id)) };
-    });
-  };
-
-  const removeStudent = (studentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setNewClassroom(prev => ({
-      ...prev,
-      studentList: prev.studentList.filter(id => id !== studentId)
-    }));
-  };
-
-  const handleCreateClassroom = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const created = {
-      id: `cls-${Date.now()}`,
-      courseCode: newClassroom.courseCode,
-      courseTitle: newClassroom.courseTitle,
-      program: newClassroom.program,
-      batch: newClassroom.batch,
-      room: newClassroom.room,
-      schedule: newClassroom.schedule,
-      startDate: newClassroom.startDate,
-      endDate: newClassroom.endDate,
-      students: newClassroom.studentList.length > 0 ? newClassroom.studentList.length : Math.floor(Math.random() * 20) + 10,
-      studentList: newClassroom.studentList,
-      classesCompleted: 0,
-      totalClasses: Number(newClassroom.totalClasses),
-      progress: 0,
-      color: "bg-indigo-500",
-      lightColor: "bg-indigo-50",
-      textColor: "text-indigo-700",
-      status: "upcoming"
-    };
-
-    setClassrooms([created, ...classrooms]);
-    setIsModalOpen(false);
-    setNewClassroom({
-      courseCode: "", courseTitle: "", program: "", batch: "", room: "", schedule: "", startDate: "", endDate: "", studentList: [], totalClasses: 24,
-      hasMidterm: true, hasFinal: true, classworkMarks: 30, midtermMarks: 30, finalMarks: 40
-    });
-  };
 
   return (
     <div className="w-full mx-auto space-y-4 pb-8 relative">
@@ -303,21 +27,15 @@ export default function TeacherClassrooms() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
-          
-          <p className="text-[11px] text-slate-500 mt-0.5">Manage your active classes, materials, and student attendance.</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Your assigned classrooms. Manage attendance, materials and sessions.</p>
+          <p className="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1.5 flex items-center gap-1.5 w-fit">
+            <Info className="w-3 h-3 shrink-0" />
+            Classrooms are assigned to you by the Administration.
+          </p>
         </div>
         
-        {/* Actions & Filters */}
+        {/* Filters */}
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
-          
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand-dark text-white rounded-md text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm w-full sm:w-auto shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Create Classroom
-          </button>
-
           <div className="relative w-full sm:w-48">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input 
@@ -342,16 +60,10 @@ export default function TeacherClassrooms() {
             </select>
 
             <div className="flex items-center border border-slate-200 rounded-md bg-white p-0.5 shrink-0">
-              <button 
-                onClick={() => setViewMode("grid")}
-                className={`p-1 rounded ${viewMode === "grid" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-              >
+              <button onClick={() => setViewMode("grid")} className={`p-1 rounded ${viewMode === "grid" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}>
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
-              <button 
-                onClick={() => setViewMode("list")}
-                className={`p-1 rounded ${viewMode === "list" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-              >
+              <button onClick={() => setViewMode("list")} className={`p-1 rounded ${viewMode === "list" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}>
                 <ListIcon className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -363,12 +75,9 @@ export default function TeacherClassrooms() {
       {viewMode === "grid" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {filteredClassrooms.map((cls) => (
-            <div 
-              key={cls.id} 
-              className={`bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all group ${cls.status === 'completed' ? 'border-slate-200/60 opacity-80' : 'border-slate-200 hover:border-brand-dark/30 hover:shadow-md'}`}
-            >
-              {/* Card Header */}
-              <div className={`h-1.5 w-full ${cls.status === 'completed' ? 'bg-slate-300' : cls.color}`}></div>
+            <div key={cls.id} className={`bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all group ${cls.status === 'completed' ? 'border-slate-200/60 opacity-80' : 'border-slate-200 hover:border-brand-dark/30 hover:shadow-md'}`}>
+              {/* Card Header Color Strip */}
+              <div className={`h-1.5 w-full ${cls.status === 'completed' ? 'bg-slate-300' : cls.color}`} />
               <div className="p-3.5 flex-1 flex flex-col relative">
                 
                 <div className="flex justify-between items-start mb-2.5">
@@ -392,10 +101,7 @@ export default function TeacherClassrooms() {
                     <span className={cls.status === 'completed' ? 'text-slate-600' : cls.textColor}>{cls.progress}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} 
-                      style={{ width: `${cls.progress}%` }}
-                    ></div>
+                    <div className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} style={{ width: `${cls.progress}%` }} />
                   </div>
                 </div>
 
@@ -418,9 +124,7 @@ export default function TeacherClassrooms() {
                   
                   <div className="flex items-start gap-2">
                     <div className="mt-0.5"><Clock className="w-3.5 h-3.5 text-slate-400" /></div>
-                    <div className="text-[10px] text-slate-600 font-medium pt-0.5">
-                      {cls.schedule}
-                    </div>
+                    <div className="text-[10px] text-slate-600 font-medium pt-0.5">{cls.schedule}</div>
                   </div>
                 </div>
 
@@ -434,22 +138,21 @@ export default function TeacherClassrooms() {
                     {cls.status === 'completed' ? 'View Archive' : 'Start Session'}
                   </Link>
                   
-                  <button className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
+                  <Link href={`/dashboard/teacher/materials/${cls.id}`} className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
                     <FolderOpen className="w-3.5 h-3.5" />
                     <span className="text-[9px] font-medium">Materials</span>
-                  </button>
+                  </Link>
                   
-                  <button className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
+                  <Link href={`/dashboard/teacher/attendance/${cls.id}`} className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
                     <ClipboardCheck className="w-3.5 h-3.5" />
                     <span className="text-[9px] font-medium">Attendance</span>
-                  </button>
+                  </Link>
 
                   <button className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-dark">
                     <BookOpen className="w-3.5 h-3.5" />
                     <span className="text-[9px] font-medium">{cls.classesCompleted}/{cls.totalClasses}</span>
                   </button>
                 </div>
-
               </div>
             </div>
           ))}
@@ -475,14 +178,12 @@ export default function TeacherClassrooms() {
                   <tr key={cls.id} className={`hover:bg-slate-50 transition-colors ${cls.status === 'completed' ? 'opacity-70' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-8 rounded-full ${cls.status === 'completed' ? 'bg-slate-300' : cls.color}`}></div>
+                        <div className={`w-1.5 h-8 rounded-full ${cls.status === 'completed' ? 'bg-slate-300' : cls.color}`} />
                         <div>
                           <p className="font-medium text-slate-900">{cls.courseTitle}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[9px] font-medium text-slate-500">{cls.courseCode}</span>
-                            <span className={`text-[8px] font-medium px-1.5 rounded-sm uppercase ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600' : cls.lightColor + ' ' + cls.textColor}`}>
-                              {cls.status}
-                            </span>
+                            <span className={`text-[8px] font-medium px-1.5 rounded-sm uppercase ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600' : cls.lightColor + ' ' + cls.textColor}`}>{cls.status}</span>
                           </div>
                         </div>
                       </div>
@@ -498,10 +199,7 @@ export default function TeacherClassrooms() {
                     <td className="px-4 py-3 w-48">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} 
-                            style={{ width: `${cls.progress}%` }}
-                          ></div>
+                          <div className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} style={{ width: `${cls.progress}%` }} />
                         </div>
                         <span className="text-[10px] font-medium text-slate-600">{cls.progress}%</span>
                       </div>
@@ -532,378 +230,6 @@ export default function TeacherClassrooms() {
           <p className="text-[10px] text-slate-500">Try adjusting your search or filters.</p>
         </div>
       )}
-
-      {/* Create Classroom Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-10">
-              <div>
-                <h2 className="text-xs font-medium text-slate-900">Create New Classroom</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Setup a new class and assign students.</p>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 bg-slate-50 text-slate-500 rounded-full hover:bg-slate-100 hover:text-slate-700 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateClassroom} className="p-4 md:p-5 space-y-5">
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Course Code <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. CSE-305" value={newClassroom.courseCode} onChange={e => setNewClassroom({...newClassroom, courseCode: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Course Title <span className="text-red-500">*</span></label>
-                  <input required type="text" placeholder="e.g. Database Systems" value={newClassroom.courseTitle} onChange={e => setNewClassroom({...newClassroom, courseTitle: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Program</label>
-                  <input type="text" placeholder="e.g. B.Sc. in Computer Science" value={newClassroom.program} onChange={e => setNewClassroom({...newClassroom, program: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Batch & Section <span className="text-red-500">*</span></label>
-                  <select required value={newClassroom.batch} onChange={e => setNewClassroom({...newClassroom, batch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none bg-white text-slate-700">
-                    <option value="" disabled>Select Batch & Section</option>
-                    <option value="Spring 2026 - A">Spring 2026 - A</option>
-                    <option value="Spring 2026 - B">Spring 2026 - B</option>
-                    <option value="Fall 2025 - A">Fall 2025 - A</option>
-                    <option value="Fall 2025 - B">Fall 2025 - B</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Room / Location</label>
-                  <input type="text" placeholder="e.g. Room 402, Bldg C" value={newClassroom.room} onChange={e => setNewClassroom({...newClassroom, room: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[11px] font-medium text-slate-700">Weekly Schedule <span className="text-red-500">*</span></label>
-                  <div className="flex flex-col gap-3 p-3 border border-slate-200 rounded-lg bg-slate-50">
-                    <div className="flex items-center gap-2 justify-between flex-wrap">
-                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => {
-                        const isSelected = selectedDays.some(d => d.day === idx);
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedDays(selectedDays.filter(d => d.day !== idx));
-                              } else {
-                                setSelectedDays([...selectedDays, { day: idx, startTime: "10:00", endTime: "11:30" }]);
-                              }
-                            }}
-                            className={`w-8 h-8 rounded-full text-[11px] font-medium flex items-center justify-center transition-colors ${isSelected ? 'bg-brand-dark text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-100'}`}
-                          >
-                            {day}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    
-                    {selectedDays.length > 0 && (
-                      <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
-                        {selectedDays.map(d => (
-                          <div key={d.day} className="flex items-center gap-3">
-                            <div className="w-16 text-[11px] font-medium text-slate-700">{DAYS[d.day]}</div>
-                            <div className="flex-1 flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-lg">
-                              <span className="text-[10px] text-slate-400 font-medium w-8">From</span>
-                              <input type="time" required value={d.startTime} onChange={e => {
-                                setSelectedDays(selectedDays.map(sd => sd.day === d.day ? { ...sd, startTime: e.target.value } : sd));
-                              }} className="text-[11px] outline-none bg-transparent w-full text-slate-700" />
-                            </div>
-                            <div className="flex-1 flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-lg">
-                              <span className="text-[10px] text-slate-400 font-medium w-8">To</span>
-                              <input type="time" required value={d.endTime} onChange={e => {
-                                setSelectedDays(selectedDays.map(sd => sd.day === d.day ? { ...sd, endTime: e.target.value } : sd));
-                              }} className="text-[11px] outline-none bg-transparent w-full text-slate-700" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Start Date <span className="text-red-500">*</span></label>
-                  <input required type="date" value={newClassroom.startDate} onChange={e => setNewClassroom({...newClassroom, startDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">End Date <span className="text-red-500">*</span></label>
-                  <input required type="date" value={newClassroom.endDate} onChange={e => setNewClassroom({...newClassroom, endDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" />
-                </div>
-              </div>
-
-              {/* Initial Grading Policy Setup */}
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-semibold text-slate-900">Initial Grading Policy</h3>
-                    <p className="text-[10px] text-slate-500">Set up the initial mark distribution (can be changed later).</p>
-                  </div>
-                  <div className={`text-[10px] font-bold px-2 py-1 rounded ${Number(newClassroom.classworkMarks) + Number(newClassroom.hasMidterm ? newClassroom.midtermMarks : 0) + Number(newClassroom.hasFinal ? newClassroom.finalMarks : 0) === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                    Total: {Number(newClassroom.classworkMarks) + Number(newClassroom.hasMidterm ? newClassroom.midtermMarks : 0) + Number(newClassroom.hasFinal ? newClassroom.finalMarks : 0)}/100
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Classwork */}
-                  <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <label className="text-[11px] font-medium text-slate-700">Classwork Marks</label>
-                    <p className="text-[9px] text-slate-500 mb-2">(CT, Assignments, Attendance)</p>
-                    <input 
-                      type="number" 
-                      value={newClassroom.classworkMarks} 
-                      onChange={e => setNewClassroom({...newClassroom, classworkMarks: Number(e.target.value)})} 
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700" 
-                    />
-                  </div>
-
-                  {/* Midterm */}
-                  <div className={`space-y-1.5 p-3 border rounded-lg transition-colors ${newClassroom.hasMidterm ? 'bg-slate-50 border-slate-200' : 'bg-white border-dashed border-slate-200 opacity-60'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-[11px] font-medium text-slate-700">Midterm Exam</label>
-                      <input 
-                        type="checkbox" 
-                        checked={newClassroom.hasMidterm} 
-                        onChange={e => setNewClassroom({...newClassroom, hasMidterm: e.target.checked, midtermMarks: e.target.checked ? 30 : 0})}
-                        className="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/20"
-                      />
-                    </div>
-                    <input 
-                      type="number" 
-                      disabled={!newClassroom.hasMidterm}
-                      value={newClassroom.midtermMarks} 
-                      onChange={e => setNewClassroom({...newClassroom, midtermMarks: Number(e.target.value)})} 
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700 disabled:bg-slate-100" 
-                    />
-                  </div>
-
-                  {/* Final Exam */}
-                  <div className={`space-y-1.5 p-3 border rounded-lg transition-colors ${newClassroom.hasFinal ? 'bg-slate-50 border-slate-200' : 'bg-white border-dashed border-slate-200 opacity-60'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-[11px] font-medium text-slate-700">Final Exam</label>
-                      <input 
-                        type="checkbox" 
-                        checked={newClassroom.hasFinal} 
-                        onChange={e => setNewClassroom({...newClassroom, hasFinal: e.target.checked, finalMarks: e.target.checked ? 40 : 0})}
-                        className="rounded border-slate-300 text-brand-dark focus:ring-brand-dark/20"
-                      />
-                    </div>
-                    <input 
-                      type="number" 
-                      disabled={!newClassroom.hasFinal}
-                      value={newClassroom.finalMarks} 
-                      onChange={e => setNewClassroom({...newClassroom, finalMarks: Number(e.target.value)})} 
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none text-slate-700 disabled:bg-slate-100" 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Student Selection Trigger */}
-              <div className="space-y-1.5 pt-4 border-t border-slate-100">
-                <div className="flex items-end justify-between mb-1">
-                  <label className="text-[11px] font-medium text-slate-700">Students</label>
-                  <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
-                    {newClassroom.studentList.length} Selected
-                  </span>
-                </div>
-                
-                <div 
-                  className="w-full px-3 py-2 min-h-[38px] border border-slate-200 rounded-lg text-[11px] flex flex-wrap gap-1.5 cursor-pointer hover:border-brand-dark/50 hover:bg-slate-50 transition-colors bg-white"
-                  onClick={() => setIsStudentSelectionOpen(true)}
-                >
-                  {newClassroom.studentList.length === 0 && (
-                    <span className="text-slate-400 my-auto flex items-center gap-1.5">
-                      <Users2 className="w-3.5 h-3.5" />
-                      Click to select and assign students to this class...
-                    </span>
-                  )}
-                  
-                  {newClassroom.studentList.map(studentId => {
-                    const student = availableStudents.find(s => s.id === studentId);
-                    return (
-                      <span 
-                        key={studentId} 
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 font-medium rounded-md text-[10px]"
-                      >
-                        {student?.name || studentId}
-                        <button 
-                          type="button" 
-                          onClick={(e) => removeStudent(studentId, e)}
-                          className="hover:bg-slate-200 rounded-full p-0.5 text-slate-500 hover:text-slate-700"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )
-                  })}
-
-                  <div className="ml-auto my-auto pl-2">
-                    <Plus className="w-4 h-4 text-slate-400" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="px-5 py-2 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
-                >
-                  Create Classroom
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Dedicated Student Selection Modal */}
-      {isStudentSelectionOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-3xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-4 duration-200">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
-              <div>
-                <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
-                  <Users2 className="w-4 h-4 text-brand-dark" />
-                  Select Students
-                </h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Filter by session or batch to find students easily.</p>
-              </div>
-              <button 
-                onClick={() => setIsStudentSelectionOpen(false)}
-                className="p-1.5 bg-white text-slate-400 rounded-full border border-slate-200 hover:bg-slate-100 hover:text-slate-700 transition-colors shadow-sm"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Filters */}
-            <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-white">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search by ID or Name..."
-                  value={studentSearch}
-                  onChange={(e) => setStudentSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
-                />
-              </div>
-              
-              <select 
-                value={sessionFilter}
-                onChange={(e) => setSessionFilter(e.target.value)}
-                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-[11px] font-medium outline-none focus:border-brand-dark cursor-pointer w-32"
-              >
-                <option value="All">All Sessions</option>
-                <option value="Spring 2026">Spring 2026</option>
-                <option value="Fall 2025">Fall 2025</option>
-                <option value="Fall 2026">Fall 2026</option>
-              </select>
-
-              <select 
-                value={batchFilter}
-                onChange={(e) => setBatchFilter(e.target.value)}
-                className="px-2 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md text-[11px] font-medium outline-none focus:border-brand-dark cursor-pointer w-28"
-              >
-                <option value="All">All Batches</option>
-                <option value="Batch A">Batch A</option>
-                <option value="Batch B">Batch B</option>
-                <option value="Batch C">Batch C</option>
-              </select>
-            </div>
-
-            {/* List Header Actions */}
-            <div className="px-4 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-600">
-                {filteredStudents.length} Students Found
-              </span>
-              <div className="flex gap-2">
-                <button onClick={selectAllFiltered} className="text-[10px] font-medium text-brand-dark hover:underline">Select All</button>
-                <span className="text-slate-300">|</span>
-                <button onClick={deselectAllFiltered} className="text-[10px] font-medium text-slate-500 hover:underline">Clear</button>
-              </div>
-            </div>
-
-            {/* Student List */}
-            <div className="overflow-y-auto flex-1 p-2">
-              {filteredStudents.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                  {filteredStudents.map(student => {
-                    const isSelected = newClassroom.studentList.includes(student.id);
-                    return (
-                      <div 
-                        key={student.id}
-                        onClick={() => toggleStudent(student.id)}
-                        className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors border ${isSelected ? 'bg-brand-dark/5 border-brand-dark/30' : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}
-                      >
-                        <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-brand-dark border-brand-dark' : 'bg-white border border-slate-300'}`}>
-                          {isSelected && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        
-                        <div className="flex-1 flex flex-col">
-                          <span className="text-[11px] font-medium text-slate-900">{student.name}</span>
-                          <span className="text-[10px] text-slate-500">{student.id}</span>
-                        </div>
-                        
-                        <div className="text-right">
-                          <span className="block text-[9px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded mb-0.5">{student.session}</span>
-                          <span className="block text-[9px] text-slate-500">{student.batch}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Users2 className="w-8 h-8 text-slate-300 mb-2" />
-                  <p className="text-[11px] font-medium text-slate-700">No students matched your filters</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Try changing the session or batch.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-slate-100 bg-white flex items-center justify-between rounded-b-xl">
-              <span className="text-[11px] font-medium text-slate-700">
-                Total Selected: <span className="text-brand-dark bg-brand-dark/10 px-2 py-0.5 rounded">{newClassroom.studentList.length}</span>
-              </span>
-              <button 
-                onClick={() => setIsStudentSelectionOpen(false)}
-                className="px-5 py-2 bg-brand-dark text-white rounded-md text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5" />
-                Done Selecting
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

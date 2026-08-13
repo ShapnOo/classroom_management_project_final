@@ -26,6 +26,8 @@ import {
   Legend
 } from "recharts";
 
+import { getTodaysSchedule, getUpNextTopic, myClassrooms } from "@/lib/mockData";
+
 const performanceData = [
   { name: 'DBMS', attendance: 92, avgScore: 85 },
   { name: 'Software Eng', attendance: 88, avgScore: 78 },
@@ -34,6 +36,11 @@ const performanceData = [
 ];
 
 export default function TeacherDashboard() {
+  const todaysSchedule = getTodaysSchedule();
+  const upNext = getUpNextTopic();
+  const totalStudents = myClassrooms.reduce((sum, c) => sum + c.students, 0);
+  const ongoingClassrooms = myClassrooms.filter(c => c.status === "ongoing").length;
+
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',

@@ -6,50 +6,33 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
+import { assignments } from "@/lib/mockData";
 import Link from "next/link";
-
-type GlobalAssignment = {
-  id: string;
-  title: string;
-  course: string;
-  batch: string;
-  teacher: string;
-  dueDate: string;
-  submissions: number;
-  totalStudents: number;
-  status: "Active" | "Upcoming" | "Completed";
-};
-
-const globalAssignments: GlobalAssignment[] = [
-  { id: "1", title: "ER Diagram Design", course: "Database Management System", batch: "PGDIT Spring 2026", teacher: "Dr. Alan Turing", dueDate: "Oct 25, 2026", submissions: 38, totalStudents: 42, status: "Active" },
-  { id: "2", title: "SQL Queries Practice", course: "Database Management System", batch: "PGDIT Spring 2026", teacher: "Dr. Alan Turing", dueDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, status: "Upcoming" },
-  { id: "3", title: "Agile Case Study", course: "Software Engineering", batch: "PGDIT Spring 2026", teacher: "Prof. Sarah Jenkins", dueDate: "Oct 20, 2026", submissions: 38, totalStudents: 38, status: "Completed" },
-  { id: "4", title: "HTML/CSS Basics", course: "Web Technologies", batch: "BSc CSE Fall 2025", teacher: "Dr. Tim Berners-Lee", dueDate: "Nov 10, 2026", submissions: 10, totalStudents: 55, status: "Active" },
-];
 
 export default function GlobalAssignmentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredAssignments = globalAssignments.filter(a => 
-    a.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredAssignments = assignments.filter(a =>
+    a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.teacher.toLowerCase().includes(searchTerm.toLowerCase())
+    a.teacher.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.batch.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <PageHeader 
-        title="Global Assignments" 
+      <PageHeader
+        title="Global Assignments"
         description="Oversee all assignments created by teachers across all active classrooms."
       />
 
-      <SearchInput 
-        placeholder="Search assignments by title, course, or teacher..." 
+      <SearchInput
+        placeholder="Search assignments by title, course, or teacher..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      <DataTable 
+      <DataTable
         columns={["Assignment Details", "Classroom & Teacher", "Due Date", "Submission Rate", "Status", "Actions"]}
         isEmpty={filteredAssignments.length === 0}
         emptyStateIcon={ListTodo}
@@ -88,12 +71,11 @@ export default function GlobalAssignmentsPage() {
               <StatusBadge status={assignment.status} />
             </td>
             <td className="px-5 py-4 text-right">
-              <Link 
-                href={`#`}
+              <Link
+                href="#"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-brand-dark transition-colors text-[11px] font-medium shadow-sm opacity-0 group-hover:opacity-100"
               >
-                View Details
-                <ArrowRight className="w-3 h-3" />
+                View Details <ArrowRight className="w-3 h-3" />
               </Link>
             </td>
           </tr>

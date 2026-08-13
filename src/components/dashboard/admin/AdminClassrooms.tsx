@@ -1,130 +1,19 @@
 "use client";
 
 import { 
-  Users, 
-  Clock, 
-  CalendarDays, 
-  BookOpen, 
-  LayoutGrid, 
-  List as ListIcon, 
-  Search,
-  MapPin,
-  TrendingUp,
-  ArrowRight,
-  User
+  Users, Clock, CalendarDays, MapPin, BookOpen, 
+  LayoutGrid, List as ListIcon, Search, TrendingUp, ArrowRight, User
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
-const allClassrooms = [
-  {
-    id: "cls-1",
-    courseCode: "CSE-305",
-    courseTitle: "Database Management Systems",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - A",
-    room: "Room 402, Bldg C",
-    schedule: "Mon, Wed • 10:00 AM - 11:30 AM",
-    startDate: "2026-01-15",
-    endDate: "2026-05-20",
-    students: 42,
-    classesCompleted: 18,
-    totalClasses: 26,
-    progress: 68,
-    teacher: "Dr. Alan Turing",
-    color: "bg-blue-500",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-2",
-    courseCode: "CSE-412",
-    courseTitle: "Software Engineering",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - B",
-    room: "Room 305, Bldg A",
-    schedule: "Tue, Thu • 02:00 PM - 03:30 PM",
-    startDate: "2026-01-16",
-    endDate: "2026-05-22",
-    students: 38,
-    classesCompleted: 15,
-    totalClasses: 20,
-    progress: 74,
-    teacher: "Prof. Sarah Jenkins",
-    color: "bg-emerald-500",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-3",
-    courseCode: "CSE-101",
-    courseTitle: "Introduction to Computer Science",
-    program: "B.Sc. CS",
-    batch: "Fall 2025 - A",
-    room: "Room 201, Bldg B",
-    schedule: "Mon, Wed • 08:00 AM - 09:30 AM",
-    startDate: "2025-08-15",
-    endDate: "2025-12-20",
-    students: 50,
-    classesCompleted: 24,
-    totalClasses: 24,
-    progress: 100,
-    teacher: "Prof. Ada Lovelace",
-    color: "bg-slate-500",
-    lightColor: "bg-slate-50",
-    textColor: "text-slate-700",
-    status: "completed"
-  },
-  {
-    id: "cls-4",
-    courseCode: "CSE-425",
-    courseTitle: "Artificial Intelligence",
-    program: "B.Sc. CS",
-    batch: "Spring 2026 - A",
-    room: "Lab 2, Bldg D",
-    schedule: "Mon, Wed • 12:00 PM - 01:30 PM",
-    startDate: "2026-01-15",
-    endDate: "2026-05-20",
-    students: 35,
-    classesCompleted: 8,
-    totalClasses: 24,
-    progress: 33,
-    teacher: "Dr. Tim Berners-Lee",
-    color: "bg-purple-500",
-    lightColor: "bg-purple-50",
-    textColor: "text-purple-700",
-    status: "ongoing"
-  },
-  {
-    id: "cls-5",
-    courseCode: "CSE-201",
-    courseTitle: "Data Structures",
-    program: "B.Sc. CS",
-    batch: "Fall 2026 - C",
-    room: "Room 101, Bldg B",
-    schedule: "Fri • 09:00 AM - 12:00 PM",
-    startDate: "2026-08-15",
-    endDate: "2026-12-20",
-    students: 45,
-    classesCompleted: 0,
-    totalClasses: 24,
-    progress: 0,
-    teacher: "Prof. Sarah Jenkins",
-    color: "bg-amber-500",
-    lightColor: "bg-amber-50",
-    textColor: "text-amber-700",
-    status: "upcoming"
-  },
-];
+import { classrooms } from "@/lib/mockData";
 
 export default function AdminClassrooms() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredClassrooms = allClassrooms.filter(cls => {
+  const filteredClassrooms = classrooms.filter(cls => {
     const matchesSearch = 
       cls.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cls.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,16 +57,10 @@ export default function AdminClassrooms() {
             </select>
 
             <div className="flex items-center border border-slate-200 rounded-md bg-white p-0.5 shrink-0">
-              <button 
-                onClick={() => setViewMode("grid")}
-                className={`p-1 rounded ${viewMode === "grid" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-              >
+              <button onClick={() => setViewMode("grid")} className={`p-1 rounded ${viewMode === "grid" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}>
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
-              <button 
-                onClick={() => setViewMode("list")}
-                className={`p-1 rounded ${viewMode === "list" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-              >
+              <button onClick={() => setViewMode("list")} className={`p-1 rounded ${viewMode === "list" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"}`}>
                 <ListIcon className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -189,10 +72,7 @@ export default function AdminClassrooms() {
       {viewMode === "grid" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {filteredClassrooms.map((cls) => (
-            <div 
-              key={cls.id} 
-              className={`bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all group ${cls.status === 'completed' ? 'border-slate-200/60 opacity-80' : 'border-slate-200 hover:border-brand-dark/30 hover:shadow-md'}`}
-            >
+            <div key={cls.id} className={`bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all group ${cls.status === 'completed' ? 'border-slate-200/60 opacity-80' : 'border-slate-200 hover:border-brand-dark/30 hover:shadow-md'}`}>
               <div className={`h-1.5 w-full ${cls.status === 'completed' ? 'bg-slate-300' : cls.color}`} />
               <div className="p-3.5 flex-1 flex flex-col">
                 
@@ -214,10 +94,7 @@ export default function AdminClassrooms() {
                     <span className={cls.status === 'completed' ? 'text-slate-600' : cls.textColor}>{cls.progress}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} 
-                      style={{ width: `${cls.progress}%` }}
-                    />
+                    <div className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} style={{ width: `${cls.progress}%` }} />
                   </div>
                 </div>
 
@@ -230,7 +107,6 @@ export default function AdminClassrooms() {
                       <p className="text-[9px] text-slate-500">Assigned Teacher</p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-2">
                     <Users className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                     <div>
@@ -238,19 +114,15 @@ export default function AdminClassrooms() {
                       <p className="text-[9px] text-slate-500">{cls.program} • {cls.students} Students</p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-2">
                     <CalendarDays className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                     <div className="text-[10px] text-slate-600 font-medium pt-0.5">
                       {new Date(cls.startDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})} – {new Date(cls.endDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'})}
                     </div>
                   </div>
-                  
                   <div className="flex items-start gap-2">
                     <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="text-[10px] text-slate-600 font-medium pt-0.5">
-                      {cls.schedule}
-                    </div>
+                    <div className="text-[10px] text-slate-600 font-medium pt-0.5">{cls.schedule}</div>
                   </div>
                 </div>
 
@@ -260,20 +132,16 @@ export default function AdminClassrooms() {
                     href={`/dashboard/admin/academic/classrooms/${cls.id}`}
                     className={`col-span-3 mb-1.5 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-medium rounded shadow-sm transition-colors ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-brand-dark text-white hover:bg-slate-800'}`}
                   >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                    View Details
+                    <ArrowRight className="w-3.5 h-3.5" /> View Details
                   </Link>
-                  
                   <div className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 text-slate-500 text-center">
                     <BookOpen className="w-3.5 h-3.5" />
                     <span className="text-[9px] font-medium">{cls.classesCompleted}/{cls.totalClasses}</span>
                   </div>
-                  
                   <div className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 text-slate-500 text-center">
                     <Users className="w-3.5 h-3.5" />
-                    <span className="text-[9px] font-medium">{cls.students} Students</span>
+                    <span className="text-[9px] font-medium">{cls.students} Stds</span>
                   </div>
-
                   <div className="col-span-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded bg-slate-50 text-slate-500 text-center">
                     <TrendingUp className="w-3.5 h-3.5" />
                     <span className="text-[9px] font-medium">{cls.progress}%</span>
@@ -310,9 +178,7 @@ export default function AdminClassrooms() {
                           <p className="font-medium text-slate-900">{cls.courseTitle}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[9px] font-medium text-slate-500">{cls.courseCode}</span>
-                            <span className={`text-[8px] font-medium px-1.5 rounded-sm uppercase ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600' : cls.lightColor + ' ' + cls.textColor}`}>
-                              {cls.status}
-                            </span>
+                            <span className={`text-[8px] font-medium px-1.5 rounded-sm uppercase ${cls.status === 'completed' ? 'bg-slate-200 text-slate-600' : cls.lightColor + ' ' + cls.textColor}`}>{cls.status}</span>
                           </div>
                         </div>
                       </div>
@@ -337,20 +203,14 @@ export default function AdminClassrooms() {
                     <td className="px-4 py-3 w-44">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} 
-                            style={{ width: `${cls.progress}%` }}
-                          />
+                          <div className={`h-full ${cls.status === 'completed' ? 'bg-slate-400' : cls.color} rounded-full`} style={{ width: `${cls.progress}%` }} />
                         </div>
                         <span className="text-[10px] font-medium text-slate-600">{cls.progress}%</span>
                       </div>
                       <p className="text-[9px] text-slate-500 mt-1">{cls.classesCompleted} of {cls.totalClasses} classes done</p>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link 
-                        href={`/dashboard/admin/academic/classrooms/${cls.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-medium transition-colors bg-brand-dark text-white hover:bg-slate-800"
-                      >
+                      <Link href={`/dashboard/admin/academic/classrooms/${cls.id}`} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-medium transition-colors bg-brand-dark text-white hover:bg-slate-800">
                         View <ArrowRight className="w-3 h-3" />
                       </Link>
                     </td>

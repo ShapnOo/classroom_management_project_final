@@ -11,11 +11,8 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 
-// Mock Data
-const mockClassrooms = [
-  { id: "cls-1", name: "Database Management Systems", code: "CSE-305", batch: "Spring 2026 - A" },
-  { id: "cls-2", name: "Software Engineering", code: "CSE-412", batch: "Spring 2026 - B" },
-];
+import { myClassrooms } from "@/lib/mockData";
+const mockClassrooms = myClassrooms.map(c => ({ id: c.id, name: c.courseTitle, code: c.courseCode, batch: c.batch }));
 
 export default function TeacherEvaluation() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);

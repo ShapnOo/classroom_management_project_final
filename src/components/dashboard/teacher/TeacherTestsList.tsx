@@ -1,62 +1,30 @@
 "use client";
 
-import { 
-  FileText,
-  ArrowRight,
-  ClipboardList,
-  Clock
-} from "lucide-react";
+import { FileText, ArrowRight, ClipboardList, Clock } from "lucide-react";
 import Link from "next/link";
-
-// Mock Data for courses
-const mockCourses = [
-  { 
-    id: "cls-1", 
-    name: "Database Management Systems", 
-    batch: "Spring 2026", 
-    code: "CSE-305",
-    activeTests: 2,
-    completedTests: 4
-  },
-  { 
-    id: "cls-2", 
-    name: "Software Engineering", 
-    batch: "Spring 2026", 
-    code: "CSE-412",
-    activeTests: 1,
-    completedTests: 3
-  },
-  { 
-    id: "cls-3", 
-    name: "Computer Networks", 
-    batch: "Fall 2025", 
-    code: "CSE-301",
-    activeTests: 0,
-    completedTests: 5
-  }
-];
+import { myTestsByClassroom } from "@/lib/mockData";
 
 export default function TeacherTestsList() {
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
       {/* Course List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCourses.map((course) => (
+        {myTestsByClassroom.map((course) => (
           <div key={course.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group">
+            <div className={`h-1 w-full ${course.color}`} />
             <div className="p-5 flex-1 flex flex-col">
               
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded uppercase bg-brand-dark/10 text-brand-dark">
-                  {course.code}
+                  {course.courseCode}
                 </span>
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded uppercase bg-slate-100 text-slate-500">
-                  {course.batch}
+                  {course.session}
                 </span>
               </div>
               
               <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-1 mb-4">
-                {course.name}
+                {course.courseTitle}
               </h3>
 
               <div className="flex items-center gap-4 mt-auto">

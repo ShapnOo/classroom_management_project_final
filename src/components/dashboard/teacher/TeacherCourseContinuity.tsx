@@ -14,27 +14,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { getSyllabusByClassroom, classrooms } from "@/lib/mockData";
+
 interface TeacherCourseContinuityProps {
   courseId?: string;
 }
 
-// Mock Data
-const topicProgress = [
-  { topic: "Introduction", progress: 100 },
-  { topic: "ER Model", progress: 100 },
-  { topic: "Relational Model", progress: 100 },
-  { topic: "Normalization", progress: 80 },
-  { topic: "SQL", progress: 40 },
-  { topic: "Transactions", progress: 0 }
-];
-
 export default function TeacherCourseContinuity({ courseId }: TeacherCourseContinuityProps) {
-  // In a real app, you'd fetch the course details based on the courseId
-  // For now we'll just mock it.
-  const courseName = courseId === "cls-2" ? "Software Engineering" : "Database Management Systems";
-  const batch = "Spring 2026";
-  const code = courseId === "cls-2" ? "CSE-412" : "CSE-305";
-  const progress = courseId === "cls-2" ? 74 : 68;
+  const resolvedId = courseId || "cls-1";
+  const classroom = classrooms.find(c => c.id === resolvedId) || classrooms[0];
+  const syllabusTopics = getSyllabusByClassroom(resolvedId);
+  const topicProgress = syllabusTopics.map(s => ({
+    topic: s.topic,
+    progress: s.status === "done" ? 100 : s.status === "current" ? 60 : 0
+  }));
+
+  const courseName = classroom.courseTitle;
+  const batch = classroom.session;
+  const code = classroom.courseCode;
+  const progress = classroom.progress;
 
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">

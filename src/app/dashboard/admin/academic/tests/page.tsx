@@ -6,51 +6,33 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
+import { tests } from "@/lib/mockData";
 import Link from "next/link";
-
-type GlobalTest = {
-  id: string;
-  title: string;
-  course: string;
-  batch: string;
-  teacher: string;
-  testDate: string;
-  submissions: number;
-  totalStudents: number;
-  totalMarks: number;
-  status: "Active" | "Upcoming" | "Completed";
-};
-
-const globalTests: GlobalTest[] = [
-  { id: "1", title: "Midterm: Normalization", course: "Database Management System", batch: "PGDIT Spring 2026", teacher: "Dr. Alan Turing", testDate: "Oct 25, 2026", submissions: 40, totalStudents: 42, totalMarks: 50, status: "Active" },
-  { id: "2", title: "Quiz 1: SQL Basics", course: "Database Management System", batch: "PGDIT Spring 2026", teacher: "Dr. Alan Turing", testDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, totalMarks: 20, status: "Upcoming" },
-  { id: "3", title: "Final Exam", course: "Software Engineering", batch: "PGDIT Spring 2026", teacher: "Prof. Sarah Jenkins", testDate: "Dec 15, 2026", submissions: 38, totalStudents: 38, totalMarks: 100, status: "Completed" },
-  { id: "4", title: "Lab Test 1", course: "Web Technologies", batch: "BSc CSE Fall 2025", teacher: "Dr. Tim Berners-Lee", testDate: "Nov 15, 2026", submissions: 55, totalStudents: 55, totalMarks: 30, status: "Completed" },
-];
 
 export default function GlobalTestsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredTests = globalTests.filter(t => 
-    t.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredTests = tests.filter(t =>
+    t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.teacher.toLowerCase().includes(searchTerm.toLowerCase())
+    t.teacher.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.batch.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <PageHeader 
-        title="Global Class Tests" 
+      <PageHeader
+        title="Global Class Tests"
         description="Monitor all tests, quizzes, and exams scheduled across the institution."
       />
 
-      <SearchInput 
-        placeholder="Search tests by title, course, or teacher..." 
+      <SearchInput
+        placeholder="Search tests by title, course, or teacher..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      <DataTable 
+      <DataTable
         columns={["Test Details", "Classroom & Teacher", "Test Date", "Participation", "Status", "Actions"]}
         isEmpty={filteredTests.length === 0}
         emptyStateIcon={FileText}
@@ -95,12 +77,11 @@ export default function GlobalTestsPage() {
               <StatusBadge status={test.status} />
             </td>
             <td className="px-5 py-4 text-right">
-              <Link 
-                href={`#`}
+              <Link
+                href="#"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-brand-dark transition-colors text-[11px] font-medium shadow-sm opacity-0 group-hover:opacity-100"
               >
-                View Details
-                <ArrowRight className="w-3 h-3" />
+                View Details <ArrowRight className="w-3 h-3" />
               </Link>
             </td>
           </tr>
