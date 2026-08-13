@@ -6,9 +6,11 @@ export const metadata: Metadata = {
   description: "Manage your classrooms",
 };
 
-export default function ClassroomsPage({ params }: { params: { role: string } }) {
+export default async function ClassroomsPage({ params }: { params: Promise<{ role: string }> }) {
+  const { role } = await params;
+
   // Render teacher classrooms if role is teacher
-  if (params.role === "teacher") {
+  if (role === "teacher") {
     return <TeacherClassrooms />;
   }
 
@@ -20,7 +22,7 @@ export default function ClassroomsPage({ params }: { params: { role: string } })
       </div>
       <h2 className="text-xl font-bold text-slate-800 mb-2">Classrooms Under Construction</h2>
       <p className="text-slate-500 max-w-md">
-        The classrooms view for the <span className="font-semibold text-brand-dark">{params.role}</span> portal is currently being built. Please check back later.
+        The classrooms view for the <span className="font-semibold text-brand-dark">{role}</span> portal is currently being built. Please check back later.
       </p>
     </div>
   );
