@@ -49,7 +49,7 @@ export const adminMenu: MenuItem[] = [
   { 
     title: "Classroom Management", icon: MonitorPlay,
     submenu: [
-      { title: "All Classrooms", href: "#" },
+      { title: "All Classrooms", href: "/dashboard/admin/academic/classrooms" },
       { title: "Class Schedules", href: "/dashboard/admin/academic/schedules" },
     ]
   },
@@ -58,8 +58,8 @@ export const adminMenu: MenuItem[] = [
     submenu: [
       { title: "Class Sessions", href: "#" },
       { title: "Attendance", href: "#" },
-      { title: "Assignments", href: "#" },
-      { title: "Class Tests", href: "#" },
+      { title: "Assignments", href: "/dashboard/admin/academic/assignments" },
+      { title: "Class Tests", href: "/dashboard/admin/academic/tests" },
       { title: "Results", href: "#" },
     ]
   },
