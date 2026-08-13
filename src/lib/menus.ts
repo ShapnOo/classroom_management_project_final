@@ -40,9 +40,10 @@ export const adminMenu: MenuItem[] = [
     submenu: [
       { title: "Departments", href: "#" },
       { title: "Programs", href: "#" },
-      { title: "Batches", href: "#" },
-      { title: "Courses", href: "#" },
-      { title: "Syllabus", href: "#" },
+      { title: "Sessions", href: "/dashboard/admin/academic/sessions" },
+      { title: "Batches", href: "/dashboard/admin/academic/batches" },
+      { title: "Courses", href: "/dashboard/admin/academic/courses" },
+      { title: "Syllabus", href: "/dashboard/admin/academic/syllabus" },
     ]
   },
   { 
