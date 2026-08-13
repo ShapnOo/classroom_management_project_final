@@ -15,7 +15,8 @@ import {
   MonitorPlay,
   ListTodo,
   TrendingUp,
-  Clock
+  Clock,
+  Award
 } from "lucide-react";
 
 export type MenuItem = {
@@ -95,6 +96,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Attendance", icon: ClipboardCheck, href: "/dashboard/teacher/attendance" },
   { title: "Assignments", icon: ListTodo, href: "/dashboard/teacher/assignments" },
   { title: "Class Tests", icon: FileText, href: "/dashboard/teacher/tests" },
+  { title: "Final Evaluation", icon: Award, href: "/dashboard/teacher/evaluation" },
   { title: "Announcements", icon: Bell, href: "#" },
   { title: "Calendar", icon: CalendarDays, href: "#" },
   { 

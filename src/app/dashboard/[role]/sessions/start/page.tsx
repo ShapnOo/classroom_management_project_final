@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import StartClassSession from "@/components/dashboard/teacher/StartClassSession";
 import { Metadata } from "next";
 
@@ -9,8 +10,13 @@ export const metadata: Metadata = {
 export default async function StartSessionPage({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
 
+
   if (role === "teacher") {
-    return <StartClassSession />;
+    return (
+      <Suspense fallback={<div className="p-8 text-center text-slate-500 text-xs">Loading session...</div>}>
+        <StartClassSession />
+      </Suspense>
+    );
   }
 
   return (

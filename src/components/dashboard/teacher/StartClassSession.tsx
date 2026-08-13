@@ -19,8 +19,9 @@ import {
   CalendarDays,
   MoreVertical
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 // Mock Data
 const mockClassrooms = [
@@ -63,12 +64,22 @@ const mockMaterials = [
 ];
 
 export default function StartClassSession() {
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const urlClassId = searchParams?.get('classId');
+  
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(urlClassId || null);
+  
+  // Sync if URL param changes
+  useEffect(() => {
+    if (urlClassId) setSelectedClassId(urlClassId);
+  }, [urlClassId]);
   const [topic, setTopic] = useState("3NF and BCNF Examples");
   const [description, setDescription] = useState("Exploring practical examples of Third Normal Form and Boyce-Codd Normal Form.");
   const [progress, setProgress] = useState(68);
   const [startTime, setStartTime] = useState("10:00");
   const [endTime, setEndTime] = useState("11:30");
+  const [meetingLink, setMeetingLink] = useState("");
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   
   // Attendance State
   const [attendance, setAttendance] = useState<Record<string, "Present" | "Absent" | "Late">>(() => {
@@ -286,6 +297,11 @@ export default function StartClassSession() {
                 <label className="text-[11px] font-medium text-slate-700">Topic Covered <span className="text-red-500">*</span></label>
                 <input required type="text" value={topic} onChange={e => setTopic(e.target.value)} placeholder="What are you teaching today?" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] font-medium focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
               </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-slate-700">Video Meeting Link (Optional)</label>
+                <input type="url" value={meetingLink} onChange={e => setMeetingLink(e.target.value)} placeholder="e.g. https://meet.google.com/abc-defg-hij" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[11px] focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none" />
+              </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-slate-700">Session Summary / Notes</label>
@@ -321,13 +337,27 @@ export default function StartClassSession() {
                   <button type="button" className="text-[10px] font-medium text-brand-dark hover:underline">Browse Library</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {mockMaterials.map((mat, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[11px] font-medium shadow-sm">
-                      <FileText className="w-3 h-3 text-slate-400" />
-                      {mat}
-                      <button type="button" className="ml-1 text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
-                    </span>
-                  ))}
+                  {mockMaterials.map((mat, idx) => {
+                    const isSelected = selectedMaterials.includes(mat);
+                    return (
+                      <button 
+                        key={idx} 
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedMaterials(selectedMaterials.filter(m => m !== mat));
+                          } else {
+                            setSelectedMaterials([...selectedMaterials, mat]);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border rounded-md text-[11px] font-medium shadow-sm transition-colors ${isSelected ? 'bg-brand-dark border-brand-dark text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      >
+                        <FileText className={`w-3 h-3 ${isSelected ? 'text-white/80' : 'text-slate-400'}`} />
+                        {mat}
+                        {isSelected && <Check className="w-3 h-3 ml-0.5 text-emerald-400" />}
+                      </button>
+                    );
+                  })}
                   <button type="button" className="inline-flex items-center justify-center px-3 py-1.5 bg-slate-50 border border-slate-200 border-dashed text-slate-500 hover:text-brand-dark hover:border-brand-dark hover:bg-brand-dark/5 transition-colors rounded-md text-[11px] font-medium">
                     + Attach File
                   </button>

@@ -68,6 +68,7 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("60");
   const [maxMarks, setMaxMarks] = useState("50");
+  const [type, setType] = useState("Class Test");
 
   // In a real app, fetch the course details based on the courseId
   const courseName = courseId === "cls-2" ? "Software Engineering" : "Database Management Systems";
@@ -157,9 +158,19 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
                 </button>
               </div>
 
-              <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-4">
+              <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-2">
                 {tst.title}
               </h3>
+              
+              {tst.title.toLowerCase().includes('midterm') || tst.title.toLowerCase().includes('final') ? (
+                <div className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 mb-3 uppercase">
+                  {tst.title.toLowerCase().includes('midterm') ? 'Midterm Exam' : 'Final Exam'}
+                </div>
+              ) : (
+                <div className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-brand-light/30 text-brand-dark mb-3 uppercase">
+                  Class Test
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-xs text-slate-600">
@@ -198,11 +209,12 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
               <button className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-medium hover:bg-slate-100 transition-colors shadow-sm">
                 Edit
               </button>
-              <button 
-                className="flex-1 py-2 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center"
+              <Link 
+                href={`/dashboard/teacher/tests/${tst.id}/evaluate`}
+                className="flex-1 flex justify-center items-center py-2 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center"
               >
                 {tst.status === 'upcoming' ? 'Start Test' : 'Enter Marks'}
-              </button>
+              </Link>
             </div>
           </div>
         ))}
@@ -237,15 +249,29 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-700">Test Title <span className="text-red-500">*</span></label>
-                <input 
-                  type="text" 
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Midterm Examination"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-700">Test Type <span className="text-red-500">*</span></label>
+                  <select 
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all text-slate-700"
+                  >
+                    <option value="Class Test">Class Test</option>
+                    <option value="Mid Term">Mid Term Exam</option>
+                    <option value="Final Exam">Final Exam</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-700">Test Title <span className="text-red-500">*</span></label>
+                  <input 
+                    type="text" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g., Chapter 1 Quiz"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
