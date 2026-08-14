@@ -1,5 +1,5 @@
 import TeacherTestEvaluate from "@/components/dashboard/teacher/TeacherTestEvaluate";
-
-export default function TestEvaluatePage({ params }: { params: { testId: string } }) {
-  return <TeacherTestEvaluate testId={params.testId} />;
+export default async function TestEvaluatePage({ params }: { params: Promise<{ testId: string }> }) {
+  const resolvedParams = await params;
+  return <TeacherTestEvaluate testId={resolvedParams.testId} />;
 }
