@@ -56,6 +56,13 @@ export type Teacher = {
   designation: string;
 };
 
+export type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "Super Admin" | "Staff";
+};
+
 // ─── Academic Entities ─────────────────────────────────────────────────────
 
 export type Course = {
@@ -197,3 +204,23 @@ export const CLASSROOM_COLORS = [
   { color: "bg-rose-500",    light: "bg-rose-50",    text: "text-rose-700"    },
   { color: "bg-teal-500",    light: "bg-teal-50",    text: "text-teal-700"    },
 ] as const;
+
+// ─── Announcements ──────────────────────────────────────────────────────────
+
+export type AnnouncementAudienceType = "Global" | "Program" | "Batch" | "Course";
+
+export type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  authorId: string;
+  authorName: string;
+  authorRole: "Admin" | "Teacher";
+  audienceType: AnnouncementAudienceType;
+  programId?: string;
+  batchId?: string;
+  courseId?: string;
+  status: "Draft" | "Published";
+  priority: "Normal" | "High";
+};

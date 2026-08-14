@@ -31,8 +31,9 @@ export const adminMenu: MenuItem[] = [
   { 
     title: "User Management", icon: Users,
     submenu: [
-      { title: "Teachers", href: "#" },
-      { title: "Students", href: "#" },
+      { title: "Teachers", href: "/dashboard/admin/users/teachers" },
+      { title: "Students", href: "/dashboard/admin/users/students" },
+      { title: "Admins", href: "/dashboard/admin/users/admins" },
     ]
   },
   { 
@@ -63,7 +64,7 @@ export const adminMenu: MenuItem[] = [
       { title: "Results", href: "/dashboard/admin/academic/results" },
     ]
   },
-  { title: "Announcements", icon: Bell, href: "#" },
+  { title: "Announcements", icon: Bell, href: "/dashboard/admin/announcements" },
   { title: "Calendar", icon: CalendarDays, href: "#" },
   { 
     title: "Reports & Analytics", icon: BarChart3,
@@ -98,7 +99,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Assignments", icon: ListTodo, href: "/dashboard/teacher/assignments" },
   { title: "Class Tests", icon: FileText, href: "/dashboard/teacher/tests" },
   { title: "Final Evaluation", icon: Award, href: "/dashboard/teacher/evaluation" },
-  { title: "Announcements", icon: Bell, href: "#" },
+  { title: "Announcements", icon: Bell, href: "/dashboard/teacher/announcements" },
   { title: "Calendar", icon: CalendarDays, href: "#" },
   { 
     title: "Progress & Analytics", icon: BarChart3,

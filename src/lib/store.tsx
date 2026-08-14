@@ -7,12 +7,13 @@ import type {
   Session, Department, Program, Batch, Student, Teacher,
   Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
   ClassroomView, ClassSession, AttendanceRecord, GradeRecord,
+  Announcement, AnnouncementAudienceType, AdminUser
 } from "./types";
 import { CLASSROOM_COLORS } from "./types";
 import {
   seedSessions, seedDepartments, seedPrograms, seedBatches, seedStudents,
   seedTeachers, seedCourses, seedSyllabusTopics, seedClassrooms, seedSchedules,
-  seedAssignments, seedTests, CURRENT_TEACHER_ID,
+  seedAssignments, seedTests, seedAnnouncements, seedAdmins, CURRENT_TEACHER_ID,
 } from "./seedData";
 
 // ─── State Shape ─────────────────────────────────────────────────────────────
@@ -33,6 +34,8 @@ type AppState = {
   classSessions: ClassSession[];
   attendanceRecords: AttendanceRecord[];
   gradeRecords: GradeRecord[];
+  announcements: Announcement[];
+  admins: AdminUser[];
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -50,6 +53,14 @@ type AppActions = {
   addStudent: (s: Omit<Student, "id">) => void;
   updateStudent: (id: string, s: Partial<Student>) => void;
   deleteStudent: (id: string) => void;
+  // Teachers
+  addTeacher: (t: Omit<Teacher, "id">) => void;
+  updateTeacher: (id: string, t: Partial<Teacher>) => void;
+  deleteTeacher: (id: string) => void;
+  // Admins
+  addAdmin: (a: Omit<AdminUser, "id">) => void;
+  updateAdmin: (id: string, a: Partial<AdminUser>) => void;
+  deleteAdmin: (id: string) => void;
   // Courses
   addCourse: (c: Omit<Course, "id">) => void;
   updateCourse: (id: string, c: Partial<Course>) => void;
@@ -86,6 +97,10 @@ type AppActions = {
   addGradeRecord: (r: Omit<GradeRecord, "id">) => void;
   updateGradeRecord: (id: string, r: Partial<GradeRecord>) => void;
   upsertGradeRecord: (data: Omit<GradeRecord, "id">) => void;
+  // Announcements
+  addAnnouncement: (a: Omit<Announcement, "id">) => void;
+  updateAnnouncement: (id: string, a: Partial<Announcement>) => void;
+  deleteAnnouncement: (id: string) => void;
   // Derived helpers
   getClassroomView: (classroomId: string) => ClassroomView | null;
   getMyClassroomViews: () => ClassroomView[];
@@ -119,6 +134,8 @@ const initialState: AppState = {
   classSessions: [],
   attendanceRecords: [],
   gradeRecords: [],
+  announcements: seedAnnouncements,
+  admins: seedAdmins,
 };
 
 function loadState(): AppState {
@@ -183,6 +200,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteStudent = (id: string) =>
     update("students", prev => prev.filter(x => x.id !== id));
 
+  // ── Teacher CRUD ──
+  const addTeacher = (t: Omit<Teacher, "id">) =>
+    update("teachers", prev => [...prev, { ...t, id: genId() }]);
+  const updateTeacher = (id: string, t: Partial<Teacher>) =>
+    update("teachers", prev => prev.map(x => x.id === id ? { ...x, ...t } : x));
+  const deleteTeacher = (id: string) =>
+    update("teachers", prev => prev.filter(x => x.id !== id));
+
+  // ── Admin CRUD ──
+  const addAdmin = (a: Omit<AdminUser, "id">) =>
+    update("admins", prev => [...prev, { ...a, id: genId() }]);
+  const updateAdmin = (id: string, a: Partial<AdminUser>) =>
+    update("admins", prev => prev.map(x => x.id === id ? { ...x, ...a } : x));
+  const deleteAdmin = (id: string) =>
+    update("admins", prev => prev.filter(x => x.id !== id));
+
   // ── Course CRUD ──
   const addCourse = (c: Omit<Course, "id">) =>
     update("courses", prev => [...prev, { ...c, id: genId() }]);
@@ -241,6 +274,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     update("classSessions", prev => prev.map(x => x.id === id ? { ...x, ...s } : x));
   const deleteClassSession = (id: string) =>
     update("classSessions", prev => prev.filter(x => x.id !== id));
+
+  // ── Announcements CRUD ──
+  const addAnnouncement = (a: Omit<Announcement, "id">) =>
+    update("announcements", prev => [...prev, { ...a, id: genId() }]);
+  const updateAnnouncement = (id: string, a: Partial<Announcement>) =>
+    update("announcements", prev => prev.map(x => x.id === id ? { ...x, ...a } : x));
+  const deleteAnnouncement = (id: string) =>
+    update("announcements", prev => prev.filter(x => x.id !== id));
 
   // ── Attendance CRUD ──
   const addAttendanceRecord = (r: Omit<AttendanceRecord, "id">) =>
@@ -371,6 +412,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addSession, updateSession, deleteSession,
     addBatch, updateBatch, deleteBatch,
     addStudent, updateStudent, deleteStudent,
+    addTeacher, updateTeacher, deleteTeacher,
+    addAdmin, updateAdmin, deleteAdmin,
     addCourse, updateCourse, deleteCourse,
     addSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic,
     addClassroom, updateClassroom, deleteClassroom,
@@ -380,7 +423,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addClassSession, updateClassSession, deleteClassSession,
     addAttendanceRecord, updateAttendanceRecord, upsertAttendance,
     addGradeRecord, updateGradeRecord, upsertGradeRecord,
-    getClassroomView, getMyClassroomViews, getAllClassroomViews,
+    addAnnouncement, updateAnnouncement, deleteAnnouncement,
+    // helpers
+    getClassroomView,
+    getMyClassroomViews, getAllClassroomViews,
     getTodaysSchedule, getUpNextTopic,
   };
 

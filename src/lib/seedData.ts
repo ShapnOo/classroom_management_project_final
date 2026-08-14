@@ -41,6 +41,13 @@ export const seedTeachers: Teacher[] = [
   { id: "teacher-5", name: "Dr. Richard Feynman",   email: "r.feynman@edu",   departmentId: "dept-3", designation: "Professor" },
 ];
 
+import type { AdminUser } from "./types";
+export const seedAdmins: AdminUser[] = [
+  { id: "admin-1", name: "System Admin", email: "admin@edu", role: "Super Admin" },
+  { id: "admin-2", name: "Jane Staff", email: "j.staff@edu", role: "Staff" },
+];
+
+
 // ─── Batches ─────────────────────────────────────────────────────────────────
 export const seedBatches: Batch[] = [
   { id: "batch-1", code: "SP26-A", name: "Spring 2026 — Section A", programId: "prog-1", sessionId: "ses-1", section: "A", status: "Active"    },
@@ -151,4 +158,34 @@ export const seedTests: Test[] = [
   { id: "tst-3", classroomId: "cls-2", title: "Final Exam: SE",              testDate: "2026-12-15", totalMarks: 100, status: "Upcoming",  submissions: 0  },
   { id: "tst-4", classroomId: "cls-2", title: "Midterm: SDLC & UML",        testDate: "2026-10-15", totalMarks: 50,  status: "Completed", submissions: 38 },
   { id: "tst-5", classroomId: "cls-4", title: "Lab Test 1: Search Algo.",   testDate: "2026-11-20", totalMarks: 30,  status: "Upcoming",  submissions: 0  },
+];
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+import type { Announcement } from "./types";
+export const seedAnnouncements: Announcement[] = [
+  {
+    id: "ann-1",
+    title: "Welcome to the Spring 2026 Semester!",
+    content: "We are excited to welcome all students to the new semester. Please check your course schedules and ensure you have access to all required materials. If you encounter any issues, contact the administration.",
+    date: "2026-08-10T09:00:00Z",
+    authorId: "admin-1",
+    authorName: "System Admin",
+    authorRole: "Admin",
+    audienceType: "Global",
+    status: "Published",
+    priority: "Normal"
+  },
+  {
+    id: "ann-2",
+    title: "Database System Midterm Update",
+    content: "The midterm syllabus for Database Systems has been updated. We will now cover Normalization up to 3NF. BCNF will be moved to the final exam.",
+    date: "2026-08-12T14:30:00Z",
+    authorId: CURRENT_TEACHER_ID,
+    authorName: "Dr. Sarah Mitchell",
+    authorRole: "Teacher",
+    audienceType: "Course",
+    courseId: "course-1",
+    status: "Published",
+    priority: "High"
+  }
 ];
