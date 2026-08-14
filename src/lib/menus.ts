@@ -65,7 +65,7 @@ export const adminMenu: MenuItem[] = [
     ]
   },
   { title: "Announcements", icon: Bell, href: "/dashboard/admin/announcements" },
-  { title: "Calendar", icon: CalendarDays, href: "#" },
+  { title: "Calendar", icon: CalendarDays, href: "/dashboard/admin/calendar" },
   { 
     title: "Reports & Analytics", icon: BarChart3,
     submenu: [
@@ -100,7 +100,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Class Tests", icon: FileText, href: "/dashboard/teacher/tests" },
   { title: "Final Evaluation", icon: Award, href: "/dashboard/teacher/evaluation" },
   { title: "Announcements", icon: Bell, href: "/dashboard/teacher/announcements" },
-  { title: "Calendar", icon: CalendarDays, href: "#" },
+  { title: "Calendar", icon: CalendarDays, href: "/dashboard/teacher/calendar" },
   { 
     title: "Progress & Analytics", icon: BarChart3,
     submenu: [
@@ -144,7 +144,7 @@ export const studentMenu: MenuItem[] = [
   { title: "Attendance", icon: ClipboardCheck, href: "#" },
   { title: "Academic Performance", icon: BarChart3, href: "#" },
   { title: "Announcements", icon: Bell, href: "#" },
-  { title: "Calendar", icon: CalendarDays, href: "#" },
+  { title: "Calendar", icon: CalendarDays, href: "/dashboard/student/calendar" },
   { title: "Notifications", icon: Bell, href: "#" },
   { title: "My Profile", icon: User, href: "#" },
   { title: "Settings", icon: Settings, href: "#" },
