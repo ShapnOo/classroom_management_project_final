@@ -342,12 +342,29 @@ export default function AdminClassrooms() {
               >
                 <option value="">Select a course</option>
                 {(() => {
+                  if (!form.batchId || !modalProgramId) return null;
                   const selectedBatch = batches.find(b => b.id === form.batchId);
+                  const hasCurriculum = selectedBatch?.batchCourses && selectedBatch.batchCourses.length > 0;
+                  
                   const validCourseIds = selectedBatch?.batchCourses?.map(bc => bc.courseId) || [];
-                  const batchCourses = courses.filter(c => validCourseIds.includes(c.id));
+                  const batchCourses = hasCurriculum 
+                    ? courses.filter(c => validCourseIds.includes(c.id))
+                    : courses.filter(c => c.programId === modalProgramId);
+                    
+                  if (batchCourses.length === 0) {
+                     return <option value="" disabled>No courses available</option>;
+                  }
+                  
                   return batchCourses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>);
                 })()}
               </select>
+              {form.batchId && (
+                <p className="text-[9px] text-slate-500">
+                  {batches.find(b => b.id === form.batchId)?.batchCourses?.length 
+                    ? "Showing courses configured in the batch's curriculum." 
+                    : "Showing all program courses (batch has no curriculum yet)."}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Assign Teacher <span className="text-red-500">*</span></label>
