@@ -17,7 +17,7 @@ type Department = {
 };
 
 const initialDepartments: Department[] = [
-  { id: "1", code: "CSE", name: "Computer Science & Engineering", head: "Dr. Alan Turing", status: "Active" },
+  { id: "1", code: "CSE", name: "Computer Science & Engineering", head: "Prof. Dr. Shamim Al Mamun", status: "Active" },
   { id: "2", code: "EEE", name: "Electrical & Electronic Engineering", head: "Dr. Nikola Tesla", status: "Active" },
   { id: "3", code: "BBA", name: "Business Administration", head: "Dr. Philip Kotler", status: "Active" },
 ];
@@ -136,7 +136,7 @@ export default function DepartmentsPage() {
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Head of Department (Optional)</label>
-            <input type="text" placeholder="e.g. Dr. Alan Turing" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
+            <input type="text" placeholder="e.g. Prof. Dr. Shamim Al Mamun" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
           </div>
         </div>
       </Modal>

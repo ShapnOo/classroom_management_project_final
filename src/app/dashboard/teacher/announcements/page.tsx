@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 
 export default function TeacherAnnouncementsPage() {
   // In a real app, author ID and Name would come from the auth session.
-  return <AnnouncementsManager role="Teacher" authorId={CURRENT_TEACHER_ID} authorName="Dr. Alan Turing" />;
+  return <AnnouncementsManager role="Teacher" authorId={CURRENT_TEACHER_ID} authorName="Prof. Dr. Shamim Al Mamun" />;
 }

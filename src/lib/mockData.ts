@@ -21,11 +21,11 @@ export type Teacher = {
 };
 
 export const teachers: Teacher[] = [
-  { id: "teacher-1", name: "Dr. Alan Turing", email: "a.turing@institution.edu", department: "Computer Science" },
-  { id: "teacher-2", name: "Prof. Sarah Jenkins", email: "s.jenkins@institution.edu", department: "Computer Science" },
-  { id: "teacher-3", name: "Dr. Tim Berners-Lee", email: "t.berners@institution.edu", department: "Computer Science" },
-  { id: "teacher-4", name: "Prof. Ada Lovelace", email: "a.lovelace@institution.edu", department: "Mathematics" },
-  { id: "teacher-5", name: "Dr. Richard Feynman", email: "r.feynman@institution.edu", department: "Physics" },
+  { id: "teacher-1", name: "Prof. Dr. Shamim Al Mamun", email: "a.turing@institution.edu", department: "Computer Science" },
+  { id: "teacher-2", name: "Prof. Dr. Risala Tasin Khan", email: "s.jenkins@institution.edu", department: "Computer Science" },
+  { id: "teacher-3", name: "Prof. Dr. Mohammad Shahidul Islam", email: "t.berners@institution.edu", department: "Computer Science" },
+  { id: "teacher-4", name: "Prof. Md. Fazlul Karim Patwary", email: "a.lovelace@institution.edu", department: "Mathematics" },
+  { id: "teacher-5", name: "Prof. Dr. M. Mesbahuddin Sarker", email: "r.feynman@institution.edu", department: "Physics" },
 ];
 
 // ─── SHARED CLASSROOMS (COURSES + THEIR CLASSROOM SETUP) ──────────────────────
@@ -76,7 +76,7 @@ export const classrooms: Classroom[] = [
     totalClasses: 26,
     progress: 68,
     teacherId: "teacher-1",
-    teacher: "Dr. Alan Turing",
+    teacher: "Prof. Dr. Shamim Al Mamun",
     color: "bg-blue-500",
     lightColor: "bg-blue-50",
     textColor: "text-blue-700",
@@ -100,7 +100,7 @@ export const classrooms: Classroom[] = [
     totalClasses: 20,
     progress: 74,
     teacherId: "teacher-1",
-    teacher: "Dr. Alan Turing",
+    teacher: "Prof. Dr. Shamim Al Mamun",
     color: "bg-emerald-500",
     lightColor: "bg-emerald-50",
     textColor: "text-emerald-700",
@@ -124,7 +124,7 @@ export const classrooms: Classroom[] = [
     totalClasses: 24,
     progress: 100,
     teacherId: "teacher-4",
-    teacher: "Prof. Ada Lovelace",
+    teacher: "Prof. Md. Fazlul Karim Patwary",
     color: "bg-slate-500",
     lightColor: "bg-slate-50",
     textColor: "text-slate-700",
@@ -148,7 +148,7 @@ export const classrooms: Classroom[] = [
     totalClasses: 24,
     progress: 33,
     teacherId: "teacher-1",
-    teacher: "Dr. Alan Turing",
+    teacher: "Prof. Dr. Shamim Al Mamun",
     color: "bg-purple-500",
     lightColor: "bg-purple-50",
     textColor: "text-purple-700",
@@ -172,7 +172,7 @@ export const classrooms: Classroom[] = [
     totalClasses: 24,
     progress: 0,
     teacherId: "teacher-2",
-    teacher: "Prof. Sarah Jenkins",
+    teacher: "Prof. Dr. Risala Tasin Khan",
     color: "bg-amber-500",
     lightColor: "bg-amber-50",
     textColor: "text-amber-700",
@@ -203,14 +203,14 @@ export type Schedule = {
 };
 
 export const schedules: Schedule[] = [
-  { id: "sch-1", classroomId: "cls-1", courseTitle: "Database Management Systems", courseCode: "CSE-305", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - A", day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM", room: "Room 402", students: 42, status: "Active" },
-  { id: "sch-2", classroomId: "cls-1", courseTitle: "Database Management Systems", courseCode: "CSE-305", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - A", day: "Wednesday", startTime: "10:00 AM", endTime: "11:30 AM", room: "Room 402", students: 42, status: "Active" },
-  { id: "sch-3", classroomId: "cls-2", courseTitle: "Software Engineering", courseCode: "CSE-412", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - B", day: "Tuesday", startTime: "02:00 PM", endTime: "03:30 PM", room: "Room 305", students: 38, status: "Active" },
-  { id: "sch-4", classroomId: "cls-2", courseTitle: "Software Engineering", courseCode: "CSE-412", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - B", day: "Thursday", startTime: "02:00 PM", endTime: "03:30 PM", room: "Room 305", students: 38, status: "Active" },
-  { id: "sch-5", classroomId: "cls-4", courseTitle: "Artificial Intelligence", courseCode: "CSE-425", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - A", day: "Monday", startTime: "12:00 PM", endTime: "01:30 PM", room: "Lab 2", students: 35, status: "Active" },
-  { id: "sch-6", classroomId: "cls-4", courseTitle: "Artificial Intelligence", courseCode: "CSE-425", teacherId: "teacher-1", teacher: "Dr. Alan Turing", batch: "Spring 2026 - A", day: "Wednesday", startTime: "12:00 PM", endTime: "01:30 PM", room: "Lab 2", students: 35, status: "Active" },
-  { id: "sch-7", classroomId: "cls-3", courseTitle: "Introduction to Computer Science", courseCode: "CSE-101", teacherId: "teacher-4", teacher: "Prof. Ada Lovelace", batch: "Fall 2025 - A", day: "Wednesday", startTime: "09:00 AM", endTime: "11:00 AM", room: "Lab 2", students: 50, status: "Completed" },
-  { id: "sch-8", classroomId: "cls-5", courseTitle: "Data Structures", courseCode: "CSE-201", teacherId: "teacher-2", teacher: "Prof. Sarah Jenkins", batch: "Fall 2026 - C", day: "Friday", startTime: "09:00 AM", endTime: "12:00 PM", room: "Room 101", students: 45, status: "Upcoming" },
+  { id: "sch-1", classroomId: "cls-1", courseTitle: "Database Management Systems", courseCode: "CSE-305", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - A", day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM", room: "Room 402", students: 42, status: "Active" },
+  { id: "sch-2", classroomId: "cls-1", courseTitle: "Database Management Systems", courseCode: "CSE-305", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - A", day: "Wednesday", startTime: "10:00 AM", endTime: "11:30 AM", room: "Room 402", students: 42, status: "Active" },
+  { id: "sch-3", classroomId: "cls-2", courseTitle: "Software Engineering", courseCode: "CSE-412", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - B", day: "Tuesday", startTime: "02:00 PM", endTime: "03:30 PM", room: "Room 305", students: 38, status: "Active" },
+  { id: "sch-4", classroomId: "cls-2", courseTitle: "Software Engineering", courseCode: "CSE-412", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - B", day: "Thursday", startTime: "02:00 PM", endTime: "03:30 PM", room: "Room 305", students: 38, status: "Active" },
+  { id: "sch-5", classroomId: "cls-4", courseTitle: "Artificial Intelligence", courseCode: "CSE-425", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - A", day: "Monday", startTime: "12:00 PM", endTime: "01:30 PM", room: "Lab 2", students: 35, status: "Active" },
+  { id: "sch-6", classroomId: "cls-4", courseTitle: "Artificial Intelligence", courseCode: "CSE-425", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", batch: "Spring 2026 - A", day: "Wednesday", startTime: "12:00 PM", endTime: "01:30 PM", room: "Lab 2", students: 35, status: "Active" },
+  { id: "sch-7", classroomId: "cls-3", courseTitle: "Introduction to Computer Science", courseCode: "CSE-101", teacherId: "teacher-4", teacher: "Prof. Md. Fazlul Karim Patwary", batch: "Fall 2025 - A", day: "Wednesday", startTime: "09:00 AM", endTime: "11:00 AM", room: "Lab 2", students: 50, status: "Completed" },
+  { id: "sch-8", classroomId: "cls-5", courseTitle: "Data Structures", courseCode: "CSE-201", teacherId: "teacher-2", teacher: "Prof. Dr. Risala Tasin Khan", batch: "Fall 2026 - C", day: "Friday", startTime: "09:00 AM", endTime: "12:00 PM", room: "Room 101", students: 45, status: "Upcoming" },
 ];
 
 /** Returns schedules for today's day of the week, filtered for the current teacher */
@@ -289,12 +289,12 @@ export type Assignment = {
 };
 
 export const assignments: Assignment[] = [
-  { id: "asgn-1", classroomId: "cls-1", title: "ER Diagram Design", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", dueDate: "Oct 25, 2026", submissions: 38, totalStudents: 42, status: "Active" },
-  { id: "asgn-2", classroomId: "cls-1", title: "SQL Queries Practice", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", dueDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, status: "Upcoming" },
-  { id: "asgn-3", classroomId: "cls-2", title: "Agile Case Study", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Dr. Alan Turing", dueDate: "Oct 20, 2026", submissions: 38, totalStudents: 38, status: "Completed" },
-  { id: "asgn-4", classroomId: "cls-2", title: "UML Diagram - Library System", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Dr. Alan Turing", dueDate: "Nov 10, 2026", submissions: 5, totalStudents: 38, status: "Active" },
-  { id: "asgn-5", classroomId: "cls-4", title: "Search Algorithm Implementation", course: "Artificial Intelligence", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", dueDate: "Nov 15, 2026", submissions: 10, totalStudents: 35, status: "Active" },
-  { id: "asgn-6", classroomId: "cls-5", title: "Linked List Implementation", course: "Data Structures", batch: "Fall 2026 - C", teacherId: "teacher-2", teacher: "Prof. Sarah Jenkins", dueDate: "Sep 10, 2026", submissions: 0, totalStudents: 45, status: "Upcoming" },
+  { id: "asgn-1", classroomId: "cls-1", title: "ER Diagram Design", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", dueDate: "Oct 25, 2026", submissions: 38, totalStudents: 42, status: "Active" },
+  { id: "asgn-2", classroomId: "cls-1", title: "SQL Queries Practice", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", dueDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, status: "Upcoming" },
+  { id: "asgn-3", classroomId: "cls-2", title: "Agile Case Study", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", dueDate: "Oct 20, 2026", submissions: 38, totalStudents: 38, status: "Completed" },
+  { id: "asgn-4", classroomId: "cls-2", title: "UML Diagram - Library System", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", dueDate: "Nov 10, 2026", submissions: 5, totalStudents: 38, status: "Active" },
+  { id: "asgn-5", classroomId: "cls-4", title: "Search Algorithm Implementation", course: "Artificial Intelligence", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", dueDate: "Nov 15, 2026", submissions: 10, totalStudents: 35, status: "Active" },
+  { id: "asgn-6", classroomId: "cls-5", title: "Linked List Implementation", course: "Data Structures", batch: "Fall 2026 - C", teacherId: "teacher-2", teacher: "Prof. Dr. Risala Tasin Khan", dueDate: "Sep 10, 2026", submissions: 0, totalStudents: 45, status: "Upcoming" },
 ];
 
 /** Returns only assignments belonging to the current teacher's classrooms */
@@ -329,12 +329,12 @@ export type Test = {
 };
 
 export const tests: Test[] = [
-  { id: "tst-1", classroomId: "cls-1", title: "Midterm: Normalization", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", testDate: "Oct 25, 2026", submissions: 40, totalStudents: 42, totalMarks: 50, status: "Active" },
-  { id: "tst-2", classroomId: "cls-1", title: "Quiz 1: SQL Basics", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", testDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, totalMarks: 20, status: "Upcoming" },
-  { id: "tst-3", classroomId: "cls-2", title: "Final Exam: SE", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Dr. Alan Turing", testDate: "Dec 15, 2026", submissions: 0, totalStudents: 38, totalMarks: 100, status: "Upcoming" },
-  { id: "tst-4", classroomId: "cls-2", title: "Midterm: SDLC & UML", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Dr. Alan Turing", testDate: "Oct 15, 2026", submissions: 38, totalStudents: 38, totalMarks: 50, status: "Completed" },
-  { id: "tst-5", classroomId: "cls-4", title: "Lab Test 1: Search Algorithms", course: "Artificial Intelligence", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Dr. Alan Turing", testDate: "Nov 20, 2026", submissions: 0, totalStudents: 35, totalMarks: 30, status: "Upcoming" },
-  { id: "tst-6", classroomId: "cls-5", title: "Lab Test 1: Arrays & Recursion", course: "Data Structures", batch: "Fall 2026 - C", teacherId: "teacher-2", teacher: "Prof. Sarah Jenkins", testDate: "Sep 15, 2026", submissions: 0, totalStudents: 45, totalMarks: 30, status: "Upcoming" },
+  { id: "tst-1", classroomId: "cls-1", title: "Midterm: Normalization", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", testDate: "Oct 25, 2026", submissions: 40, totalStudents: 42, totalMarks: 50, status: "Active" },
+  { id: "tst-2", classroomId: "cls-1", title: "Quiz 1: SQL Basics", course: "Database Management Systems", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", testDate: "Nov 02, 2026", submissions: 0, totalStudents: 42, totalMarks: 20, status: "Upcoming" },
+  { id: "tst-3", classroomId: "cls-2", title: "Final Exam: SE", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", testDate: "Dec 15, 2026", submissions: 0, totalStudents: 38, totalMarks: 100, status: "Upcoming" },
+  { id: "tst-4", classroomId: "cls-2", title: "Midterm: SDLC & UML", course: "Software Engineering", batch: "Spring 2026 - B", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", testDate: "Oct 15, 2026", submissions: 38, totalStudents: 38, totalMarks: 50, status: "Completed" },
+  { id: "tst-5", classroomId: "cls-4", title: "Lab Test 1: Search Algorithms", course: "Artificial Intelligence", batch: "Spring 2026 - A", teacherId: "teacher-1", teacher: "Prof. Dr. Shamim Al Mamun", testDate: "Nov 20, 2026", submissions: 0, totalStudents: 35, totalMarks: 30, status: "Upcoming" },
+  { id: "tst-6", classroomId: "cls-5", title: "Lab Test 1: Arrays & Recursion", course: "Data Structures", batch: "Fall 2026 - C", teacherId: "teacher-2", teacher: "Prof. Dr. Risala Tasin Khan", testDate: "Sep 15, 2026", submissions: 0, totalStudents: 45, totalMarks: 30, status: "Upcoming" },
 ];
 
 /** Returns only tests belonging to the current teacher's classrooms */

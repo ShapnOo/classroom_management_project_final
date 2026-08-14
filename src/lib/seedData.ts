@@ -34,11 +34,11 @@ export const seedPrograms: Program[] = [
 
 // ─── Teachers ────────────────────────────────────────────────────────────────
 export const seedTeachers: Teacher[] = [
-  { id: "teacher-1", name: "Dr. Alan Turing",       email: "a.turing@edu",    departmentId: "dept-1", designation: "Associate Professor" },
-  { id: "teacher-2", name: "Prof. Sarah Jenkins",   email: "s.jenkins@edu",   departmentId: "dept-1", designation: "Assistant Professor" },
-  { id: "teacher-3", name: "Dr. Tim Berners-Lee",   email: "t.berners@edu",   departmentId: "dept-1", designation: "Professor" },
-  { id: "teacher-4", name: "Prof. Ada Lovelace",    email: "a.lovelace@edu",  departmentId: "dept-2", designation: "Associate Professor" },
-  { id: "teacher-5", name: "Dr. Richard Feynman",   email: "r.feynman@edu",   departmentId: "dept-3", designation: "Professor" },
+  { id: "teacher-1", name: "Prof. Dr. Shamim Al Mamun",       email: "sam@juniv.edu",    departmentId: "dept-1", designation: "Professor & Coordinator PGDIT" },
+  { id: "teacher-2", name: "Prof. Dr. Risala Tasin Khan",   email: "rtkhan@juniv.edu",   departmentId: "dept-1", designation: "Professor" },
+  { id: "teacher-3", name: "Prof. Dr. Mohammad Shahidul Islam",   email: "shahidul@juniv.edu",   departmentId: "dept-1", designation: "Professor" },
+  { id: "teacher-4", name: "Prof. Md. Fazlul Karim Patwary",    email: "patwary@juniv.edu",  departmentId: "dept-2", designation: "Professor" },
+  { id: "teacher-5", name: "Prof. Dr. M. Mesbahuddin Sarker",   email: "mesbah@juniv.edu",   departmentId: "dept-3", designation: "Professor" },
 ];
 
 import type { AdminUser } from "./types";
@@ -181,7 +181,7 @@ export const seedAnnouncements: Announcement[] = [
     content: "The midterm syllabus for Database Systems has been updated. We will now cover Normalization up to 3NF. BCNF will be moved to the final exam.",
     date: "2026-08-12T14:30:00Z",
     authorId: CURRENT_TEACHER_ID,
-    authorName: "Dr. Sarah Mitchell",
+    authorName: "Prof. Dr. Shamim Al Mamun",
     authorRole: "Teacher",
     audienceType: "Course",
     courseId: "course-1",

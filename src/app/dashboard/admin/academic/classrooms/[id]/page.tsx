@@ -21,35 +21,35 @@ const allClassrooms: Record<string, {
     program: "B.Sc. CS", batch: "Spring 2026 - A", room: "Room 402, Bldg C",
     schedule: "Mon, Wed • 10:00 AM - 11:30 AM", startDate: "2026-01-15", endDate: "2026-05-20",
     students: 42, classesCompleted: 18, totalClasses: 26, progress: 68,
-    teacher: "Dr. Alan Turing", color: "bg-blue-500", lightColor: "bg-blue-50", textColor: "text-blue-700", status: "ongoing"
+    teacher: "Prof. Dr. Shamim Al Mamun", color: "bg-blue-500", lightColor: "bg-blue-50", textColor: "text-blue-700", status: "ongoing"
   },
   "cls-2": {
     id: "cls-2", courseCode: "CSE-412", courseTitle: "Software Engineering",
     program: "B.Sc. CS", batch: "Spring 2026 - B", room: "Room 305, Bldg A",
     schedule: "Tue, Thu • 02:00 PM - 03:30 PM", startDate: "2026-01-16", endDate: "2026-05-22",
     students: 38, classesCompleted: 15, totalClasses: 20, progress: 74,
-    teacher: "Prof. Sarah Jenkins", color: "bg-emerald-500", lightColor: "bg-emerald-50", textColor: "text-emerald-700", status: "ongoing"
+    teacher: "Prof. Dr. Risala Tasin Khan", color: "bg-emerald-500", lightColor: "bg-emerald-50", textColor: "text-emerald-700", status: "ongoing"
   },
   "cls-3": {
     id: "cls-3", courseCode: "CSE-101", courseTitle: "Introduction to Computer Science",
     program: "B.Sc. CS", batch: "Fall 2025 - A", room: "Room 201, Bldg B",
     schedule: "Mon, Wed • 08:00 AM - 09:30 AM", startDate: "2025-08-15", endDate: "2025-12-20",
     students: 50, classesCompleted: 24, totalClasses: 24, progress: 100,
-    teacher: "Prof. Ada Lovelace", color: "bg-slate-500", lightColor: "bg-slate-50", textColor: "text-slate-700", status: "completed"
+    teacher: "Prof. Md. Fazlul Karim Patwary", color: "bg-slate-500", lightColor: "bg-slate-50", textColor: "text-slate-700", status: "completed"
   },
   "cls-4": {
     id: "cls-4", courseCode: "CSE-425", courseTitle: "Artificial Intelligence",
     program: "B.Sc. CS", batch: "Spring 2026 - A", room: "Lab 2, Bldg D",
     schedule: "Mon, Wed • 12:00 PM - 01:30 PM", startDate: "2026-01-15", endDate: "2026-05-20",
     students: 35, classesCompleted: 8, totalClasses: 24, progress: 33,
-    teacher: "Dr. Tim Berners-Lee", color: "bg-purple-500", lightColor: "bg-purple-50", textColor: "text-purple-700", status: "ongoing"
+    teacher: "Prof. Dr. Mohammad Shahidul Islam", color: "bg-purple-500", lightColor: "bg-purple-50", textColor: "text-purple-700", status: "ongoing"
   },
   "cls-5": {
     id: "cls-5", courseCode: "CSE-201", courseTitle: "Data Structures",
     program: "B.Sc. CS", batch: "Fall 2026 - C", room: "Room 101, Bldg B",
     schedule: "Fri • 09:00 AM - 12:00 PM", startDate: "2026-08-15", endDate: "2026-12-20",
     students: 45, classesCompleted: 0, totalClasses: 24, progress: 0,
-    teacher: "Prof. Sarah Jenkins", color: "bg-amber-500", lightColor: "bg-amber-50", textColor: "text-amber-700", status: "upcoming"
+    teacher: "Prof. Dr. Risala Tasin Khan", color: "bg-amber-500", lightColor: "bg-amber-50", textColor: "text-amber-700", status: "upcoming"
   },
 };
 
