@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Announcement, AnnouncementAudienceType } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
-import { Bell, Plus, Search, Calendar, Megaphone, Edit2, Trash2, Globe, Users, BookOpen, AlertCircle } from "lucide-react";
+import { Bell, Plus, Search, Calendar, Megaphone, Edit2, Trash2, Globe, Users, BookOpen, AlertCircle, Paperclip, FileText } from "lucide-react";
 
 interface AnnouncementsManagerProps {
   role: "Admin" | "Teacher";
@@ -31,6 +31,29 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [currentPdfUrl, setCurrentPdfUrl] = useState("");
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File is too large for this demo. Please upload a file smaller than 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setForm(f => ({
+        ...f,
+        attachment: {
+          name: file.name,
+          type: file.type,
+          dataUrl: event.target?.result as string,
+        }
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Filter announcements based on role & search
   const filtered = announcements.filter(a => {
@@ -62,6 +85,7 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
       courseId: a.courseId,
       status: a.status,
       priority: a.priority,
+      attachment: a.attachment,
     });
     setIsOpen(true);
   };
@@ -140,6 +164,25 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
                   )}
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-wrap">{a.content}</p>
+                {a.attachment && (
+                  <div className="mt-2">
+                    <button 
+                      onClick={() => {
+                        if (a.attachment?.type === "application/pdf") {
+                          setCurrentPdfUrl(a.attachment.dataUrl);
+                          setPdfViewerOpen(true);
+                        } else {
+                          const w = window.open();
+                          if (w) w.document.write(`<iframe src="${a.attachment?.dataUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors text-[11px] font-medium text-slate-700 w-fit"
+                    >
+                      {a.attachment.type === "application/pdf" ? <FileText className="w-3.5 h-3.5 text-red-500" /> : <Paperclip className="w-3.5 h-3.5 text-slate-400" />}
+                      <span className="truncate max-w-[200px]">{a.attachment.name}</span>
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center gap-4 text-[10px] text-slate-500 pt-1">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
@@ -213,6 +256,24 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
             </div>
           </div>
           
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-medium text-slate-700">Attachment (Optional)</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors">
+                <Paperclip className="w-3.5 h-3.5 text-slate-500" />
+                {form.attachment ? "Change File" : "Upload File"}
+                <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
+              </label>
+              {form.attachment && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-600 truncate max-w-[150px]">{form.attachment.name}</span>
+                  <button onClick={() => setForm(f => ({ ...f, attachment: undefined }))} className="text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-500">Max size 2MB (Demo limit). Supports PDF and Images.</p>
+          </div>
+          
           <div className="pt-3 border-t border-slate-100">
             <h3 className="text-[11px] font-semibold text-slate-800 mb-3">Target Audience</h3>
             
@@ -265,6 +326,18 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
               )}
             </div>
           </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={pdfViewerOpen} onClose={() => setPdfViewerOpen(false)} title="PDF Viewer" maxWidth="max-w-4xl"
+        footer={<button onClick={() => setPdfViewerOpen(false)} className="px-4 py-2 text-[11px] font-medium text-white bg-slate-900 rounded-lg">Close</button>}
+      >
+        <div className="w-full h-[70vh] bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+          <object data={currentPdfUrl} type="application/pdf" className="w-full h-full">
+            <div className="flex items-center justify-center h-full text-slate-500 text-[13px]">
+              Unable to display PDF. <a href={currentPdfUrl} download="attachment.pdf" className="text-brand-dark underline ml-1">Download instead</a>
+            </div>
+          </object>
         </div>
       </Modal>
     </div>

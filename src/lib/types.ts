@@ -209,6 +209,12 @@ export const CLASSROOM_COLORS = [
 
 export type AnnouncementAudienceType = "Global" | "Program" | "Batch" | "Course";
 
+export type AnnouncementAttachment = {
+  name: string;
+  type: string; // e.g. "application/pdf", "image/png"
+  dataUrl: string; // Base64 string or blob URL
+};
+
 export type Announcement = {
   id: string;
   title: string;
@@ -223,4 +229,5 @@ export type Announcement = {
   courseId?: string;
   status: "Draft" | "Published";
   priority: "Normal" | "High";
+  attachment?: AnnouncementAttachment;
 };
