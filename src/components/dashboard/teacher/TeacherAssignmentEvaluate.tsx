@@ -14,8 +14,9 @@ import { useState } from "react";
 import Link from "next/link";
 
 interface TeacherAssignmentEvaluateProps {
-  courseId: string;
-  assignmentId: string;
+  courseId?: string;
+  assignmentId?: string;
+  role?: "admin" | "teacher";
 }
 
 // Mock Data
@@ -28,7 +29,7 @@ const mockSubmissions = [
   { id: "24206", name: "Tanvir Ahmed", status: "pending", file: null, submittedAt: null, marks: "" },
 ];
 
-export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: TeacherAssignmentEvaluateProps) {
+export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId = "", role = "teacher" }: TeacherAssignmentEvaluateProps) {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Local state for marks
@@ -73,7 +74,7 @@ export default function TeacherAssignmentEvaluate({ courseId, assignmentId }: Te
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Link 
-            href={`/dashboard/teacher/assignments/${courseId}`}
+            href={`/dashboard/${role === "admin" ? "admin/academic" : "teacher"}/assignments/${courseId}`}
             className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm shrink-0"
             title="Back to Assignments"
           >

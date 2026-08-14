@@ -174,6 +174,11 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
                     <p className="text-[10px] text-amber-600 font-medium mt-1.5 text-right">{students.length - asn.submissions} pending</p>
                   )}
                 </div>
+                <div className="mt-4 flex gap-2">
+                  <Link href={`/dashboard/admin/academic/assignments/${courseId}/evaluate/${asn.id}`} className="flex-1 py-1.5 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center">
+                    Evaluate
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

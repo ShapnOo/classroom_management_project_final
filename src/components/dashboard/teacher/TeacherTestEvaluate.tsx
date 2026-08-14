@@ -14,8 +14,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 interface TeacherTestEvaluateProps {
-  testId?: string;
   courseId?: string;
+  testId?: string;
+  role?: "admin" | "teacher";
 }
 
 // Mock Data
@@ -36,7 +37,7 @@ const mockStudents = [
   { id: "STD-005", name: "Sarah Khan", profile: "SK" },
 ];
 
-export default function TeacherTestEvaluate({ testId }: TeacherTestEvaluateProps) {
+export default function TeacherTestEvaluate({ courseId = "", testId = "", role = "teacher" }: TeacherTestEvaluateProps) {
   const [marks, setMarks] = useState<Record<string, string>>({});
 
   const handleSave = () => {
@@ -52,9 +53,9 @@ export default function TeacherTestEvaluate({ testId }: TeacherTestEvaluateProps
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Link 
-            href="/dashboard/teacher/tests"
+            href={`/dashboard/${role === "admin" ? "admin/academic" : "teacher"}/tests/${courseId}`}
             className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-900 transition-colors shadow-sm shrink-0"
-            title="Back to Tests"
+            title="Back to Class Tests"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>

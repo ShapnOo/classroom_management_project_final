@@ -176,6 +176,11 @@ export default function AdminTests({ courseId }: AdminTestsProps) {
                     </div>
                   </div>
                 )}
+                <div className="mt-4 flex gap-2">
+                  <Link href={`/dashboard/admin/academic/tests/${courseId}/evaluate/${test.id}`} className="flex-1 py-1.5 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center">
+                    Evaluate
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
