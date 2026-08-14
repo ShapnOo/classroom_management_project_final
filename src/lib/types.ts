@@ -22,6 +22,11 @@ export type Program = {
   duration: string;
 };
 
+export type BatchCourse = {
+  courseId: string;
+  semester: number;
+};
+
 export type Batch = {
   id: string;
   code: string;
@@ -30,6 +35,8 @@ export type Batch = {
   sessionId: string;
   section: string;
   status: "Active" | "Upcoming" | "Completed";
+  semesterCount?: number;
+  batchCourses?: BatchCourse[];
 };
 
 export type Student = {
@@ -55,9 +62,7 @@ export type Course = {
   id: string;
   code: string;
   title: string;
-  programId: string;
   credits: number;
-  semester: number;
 };
 
 export type SyllabusTopic = {

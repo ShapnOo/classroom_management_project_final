@@ -11,7 +11,7 @@ import { useStore } from "@/lib/store";
 import type { Course } from "@/lib/types";
 
 type Form = Omit<Course, "id">;
-const EMPTY: Form = { code: "", title: "", programId: "", credits: 3, semester: 1 };
+const EMPTY: Form = { code: "", title: "", credits: 3 };
 
 // Classroom status mapping for display
 const CLASSROOM_STATUS_MAP: Record<string, "Active" | "Upcoming" | "Completed"> = {
@@ -19,7 +19,7 @@ const CLASSROOM_STATUS_MAP: Record<string, "Active" | "Upcoming" | "Completed"> 
 };
 
 export default function CoursesPage() {
-  const { courses, programs, classrooms, teachers, addCourse, updateCourse, deleteCourse } = useStore();
+  const { courses, classrooms, teachers, addCourse, updateCourse, deleteCourse } = useStore();
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
@@ -31,9 +31,9 @@ export default function CoursesPage() {
   );
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setIsOpen(true); };
-  const openEdit = (c: Course) => { setEditing(c); setForm({ code: c.code, title: c.title, programId: c.programId, credits: c.credits, semester: c.semester }); setIsOpen(true); };
+  const openEdit = (c: Course) => { setEditing(c); setForm({ code: c.code, title: c.title, credits: c.credits }); setIsOpen(true); };
   const handleSave = () => {
-    if (!form.code || !form.title || !form.programId) return;
+    if (!form.code || !form.title) return;
     if (editing) updateCourse(editing.id, form);
     else addCourse(form);
     setIsOpen(false);
@@ -43,7 +43,7 @@ export default function CoursesPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <PageHeader title="Courses" description="Create courses and assign them to programs. Courses are then assigned to batches + teachers via Classrooms." />
+      <PageHeader title="Courses" description="Create universal master courses. Courses are assigned to batches through the curriculum configuration in Batches." />
 
       <SearchInput placeholder="Search courses by name or code..." value={search} onChange={e => setSearch(e.target.value)}
         actionButton={
@@ -53,10 +53,9 @@ export default function CoursesPage() {
         }
       />
 
-      <DataTable columns={["Course Code", "Course Name", "Program", "Credits", "Active Classrooms", "Actions"]}
-        isEmpty={filtered.length === 0} emptyStateIcon={BookOpen} emptyStateTitle="No courses found" emptyStateDescription="Add courses to assign them to classrooms.">
+      <DataTable columns={["Course Code", "Course Name", "Credits", "Active Classrooms", "Actions"]}
+        isEmpty={filtered.length === 0} emptyStateIcon={BookOpen} emptyStateTitle="No courses found" emptyStateDescription="Add courses to assign them to batches.">
         {filtered.map(course => {
-          const program = programs.find(p => p.id === course.programId);
           const activeClassrooms = getClassroomsForCourse(course.id);
           const teacher = activeClassrooms.length > 0
             ? teachers.find(t => t.id === activeClassrooms[0].teacherId)
@@ -75,7 +74,6 @@ export default function CoursesPage() {
                   </div>
                 </div>
               </td>
-              <td className="px-5 py-4 text-[11px] font-medium text-slate-600">{program?.code ?? "—"}</td>
               <td className="px-5 py-4 text-[11px] font-medium text-slate-600">{course.credits} Cr.</td>
               <td className="px-5 py-4">
                 <div className="flex gap-1.5 flex-wrap">
@@ -119,20 +117,7 @@ export default function CoursesPage() {
             <label className="text-[11px] font-medium text-slate-700">Course Title <span className="text-red-500">*</span></label>
             <input type="text" placeholder="e.g. Database Management Systems" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-700">Program <span className="text-red-500">*</span></label>
-              <select value={form.programId} onChange={e => setForm(f => ({ ...f, programId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="">Select a program</option>
-                {programs.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-700">Semester</label>
-              <input type="number" min={1} max={12} value={form.semester} onChange={e => setForm(f => ({ ...f, semester: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">After creating a course, go to <strong>Classrooms</strong> to assign it to a batch and teacher.</p>
+          <p className="text-[10px] text-slate-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">After creating a universal course, go to <strong>Batches</strong> to configure curriculum.</p>
         </div>
       </Modal>
     </div>
