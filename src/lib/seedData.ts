@@ -85,11 +85,11 @@ export const seedStudents: Student[] = [
 
 // ─── Courses ─────────────────────────────────────────────────────────────────
 export const seedCourses: Course[] = [
-  { id: "course-1", code: "CSE-305", title: "Database Management Systems", credits: 3 },
-  { id: "course-2", code: "CSE-412", title: "Software Engineering",        credits: 3 },
-  { id: "course-3", code: "CSE-101", title: "Intro to Computer Science",   credits: 3 },
-  { id: "course-4", code: "CSE-425", title: "Artificial Intelligence",     credits: 3 },
-  { id: "course-5", code: "CSE-201", title: "Data Structures",             credits: 3 },
+  { id: "course-1", code: "CSE-305", title: "Database Management Systems", programId: "prog-1", credits: 3 },
+  { id: "course-2", code: "CSE-412", title: "Software Engineering",        programId: "prog-1", credits: 3 },
+  { id: "course-3", code: "CSE-101", title: "Intro to Computer Science",   programId: "prog-1", credits: 3 },
+  { id: "course-4", code: "CSE-425", title: "Artificial Intelligence",     programId: "prog-1", credits: 3 },
+  { id: "course-5", code: "CSE-201", title: "Data Structures",             programId: "prog-1", credits: 3 },
 ];
 
 // ─── Classrooms ──────────────────────────────────────────────────────────────

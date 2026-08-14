@@ -21,7 +21,7 @@ const EMPTY: Form = {
 
 export default function AdminClassrooms() {
   const {
-    classrooms, courses, batches, sessions, teachers, students,
+    classrooms, courses, batches, sessions, teachers, students, programs,
     addClassroom, updateClassroom, deleteClassroom,
     addSchedule, updateSchedule, deleteSchedule,
     schedules: allSchedules
@@ -35,6 +35,7 @@ export default function AdminClassrooms() {
   const [editing, setEditing] = useState<Classroom | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [modalProgramId, setModalProgramId] = useState<string>("");
 
   const [schedules, setSchedules] = useState<{ id?: string; day: string; startTime: string; endTime: string }[]>([]);
 
@@ -55,12 +56,15 @@ export default function AdminClassrooms() {
   const openAdd = () => {
     setEditing(null);
     setForm({ ...EMPTY, colorIndex: classrooms.length % CLASSROOM_COLORS.length });
+    setModalProgramId("");
     setSchedules([{ day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM" }]);
     setIsOpen(true);
   };
   const openEdit = (cls: Classroom) => {
     setEditing(cls);
     setForm({ courseId: cls.courseId, batchId: cls.batchId, teacherId: cls.teacherId, room: cls.room, startDate: cls.startDate, endDate: cls.endDate, status: cls.status, classesCompleted: cls.classesCompleted, totalClasses: cls.totalClasses, colorIndex: cls.colorIndex });
+    const batch = batches.find(b => b.id === cls.batchId);
+    setModalProgramId(batch?.programId || "");
     const clsSchedules = allSchedules.filter(s => s.classroomId === cls.id);
     setSchedules(clsSchedules.map(s => ({ id: s.id, day: s.day, startTime: s.startTime, endTime: s.endTime })));
     setIsOpen(true);
@@ -298,24 +302,51 @@ export default function AdminClassrooms() {
             <p className="text-[10px] text-blue-700 font-medium">A Classroom links a Course to a Batch, assigns a Teacher, and sets a room and dates. Once created, the teacher will see it in their portal.</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-slate-700">Course <span className="text-red-500">*</span></label>
-            <select value={form.courseId} onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-              <option value="">Select a course</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-700">Program <span className="text-red-500">*</span></label>
+              <select value={modalProgramId} onChange={e => {
+                setModalProgramId(e.target.value);
+                setForm(f => ({ ...f, batchId: "", courseId: "" })); // Reset downstream
+              }} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
+                <option value="">Select a program</option>
+                {programs.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
+              </select>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
+              <select 
+                value={form.batchId} 
+                onChange={e => setForm(f => ({ ...f, batchId: e.target.value, courseId: "" }))} 
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                disabled={!modalProgramId}
+              >
+                <option value="">Select a batch</option>
+                {batches.filter(b => b.programId === modalProgramId).map(b => {
+                  const session = sessions.find(s => s.id === b.sessionId);
+                  return <option key={b.id} value={b.id}>{b.name} ({session?.name ?? ""})</option>;
+                })}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
-              <select value={form.batchId} onChange={e => setForm(f => ({ ...f, batchId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="">Select a batch</option>
-                {batches.map(b => {
-                  const session = sessions.find(s => s.id === b.sessionId);
-                  const count = students.filter(s => s.batchId === b.id).length;
-                  return <option key={b.id} value={b.id}>{b.name} ({session?.name ?? ""}) — {count} students</option>;
-                })}
+              <label className="text-[11px] font-medium text-slate-700">Course <span className="text-red-500">*</span></label>
+              <select 
+                value={form.courseId} 
+                onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))} 
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                disabled={!form.batchId}
+              >
+                <option value="">Select a course</option>
+                {(() => {
+                  const selectedBatch = batches.find(b => b.id === form.batchId);
+                  const validCourseIds = selectedBatch?.batchCourses?.map(bc => bc.courseId) || [];
+                  const batchCourses = courses.filter(c => validCourseIds.includes(c.id));
+                  return batchCourses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>);
+                })()}
               </select>
             </div>
             <div className="space-y-1.5">

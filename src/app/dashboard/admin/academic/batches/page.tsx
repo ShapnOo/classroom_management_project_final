@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Edit2, Trash2, Users, BookOpen } from "lucide-react";
+import { Plus, Edit2, Trash2, Users, BookOpen, Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -20,6 +20,7 @@ export default function BatchesPage() {
   const [editing, setEditing] = useState<Batch | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
   const [activeTab, setActiveTab] = useState<"details" | "curriculum">("details");
+  const [courseSearch, setCourseSearch] = useState<Record<number, string>>({});
 
   const filtered = batches.filter(b =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,7 +89,7 @@ export default function BatchesPage() {
         })}
       </DataTable>
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Batch" : "Add New Batch"}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Batch" : "Add New Batch"} maxWidth="max-w-2xl"
         footer={<>
           <button onClick={() => setIsOpen(false)} className="px-3 py-2 text-[11px] font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
           <button onClick={handleSave} className="px-3 py-2 text-[11px] font-medium text-white bg-brand-dark hover:bg-brand-dark/90 rounded-lg shadow-sm transition-all">Save Batch</button>
@@ -157,40 +158,68 @@ export default function BatchesPage() {
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {Array.from({ length: form.semesterCount || 8 }).map((_, i) => {
                 const semesterIndex = i + 1;
-                const programCourses = courses; // Universal courses
+                const semesterSearch = courseSearch[semesterIndex] || "";
+                const programCourses = courses.filter(c => 
+                  c.programId === form.programId &&
+                  (c.title.toLowerCase().includes(semesterSearch.toLowerCase()) || c.code.toLowerCase().includes(semesterSearch.toLowerCase()))
+                );
                 const selectedForSemester = form.batchCourses?.filter(bc => bc.semester === semesterIndex).map(bc => bc.courseId) || [];
                 
                 return (
                   <div key={semesterIndex} className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
                     <h4 className="text-[11px] font-medium text-brand-dark mb-2 flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Semester {semesterIndex}</h4>
-                    <div className="space-y-1.5">
-                      {programCourses.length > 0 ? programCourses.map(course => {
-                          const isSelected = selectedForSemester.includes(course.id);
-                          return (
-                            <label key={course.id} className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded-md cursor-pointer border border-transparent hover:border-slate-200 transition-colors">
-                              <input type="checkbox" className="mt-0.5 rounded text-brand-dark focus:ring-brand-dark" checked={isSelected}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setForm(f => {
-                                    const current = f.batchCourses || [];
-                                    if (checked) {
-                                      return { ...f, batchCourses: [...current, { courseId: course.id, semester: semesterIndex }] };
-                                    } else {
-                                      return { ...f, batchCourses: current.filter(bc => !(bc.courseId === course.id && bc.semester === semesterIndex)) };
-                                    }
-                                  });
-                                }}
-                              />
-                              <div>
-                                <p className="text-[11px] font-medium text-slate-900">{course.code} - {course.title}</p>
-                                <p className="text-[9px] text-slate-500">{course.credits} Credits</p>
-                              </div>
-                            </label>
-                          );
-                        }) : (
-                          <p className="text-[10px] text-slate-500 italic">No courses found in the system.</p>
-                        )}
+                    {form.programId ? (
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                          <input 
+                            type="text" 
+                            placeholder="Search courses..." 
+                            value={semesterSearch} 
+                            onChange={e => setCourseSearch(prev => ({ ...prev, [semesterIndex]: e.target.value }))} 
+                            className="w-full pl-7 pr-3 py-1.5 rounded border border-slate-200 text-[10px] placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" 
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          {programCourses.length > 0 ? programCourses.map(course => {
+                            const isSelected = selectedForSemester.includes(course.id);
+                            
+                            // Check if this course is already selected in ANOTHER semester
+                            const selectedInOtherSemester = form.batchCourses?.find(bc => bc.courseId === course.id && bc.semester !== semesterIndex);
+                            
+                            return (
+                              <label key={course.id} className={`flex items-start gap-2 p-2 rounded-md border border-transparent transition-colors ${selectedInOtherSemester ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:bg-slate-50 cursor-pointer hover:border-slate-200'}`}>
+                                <input type="checkbox" className="mt-0.5 rounded text-brand-dark focus:ring-brand-dark disabled:opacity-50" checked={isSelected}
+                                  disabled={!!selectedInOtherSemester}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setForm(f => {
+                                      const current = f.batchCourses || [];
+                                      if (checked) {
+                                        return { ...f, batchCourses: [...current, { courseId: course.id, semester: semesterIndex }] };
+                                      } else {
+                                        return { ...f, batchCourses: current.filter(bc => !(bc.courseId === course.id && bc.semester === semesterIndex)) };
+                                      }
+                                    });
+                                  }}
+                                />
+                                <div>
+                                  <p className="text-[11px] font-medium text-slate-900">{course.code} - {course.title}</p>
+                                  <p className="text-[9px] text-slate-500">
+                                    {course.credits} Credits 
+                                    {selectedInOtherSemester && <span className="ml-1 text-amber-600 font-medium">(Selected in Semester {selectedInOtherSemester.semester})</span>}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          }) : (
+                            <p className="text-[10px] text-slate-500 italic">No courses found.</p>
+                          )}
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-[10px] text-amber-600 bg-amber-50 p-2 rounded-md">Please select a program in the Details tab first.</p>
+                    )}
                   </div>
                 );
               })}
