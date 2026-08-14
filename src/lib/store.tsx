@@ -14,6 +14,7 @@ import {
   seedSessions, seedDepartments, seedPrograms, seedBatches, seedStudents,
   seedTeachers, seedCourses, seedSyllabusTopics, seedClassrooms, seedSchedules,
   seedAssignments, seedTests, seedAnnouncements, seedAdmins, CURRENT_TEACHER_ID,
+  seedClassSessions, seedAttendanceRecords, seedGradeRecords
 } from "./seedData";
 
 // ─── State Shape ─────────────────────────────────────────────────────────────
@@ -131,9 +132,9 @@ const initialState: AppState = {
   schedules: seedSchedules,
   assignments: seedAssignments,
   tests: seedTests,
-  classSessions: [],
-  attendanceRecords: [],
-  gradeRecords: [],
+  classSessions: seedClassSessions,
+  attendanceRecords: seedAttendanceRecords,
+  gradeRecords: seedGradeRecords,
   announcements: seedAnnouncements,
   admins: seedAdmins,
 };

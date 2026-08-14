@@ -189,3 +189,76 @@ export const seedAnnouncements: Announcement[] = [
     priority: "High"
   }
 ];
+
+// ─── Class Sessions & Attendance ─────────────────────────────────────────────
+import type { ClassSession, AttendanceRecord } from "./types";
+
+export const seedClassSessions: ClassSession[] = [];
+export const seedAttendanceRecords: AttendanceRecord[] = [];
+
+let sessionCounter = 1;
+let attendanceCounter = 1;
+
+seedClassrooms.forEach(cls => {
+  if (cls.status !== "upcoming") {
+    const batchStudents = seedStudents.filter(s => s.batchId === cls.batchId);
+    
+    for (let i = 1; i <= 10; i++) {
+      const sessionId = `cses-${sessionCounter++}`;
+      seedClassSessions.push({
+        id: sessionId,
+        classroomId: cls.id,
+        date: `2026-0${Math.floor((i+1)/2)}-${String(10+i).padStart(2, "0")}T10:00:00Z`,
+        topicCovered: `Topic ${i}`,
+        duration: "1h 30m",
+        conductedAt: `2026-0${Math.floor((i+1)/2)}-${String(10+i).padStart(2, "0")}T11:30:00Z`,
+      });
+
+      batchStudents.forEach(student => {
+        // Deterministic pseudo-random based on ID and i so it stays the same on reload
+        const hash = (student.id.length * 13 + i * 7) % 100;
+        const status = hash < 75 ? "present" : hash < 90 ? "late" : "absent";
+        
+        seedAttendanceRecords.push({
+          id: `att-${attendanceCounter++}`,
+          sessionId,
+          classroomId: cls.id,
+          studentId: student.id,
+          status,
+        });
+      });
+    }
+  }
+});
+
+// ─── Grade Records (Test & Assignment Results) ──────────────────────────────
+import type { GradeRecord } from "./types";
+
+export const seedGradeRecords: GradeRecord[] = [];
+let gradeCounter = 1;
+
+seedTests.forEach(test => {
+  if (test.status !== "Upcoming") {
+    const cls = seedClassrooms.find(c => c.id === test.classroomId);
+    if (cls) {
+      const batchStudents = seedStudents.filter(s => s.batchId === cls.batchId);
+      batchStudents.forEach(student => {
+        // Deterministic random score
+        const hash = (student.id.length * 11 + test.id.length * 5) % 100;
+        // Most scores between 60% and 100% of totalMarks
+        const scorePercent = 60 + (hash % 41); // 60 to 100
+        const obtainedMarks = Math.round((scorePercent / 100) * test.totalMarks);
+        
+        seedGradeRecords.push({
+          id: `grd-tst-${gradeCounter++}`,
+          classroomId: cls.id,
+          studentId: student.id,
+          testId: test.id,
+          obtainedMarks,
+          totalMarks: test.totalMarks,
+          remarks: scorePercent >= 90 ? "Excellent" : scorePercent >= 80 ? "Good" : scorePercent >= 70 ? "Average" : "Needs Improvement"
+        });
+      });
+    }
+  }
+});

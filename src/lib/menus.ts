@@ -72,7 +72,7 @@ export const adminMenu: MenuItem[] = [
       { title: "Attendance Reports", href: "/dashboard/admin/reports/attendance" },
       { title: "Course Progress", href: "#" },
       { title: "Assignment Reports", href: "#" },
-      { title: "Test Results", href: "#" },
+      { title: "Test Results", href: "/dashboard/admin/reports/tests" },
       { title: "Student Performance", href: "#" },
     ]
   },
