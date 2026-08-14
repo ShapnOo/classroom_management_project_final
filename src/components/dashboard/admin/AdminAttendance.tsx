@@ -29,43 +29,75 @@ export default function AdminAttendance({ courseId }: AdminAttendanceProps) {
 
   const [activeTab, setActiveTab] = useState<"students" | "sessions">("students");
   const [search, setSearch] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   // If a classroomId is provided, show that classroom's attendance
   const view = courseId ? allClassrooms.find(v => v.classroom.id === courseId) : null;
 
-  // ── CLASSROOM PICKER ──────────────────────────────────────────────────────
+  // ── BATCH / CLASSROOM PICKER ──────────────────────────────────────────────────────
   if (!courseId || !view) {
-    return (
-      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
-        <div className="pb-4 border-b border-slate-200">
-          <h2 className="text-[13px] font-medium text-slate-900">Attendance Records</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to view detailed attendance records.</p>
+    if (!selectedBatchId) {
+      const uniqueBatches = Array.from(new Map(allClassrooms.map(c => [c.batch.id, c.batch])).values());
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200">
+            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view its attendance records.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uniqueBatches.map(b => {
+              const batchClasses = allClassrooms.filter(c => c.batch.id === b.id);
+              return (
+                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allClassrooms.map(({ classroom: cls, course, batch, students, colors, teacher }) => {
-            const sessions = classSessions.filter(s => s.classroomId === cls.id);
-            const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && r.status === "present").length;
-            const totalMarked  = attendanceRecords.filter(r => r.classroomId === cls.id).length;
-            const classAvg = pct(totalPresent, totalMarked);
-            const sc = statusColor(classAvg);
-            return (
-              <Link key={cls.id} href={`/dashboard/admin/academic/attendance/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • Teacher: {teacher.name}</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-[10px] text-slate-500">{sessions.length} sessions conducted</div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
-                    {classAvg > 0 ? `${classAvg}% avg` : "No data"}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+      );
+    } else {
+      const batchClasses = allClassrooms.filter(c => c.batch.id === selectedBatchId);
+      const batchInfo = batchClasses[0]?.batch;
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200 flex items-center gap-3">
+            <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view its attendance records.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {batchClasses.map(({ classroom: cls, course, batch, students, colors, teacher }) => {
+              const sessions = classSessions.filter(s => s.classroomId === cls.id);
+              const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && r.status === "present").length;
+              const totalMarked  = attendanceRecords.filter(r => r.classroomId === cls.id).length;
+              const classAvg = pct(totalPresent, totalMarked);
+              const sc = statusColor(classAvg);
+              return (
+                <Link key={cls.id} href={`/dashboard/admin/academic/attendance/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
+                  <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
+                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
+                  <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batch.name} • Teacher: {teacher.name}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-[10px] text-slate-500">{sessions.length} sessions conducted</div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
+                      {classAvg > 0 ? `${classAvg}% avg` : "No data"}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // ── CLASSROOM DETAIL ──────────────────────────────────────────────────────

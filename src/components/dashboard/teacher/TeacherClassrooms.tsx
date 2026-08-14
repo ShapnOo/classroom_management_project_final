@@ -3,7 +3,7 @@
 import {
   Users, Clock, Play, FolderOpen, ClipboardCheck,
   Search, MoreVertical, CalendarDays, BookOpen, LayoutGrid,
-  List as ListIcon, Info, MapPin
+  List as ListIcon, Info, MapPin, ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -16,8 +16,10 @@ export default function TeacherClassrooms() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   const filtered = myClassrooms.filter(v => {
+    if (selectedBatchId && v.batch.id !== selectedBatchId) return false;
     const matchSearch =
       v.course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,17 +28,51 @@ export default function TeacherClassrooms() {
     return matchSearch && matchStatus;
   });
 
+  if (!selectedBatchId) {
+    const uniqueBatches = Array.from(new Map(myClassrooms.map(c => [c.batch.id, c.batch])).values());
+    return (
+      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
+          <div>
+            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Your assigned classrooms — created and configured by the administration.</p>
+            <p className="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1.5 flex items-center gap-1.5 w-fit">
+              <Info className="w-3 h-3 shrink-0" />
+              Classrooms are assigned to you by the Admin. Contact admin to add or modify classrooms.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {uniqueBatches.map(b => {
+            const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
+            return (
+              <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const batchInfo = myClassrooms.find(c => c.batch.id === selectedBatchId)?.batch;
+
   return (
     <div className="w-full mx-auto space-y-4 pb-8 relative">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
-        <div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Your assigned classrooms — created and configured by the administration.</p>
-          <p className="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1.5 flex items-center gap-1.5 w-fit">
-            <Info className="w-3 h-3 shrink-0" />
-            Classrooms are assigned to you by the Admin. Contact admin to add or modify classrooms.
-          </p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to view details or start a session.</p>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-48">

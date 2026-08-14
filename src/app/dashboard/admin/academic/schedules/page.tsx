@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Edit2, Trash2, Clock } from "lucide-react";
+import { Plus, Edit2, Trash2, Clock, ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Modal } from "@/components/ui/Modal";
@@ -20,11 +20,16 @@ export default function SchedulesPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<ClassSchedule | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   const filtered = schedules.filter(s => {
     const view = allViews.find(v => v.classroom.id === s.classroomId);
+    if (selectedBatchId && view?.batch.id !== selectedBatchId) return false;
     return !search || view?.course.title.toLowerCase().includes(search.toLowerCase()) || view?.course.code.toLowerCase().includes(search.toLowerCase()) || s.day.toLowerCase().includes(search.toLowerCase());
   });
+
+  const uniqueBatches = Array.from(new Map(allViews.map(c => [c.batch.id, c.batch])).values());
+  const batchInfo = allViews.find(c => c.batch.id === selectedBatchId)?.batch;
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setIsOpen(true); };
   const openEdit = (s: ClassSchedule) => { setEditing(s); setForm({ classroomId: s.classroomId, day: s.day, startTime: s.startTime, endTime: s.endTime, room: s.room }); setIsOpen(true); };
@@ -39,15 +44,41 @@ export default function SchedulesPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      <PageHeader title="Class Schedules" description="Set recurring class days and times per classroom. Teachers see these in their daily schedule and dashboard." />
+      {!selectedBatchId ? (
+        <>
+          <PageHeader title="Select Batch" description="Select a batch to view or manage its class schedules." />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uniqueBatches.map(b => {
+              const batchSchedules = schedules.filter(s => {
+                const view = allViews.find(v => v.classroom.id === s.classroomId);
+                return view?.batch.id === b.id;
+              });
+              return (
+                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batchSchedules.length} schedules</p>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <PageHeader title={`Schedules for ${batchInfo?.name}`} description="Set recurring class days and times per classroom." />
+          </div>
 
-      <SearchInput placeholder="Search by course or day..." value={search} onChange={e => setSearch(e.target.value)}
-        actionButton={
-          <button onClick={openAdd} className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm whitespace-nowrap">
-            <Plus className="w-3.5 h-3.5" /> Add Schedule
-          </button>
-        }
-      />
+          <SearchInput placeholder="Search by course or day..." value={search} onChange={e => setSearch(e.target.value)}
+            actionButton={
+              <button onClick={openAdd} className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm whitespace-nowrap">
+                <Plus className="w-3.5 h-3.5" /> Add Schedule
+              </button>
+            }
+          />
 
       <DataTable columns={["Classroom / Course", "Teacher", "Batch", "Day", "Time", "Room", "Actions"]}
         isEmpty={filtered.length === 0} emptyStateIcon={Clock} emptyStateTitle="No schedules found" emptyStateDescription="Create classrooms first, then add schedules.">
@@ -81,6 +112,8 @@ export default function SchedulesPage() {
           );
         })}
       </DataTable>
+        </>
+      )}
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Schedule" : "Add Class Schedule"}
         footer={<>
