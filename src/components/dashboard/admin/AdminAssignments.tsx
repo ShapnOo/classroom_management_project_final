@@ -9,58 +9,82 @@ import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Assignment } from "@/lib/types";
-import { Modal } from "@/components/ui/Modal";
 
 interface AdminAssignmentsProps {
   courseId?: string; // classroomId
 }
 
-type Form = Omit<Assignment, "id" | "submissions">;
-const EMPTY: Form = {
-  classroomId: "", title: "", description: "",
-  dueDate: "", totalMarks: 10, status: "Active"
-};
+
 
 export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
-  const { getAllClassroomViews, assignments, addAssignment, updateAssignment, deleteAssignment } = useStore();
+  const { getAllClassroomViews, assignments } = useStore();
   const allClassrooms = getAllClassroomViews();
 
   const [search, setSearch] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const [editing, setEditing] = useState<Assignment | null>(null);
-  const [form, setForm] = useState<Form>({ ...EMPTY, classroomId: courseId ?? "" });
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  // ── CLASSROOM PICKER ──────────────────────────────────────────────────────
+  // ── BATCH / CLASSROOM PICKER ──────────────────────────────────────────────────────
   if (!courseId) {
-    return (
-      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
-        <div className="pb-4 border-b border-slate-200">
-          <h2 className="text-[13px] font-medium text-slate-900">Assignments</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to manage its assignments.</p>
+    if (!selectedBatchId) {
+      const uniqueBatches = Array.from(new Map(allClassrooms.map(c => [c.batch.id, c.batch])).values());
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200">
+            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to manage its assignments.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uniqueBatches.map(b => {
+              const batchClasses = allClassrooms.filter(c => c.batch.id === b.id);
+              return (
+                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allClassrooms.map(({ classroom: cls, course, batch, session, assignments: clsAssn, colors }) => {
-            const active = clsAssn.filter(a => a.status === "Active").length;
-            const pending = clsAssn.reduce((s, a) => s + (a.status !== "Completed" ? a.submissions : 0), 0);
-            return (
-              <Link key={cls.id} href={`/dashboard/admin/academic/assignments/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                  <span className="text-[10px] text-slate-400">{session.name}</span>
-                </div>
-                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {clsAssn.length} total</p>
-                <div className="mt-4 flex gap-3 text-[11px]">
-                  <span className="text-amber-600 font-medium flex items-center gap-1"><Clock className="w-3 h-3" />{active} Active</span>
-                  {pending > 0 && <span className="text-red-600 font-medium">{pending} to Grade</span>}
-                </div>
-              </Link>
-            );
-          })}
+      );
+    } else {
+      const batchClasses = allClassrooms.filter(c => c.batch.id === selectedBatchId);
+      const batchInfo = batchClasses[0]?.batch;
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200 flex items-center gap-3">
+            <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to manage its assignments.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {batchClasses.map(({ classroom: cls, course, batch, session, assignments: clsAssn, colors }) => {
+              const active = clsAssn.filter(a => a.status === "Active").length;
+              const pending = clsAssn.reduce((s, a) => s + (a.status !== "Completed" ? a.submissions : 0), 0);
+              return (
+                <Link key={cls.id} href={`/dashboard/admin/academic/assignments/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
+                  <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
+                    <span className="text-[10px] text-slate-400">{session.name}</span>
+                  </div>
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {clsAssn.length} total</p>
+                  <div className="mt-4 flex gap-3 text-[11px]">
+                    <span className="text-amber-600 font-medium flex items-center gap-1"><Clock className="w-3 h-3" />{active} Active</span>
+                    {pending > 0 && <span className="text-red-600 font-medium">{pending} to Grade</span>}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // ── CLASSROOM DETAIL ──────────────────────────────────────────────────────
@@ -71,22 +95,7 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
   const clsAssignments = assignments.filter(a => a.classroomId === courseId);
   const filtered = clsAssignments.filter(a => a.title.toLowerCase().includes(search.toLowerCase()));
 
-  const openAdd = () => {
-    setEditing(null);
-    setForm({ ...EMPTY, classroomId: courseId });
-    setIsOpen(true);
-  };
-  const openEdit = (a: Assignment) => {
-    setEditing(a);
-    setForm({ classroomId: a.classroomId, title: a.title, description: a.description ?? "", dueDate: a.dueDate, totalMarks: a.totalMarks, status: a.status });
-    setIsOpen(true);
-  };
-  const handleSave = () => {
-    if (!form.title || !form.dueDate) return;
-    if (editing) updateAssignment(editing.id, form);
-    else addAssignment({ ...form, submissions: 0 });
-    setIsOpen(false);
-  };
+
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-12">
@@ -104,10 +113,7 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
             <h1 className="text-[13px] font-semibold text-slate-900 mt-0.5">{course.title}</h1>
           </div>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-1.5 bg-brand-dark text-white px-3 py-2 rounded-lg hover:bg-slate-800 transition-all font-medium text-[11px] shadow-sm whitespace-nowrap">
-          <Plus className="w-3.5 h-3.5" /> Create Assignment
-        </button>
-      </div>
+        </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -134,8 +140,7 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
         <div className="py-12 text-center bg-slate-50 rounded-xl border border-slate-200 border-dashed">
           <ListTodo className="w-8 h-8 mx-auto text-slate-300 mb-2" />
           <p className="text-[11px] font-medium text-slate-700">No assignments yet</p>
-          <p className="text-[10px] text-slate-500 mt-0.5 mb-3">Create the first assignment for this classroom</p>
-          <button onClick={openAdd} className="text-[11px] font-medium bg-brand-dark text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors shadow-sm">+ Create Assignment</button>
+          <p className="text-[10px] text-slate-500 mt-0.5 mb-3">No assignments for this classroom</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -150,10 +155,6 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
                   }`}>
                     {asn.status}
                   </span>
-                  <div className="flex gap-0.5">
-                    <button onClick={() => openEdit(asn)} className="p-1.5 text-slate-300 hover:text-slate-600 rounded transition-colors"><Edit2 className="w-3 h-3" /></button>
-                    <button onClick={() => deleteAssignment(asn.id)} className="p-1.5 text-slate-300 hover:text-red-500 rounded transition-colors"><Trash2 className="w-3 h-3" /></button>
-                  </div>
                 </div>
                 <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2 mb-3">{asn.title}</h3>
                 {asn.description && <p className="text-[10px] text-slate-500 mb-3 line-clamp-2">{asn.description}</p>}
@@ -174,56 +175,11 @@ export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
                   )}
                 </div>
               </div>
-              <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex gap-2">
-                <button onClick={() => openEdit(asn)} className="flex-1 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-medium hover:bg-slate-100 transition-colors shadow-sm">Edit</button>
-                <Link href={`/dashboard/admin/academic/assignments/${courseId}/evaluate/${asn.id}`} className="flex-1 py-1.5 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center">Evaluate</Link>
-              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editing ? "Edit Assignment" : "Create Assignment"}
-        footer={<>
-          <button onClick={() => setIsOpen(false)} className="px-3 py-2 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-          <button onClick={handleSave} className="px-3 py-2 text-[11px] font-medium text-white bg-brand-dark hover:bg-brand-dark/90 rounded-lg shadow-sm transition-all">{editing ? "Update" : "Publish"}</button>
-        </>}
-      >
-        <div className="space-y-4">
-          {/* Context */}
-          <div className="bg-brand-dark/5 border border-brand-dark/10 rounded-lg px-3 py-2.5">
-            <p className="text-[10px] font-medium text-brand-dark uppercase tracking-wide mb-0.5">Assigning to</p>
-            <p className="text-[12px] font-semibold text-slate-900">{course.title}</p>
-            <p className="text-[10px] text-slate-500">{batch.name} • {students.length} students</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-slate-700">Assignment Title <span className="text-red-500">*</span></label>
-            <input type="text" placeholder="e.g. ER Diagram Assignment" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-slate-700">Instructions</label>
-            <textarea rows={3} placeholder="Detailed instructions for students..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all resize-none" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-700">Due Date <span className="text-red-500">*</span></label>
-              <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-700">Max Marks</label>
-              <input type="number" min={1} value={form.totalMarks} onChange={e => setForm(f => ({ ...f, totalMarks: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-slate-700">Status</label>
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Assignment["status"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-              <option>Upcoming</option><option>Active</option><option>Completed</option>
-            </select>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

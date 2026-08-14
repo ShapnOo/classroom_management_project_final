@@ -55,34 +55,62 @@ function seededRand(seed: string, min: number, max: number) {
 }
 
 export default function AdminResults({ courseId }: AdminResultsProps) {
-  const { getAllClassroomViews, classSessions, attendanceRecords, gradeRecords, upsertGradeRecord } = useStore();
+  const { getAllClassroomViews, classSessions, attendanceRecords, gradeRecords } = useStore();
   const allClassrooms = getAllClassroomViews();
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"sheet" | "entry">("sheet");
-  const [entryTestId, setEntryTestId] = useState<string>("");
-  const [marks, setMarks] = useState<Record<string, number>>({});
-  const [saved, setSaved] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  // ── CLASSROOM PICKER ──────────────────────────────────────────────────────
+  // ── BATCH / CLASSROOM PICKER ──────────────────────────────────────────────────────
   if (!courseId) {
-    return (
-      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
-        <div className="pb-4 border-b border-slate-200">
-          <h2 className="text-[13px] font-medium text-slate-900">Results & Grades</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to view or enter grades.</p>
+    if (!selectedBatchId) {
+      const uniqueBatches = Array.from(new Map(allClassrooms.map(c => [c.batch.id, c.batch])).values());
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200">
+            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view its courses.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uniqueBatches.map(b => {
+              const batchClasses = allClassrooms.filter(c => c.batch.id === b.id);
+              return (
+                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allClassrooms.map(({ classroom: cls, course, batch, students, colors, teacher }) => (
-            <Link key={cls.id} href={`/dashboard/admin/academic/results/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-              <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-              <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-              <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-              <p className="text-[10px] text-slate-500 mt-1">{batch.name} • Teacher: {teacher.name}</p>
-            </Link>
-          ))}
+      );
+    } else {
+      const batchClasses = allClassrooms.filter(c => c.batch.id === selectedBatchId);
+      const batchInfo = batchClasses[0]?.batch;
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200 flex items-center gap-3">
+            <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view its results.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {batchClasses.map(({ classroom: cls, course, batch, students, colors, teacher }) => (
+              <Link key={cls.id} href={`/dashboard/admin/academic/results/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
+                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
+                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
+                <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
+                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • Teacher: {teacher.name}</p>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // ── CLASSROOM DETAIL ──────────────────────────────────────────────────────
@@ -158,17 +186,7 @@ export default function AdminResults({ courseId }: AdminResultsProps) {
     count: resultSheet.filter(r => r.letterGrade === g).length
   })).filter(g => g.count > 0);
 
-  // Entry mode: select test and enter marks
-  const handleMarkSave = () => {
-    if (!entryTestId) return;
-    const test = tests.find(t => t.id === entryTestId);
-    if (!test) return;
-    Object.entries(marks).forEach(([studentId, obtained]) => {
-      upsertGradeRecord({ classroomId: cls.id, studentId, testId: entryTestId, obtainedMarks: obtained, totalMarks: test.totalMarks });
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-12">
@@ -223,18 +241,7 @@ export default function AdminResults({ courseId }: AdminResultsProps) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-        {(["sheet","entry"] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-1.5 text-[11px] font-medium rounded-md transition-all capitalize ${activeTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-            {tab === "sheet" ? "Result Sheet" : "Enter Marks"}
-          </button>
-        ))}
-      </div>
-
       {/* Result Sheet */}
-      {activeTab === "sheet" && (
-        <>
           <div className="relative w-full max-w-xs">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input type="text" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark" />
@@ -282,61 +289,6 @@ export default function AdminResults({ courseId }: AdminResultsProps) {
               </table>
             </div>
           </div>
-        </>
-      )}
-
-      {/* Mark Entry */}
-      {activeTab === "entry" && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-            <h2 className="text-[11px] font-medium text-slate-700 uppercase tracking-wide">Enter Marks for a Test</h2>
-            <select value={entryTestId} onChange={e => { setEntryTestId(e.target.value); setMarks({}); setSaved(false); }} className="w-full max-w-sm px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-              <option value="">Select test / assignment</option>
-              {tests.map(t => <option key={t.id} value={t.id}>{t.title} (/{t.totalMarks})</option>)}
-              {assignments.map(a => <option key={a.id} value={a.id}>{a.title} (/{a.totalMarks})</option>)}
-            </select>
-          </div>
-
-          {entryTestId && (() => {
-            const item = [...tests, ...assignments].find(x => x.id === entryTestId);
-            if (!item) return null;
-            return (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-slate-700">Entering marks for: <strong>{item.title}</strong> (Max: {item.totalMarks})</span>
-                  <button onClick={handleMarkSave} className="flex items-center gap-1.5 bg-brand-dark text-white text-[11px] font-medium px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors shadow-sm">
-                    {saved ? <><CheckCircle2 className="w-3 h-3" /> Saved!</> : "Save Marks"}
-                  </button>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {students.map((student, idx) => {
-                    const existing = gradeRecords.find(r => r.studentId === student.id && (r.testId === entryTestId || r.assignmentId === entryTestId));
-                    const value = marks[student.id] ?? (existing?.obtainedMarks ?? "");
-                    return (
-                      <div key={student.id} className="px-4 py-2.5 flex items-center gap-4">
-                        <span className="text-[10px] text-slate-400 w-5 text-right shrink-0">{idx + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium text-slate-900">{student.name}</p>
-                          <p className="text-[9px] text-slate-500">{student.rollNo}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number" min={0} max={item.totalMarks}
-                            value={value}
-                            onChange={e => setMarks(prev => ({ ...prev, [student.id]: Number(e.target.value) }))}
-                            className="w-16 text-center px-2 py-1 rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all"
-                          />
-                          <span className="text-[10px] text-slate-400">/{item.totalMarks}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
         </div>
-      )}
-    </div>
   );
 }

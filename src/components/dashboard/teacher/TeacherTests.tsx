@@ -32,38 +32,70 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
   const [isOpen, setIsOpen]   = useState(false);
   const [editing, setEditing] = useState<Test | null>(null);
   const [form, setForm]       = useState<Form>({ ...EMPTY, classroomId: courseId ?? "" });
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  // ── CLASSROOM PICKER ──────────────────────────────────────────────────────
+  // ── BATCH / CLASSROOM PICKER ──────────────────────────────────────────────────────
   if (!courseId) {
-    return (
-      <div className="space-y-4 animate-in fade-in duration-500 pb-12">
-        <div className="pb-4 border-b border-slate-200">
-          <h2 className="text-[13px] font-medium text-slate-900">Class Tests</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to manage its tests and quizzes.</p>
+    if (!selectedBatchId) {
+      const uniqueBatches = Array.from(new Map(myClassrooms.map(c => [c.batch.id, c.batch])).values());
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200">
+            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to manage its tests.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uniqueBatches.map(b => {
+              const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
+              return (
+                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
+                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myClassrooms.map(({ classroom: cls, course, batch, session, tests: clsTests, colors }) => {
-            const upcoming = clsTests.filter(t => t.status === "Upcoming").length;
-            const done = clsTests.filter(t => t.status === "Completed").length;
-            return (
-              <Link key={cls.id} href={`/dashboard/teacher/tests/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                  <span className="text-[10px] text-slate-400">{session.name}</span>
-                </div>
-                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {clsTests.length} tests</p>
-                <div className="mt-4 flex gap-3 text-[11px]">
-                  {upcoming > 0 && <span className="text-blue-600 font-medium">{upcoming} Upcoming</span>}
-                  {done > 0 && <span className="text-emerald-600 font-medium">{done} Done</span>}
-                </div>
-              </Link>
-            );
-          })}
+      );
+    } else {
+      const batchClasses = myClassrooms.filter(c => c.batch.id === selectedBatchId);
+      const batchInfo = batchClasses[0]?.batch;
+      return (
+        <div className="space-y-4 animate-in fade-in duration-500 pb-12">
+          <div className="pb-4 border-b border-slate-200 flex items-center gap-3">
+            <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to manage its tests.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {batchClasses.map(({ classroom: cls, course, batch, session, tests: clsTests, colors }) => {
+              const upcoming = clsTests.filter(t => t.status === "Upcoming").length;
+              const done = clsTests.filter(t => t.status === "Completed").length;
+              return (
+                <Link key={cls.id} href={`/dashboard/teacher/tests/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
+                  <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
+                    <span className="text-[10px] text-slate-400">{session.name}</span>
+                  </div>
+                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
+                  <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {clsTests.length} tests</p>
+                  <div className="mt-4 flex gap-3 text-[11px]">
+                    {upcoming > 0 && <span className="text-blue-600 font-medium">{upcoming} Upcoming</span>}
+                    {done > 0 && <span className="text-emerald-600 font-medium">{done} Done</span>}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // ── CLASSROOM DETAIL ──────────────────────────────────────────────────────
