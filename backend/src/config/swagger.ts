@@ -20,7 +20,23 @@ export const swaggerSpec = {
       description: "Local Development Server",
     },
   ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "Enter your JWT token in the format: Bearer <token>",
+      },
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
   tags: [
+    { name: "Authentication", description: "JWT Authentication, user login, profile retrieval, and logout" },
     { name: "System", description: "Health checks & system metadata" },
     { name: "Academic Structure", description: "Departments, Programs, Academic Sessions, Batches, Courses & Syllabus" },
     { name: "Users & Roles", description: "Admins, Teachers, and Students administration" },
@@ -32,6 +48,93 @@ export const swaggerSpec = {
     { name: "Settings", description: "Application configuration & university branding" },
   ],
   paths: {
+    "/api/auth/login": {
+      post: {
+        tags: ["Authentication"],
+        summary: "Login with email & password",
+        description: "Authenticates any student, teacher, or admin account and returns a signed JWT Bearer token and user details.",
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                email: "admin@scholaris.edu",
+                password: "admin123",
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Login successful with token & user data",
+            content: {
+              "application/json": {
+                example: {
+                  success: true,
+                  message: "Login successful",
+                  data: {
+                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    user: {
+                      id: "admin-1",
+                      name: "Prof. Dr. Shamim Al Mamun",
+                      email: "admin@scholaris.edu",
+                      role: "admin",
+                      departmentId: "dept-1",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: "Invalid email or password",
+          },
+        },
+      },
+    },
+    "/api/auth/me": {
+      get: {
+        tags: ["Authentication"],
+        summary: "Get current authenticated user profile",
+        description: "Returns the profile of the user identified by the Bearer token.",
+        responses: {
+          200: {
+            description: "Current user profile",
+            content: {
+              "application/json": {
+                example: {
+                  success: true,
+                  message: "User profile retrieved successfully",
+                  data: {
+                    user: {
+                      id: "admin-1",
+                      name: "Prof. Dr. Shamim Al Mamun",
+                      email: "admin@scholaris.edu",
+                      role: "admin",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized: Missing or invalid token",
+          },
+        },
+      },
+    },
+    "/api/auth/logout": {
+      post: {
+        tags: ["Authentication"],
+        summary: "Log out current session",
+        responses: {
+          200: {
+            description: "Successfully logged out",
+          },
+        },
+      },
+    },
     "/api/health": {
       get: {
         tags: ["System"],

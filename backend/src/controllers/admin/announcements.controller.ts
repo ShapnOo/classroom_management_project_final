@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 import crypto from "crypto";
 
 const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
@@ -16,9 +17,9 @@ export const getAnnouncements = async (req: Request, res: Response) => {
     queryText += " ORDER BY date DESC, created_at DESC";
 
     const { rows } = await pool.query(queryText, params);
-    res.json(rows);
+    sendSuccess(res, rows, "Announcements retrieved successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -26,7 +27,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
   try {
     const { title, content, authorName, authorId, audienceType, programId, batchId, courseId, priority, status } = req.body;
     if (!title || !content) {
-      return res.status(400).json({ error: "Title and content are required" });
+      return sendError(res, "Title and content are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(`
@@ -47,9 +48,9 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       status || "Published",
       priority || "Normal",
     ]);
-    res.status(201).json(rows[0]);
+    sendSuccess(res, rows[0], "Announcement created successfully", 201);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -66,19 +67,20 @@ export const updateAnnouncement = async (req: Request, res: Response) => {
           audience_type = COALESCE($5, audience_type)
       WHERE id = $6 RETURNING *
     `, [title, content, priority, status, audienceType, id]);
-    if (rows.length === 0) return res.status(404).json({ error: "Announcement not found" });
-    res.json(rows[0]);
+    if (rows.length === 0) return sendError(res, "Announcement not found", 404);
+    sendSuccess(res, rows[0], "Announcement updated successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
 export const deleteAnnouncement = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM announcements WHERE id = $1", [id]);
-    res.json({ message: "Announcement deleted successfully" });
+    const { rowCount } = await pool.query("DELETE FROM announcements WHERE id = $1", [id]);
+    if (rowCount === 0) return sendError(res, "Announcement not found", 404);
+    sendSuccess(res, { id }, "Announcement deleted successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };

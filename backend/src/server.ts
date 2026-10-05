@@ -6,6 +6,8 @@ import { pool } from "./config/db.js";
 import { initDatabase } from "./db/init.js";
 import { swaggerSpec } from "./config/swagger.js";
 import adminRoutes from "./routes/admin/index.js";
+import authRoutes from "./routes/auth.routes.js";
+import { sendError, sendSuccess } from "./utils/response.js";
 
 dotenv.config();
 
@@ -34,32 +36,35 @@ app.get("/api/docs.json", (req: Request, res: Response) => {
 app.get("/api/health", async (req: Request, res: Response) => {
   try {
     const result = await pool.query("SELECT NOW() as current_time");
-    res.json({
+    sendSuccess(res, {
       status: "healthy",
       timestamp: result.rows[0].current_time,
       service: "Scholaris Express Backend",
       database: "PostgreSQL connected",
       docs: `http://localhost:${PORT}/api/docs`,
-    });
+    }, "Scholaris Backend API is running smoothly");
   } catch (error: any) {
-    res.status(500).json({
-      status: "unhealthy",
-      error: error.message,
-      service: "Scholaris Express Backend",
-    });
+    sendError(res, "Database connection error", 500, error.message);
   }
 });
+
+// Auth Routes (Login, Token Verification, Profile)
+app.use("/api/auth", authRoutes);
 
 // Admin Panel API Routes
 app.use("/api/admin", adminRoutes);
 
 // Root API Welcome & Endpoint Discovery
 app.get("/", (req: Request, res: Response) => {
-  res.json({
-    message: "Welcome to Scholaris Management System Backend API",
+  sendSuccess(res, {
     version: "1.0.0",
     docs: `http://localhost:${PORT}/api/docs`,
     modules: {
+      auth: {
+        login: "POST /api/auth/login",
+        me: "GET /api/auth/me (Bearer Auth)",
+        logout: "POST /api/auth/logout (Bearer Auth)"
+      },
       admin: {
         academic: "/api/admin/academic/(departments|programs|sessions|batches|courses|syllabus)",
         users: "/api/admin/users/(teachers|students|admins)",
@@ -72,7 +77,7 @@ app.get("/", (req: Request, res: Response) => {
       },
       health: "/api/health"
     }
-  });
+  }, "Welcome to Scholaris Management System Backend API");
 });
 
 // 404 Handler

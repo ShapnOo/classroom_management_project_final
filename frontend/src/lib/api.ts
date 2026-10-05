@@ -11,25 +11,77 @@ import type {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-// ─── Generic HTTP Fetcher ───────────────────────────────────────────────────
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data: T;
+  meta?: Record<string, any>;
+}
+
+// ─── Token Management ────────────────────────────────────────────────────────
+
+const TOKEN_KEY = "scholaris_token";
+const USER_KEY = "scholaris_user";
+
+export const authStorage = {
+  getToken: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+  setToken: (token: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(TOKEN_KEY, token);
+    }
+  },
+  getUser: (): any | null => {
+    if (typeof window === "undefined") return null;
+    const str = localStorage.getItem(USER_KEY);
+    return str ? JSON.parse(str) : null;
+  },
+  setUser: (user: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+  },
+  clear: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+  },
+};
+
+// ─── Generic HTTP Fetcher with Automatic Bearer Token & Response Unwrapping ──
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = authStorage.getToken();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers as Record<string, string>),
+  };
+
   try {
     const res = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
       ...options,
+      headers,
     });
 
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.error || `HTTP error! status: ${res.status}`);
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok || json.success === false) {
+      const errorMessage = json.error || json.message || `HTTP error! status: ${res.status}`;
+      throw new Error(errorMessage);
     }
 
-    return await res.json();
+    // Seamlessly unwrap standardized envelope { success: true, data: T } if present
+    if (json && typeof json === "object" && "data" in json) {
+      return json.data as T;
+    }
+
+    return json as T;
   } catch (err: any) {
     console.warn(`[API] Request failed for ${endpoint}:`, err.message);
     throw err;
@@ -39,6 +91,27 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 // ─── Data Transformers (PostgreSQL snake_case <-> Frontend camelCase) ────────
 
 export const api = {
+  // ── Auth & Session ──
+  login: async (credentials: { email: string; password: string }) => {
+    const data = await request<{ token: string; user: any }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    });
+    if (data.token) {
+      authStorage.setToken(data.token);
+      authStorage.setUser(data.user);
+    }
+    return data;
+  },
+  getMe: () => request<{ user: any }>("/auth/me"),
+  logout: async () => {
+    try {
+      await request("/auth/logout", { method: "POST" });
+    } finally {
+      authStorage.clear();
+    }
+  },
+
   // Health
   checkHealth: () => request<{ status: string; service: string }>("/health"),
 

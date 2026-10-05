@@ -1,22 +1,23 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 
 export const getSettings = async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query("SELECT * FROM app_settings WHERE id = 'default' LIMIT 1");
     if (rows.length > 0) {
-      return res.json({
+      return sendSuccess(res, {
         schoolName: rows[0].school_name,
         logoBase64: rows[0].logo_base64 || "",
-      });
+      }, "Settings retrieved successfully");
     }
-    return res.json({
+    return sendSuccess(res, {
       schoolName: "Jahangirnagar University",
       logoBase64: "",
-    });
-  } catch (error) {
+    }, "Default settings retrieved");
+  } catch (error: any) {
     console.error("Error fetching settings:", error);
-    res.status(500).json({ error: "Failed to fetch application settings" });
+    sendError(res, "Failed to fetch application settings", 500, error.message);
   }
 };
 
@@ -37,12 +38,12 @@ export const updateSettings = async (req: Request, res: Response) => {
       [name, logo]
     );
 
-    res.json({
+    sendSuccess(res, {
       schoolName: rows[0].school_name,
       logoBase64: rows[0].logo_base64 || "",
-    });
-  } catch (error) {
+    }, "Settings updated successfully");
+  } catch (error: any) {
     console.error("Error updating settings:", error);
-    res.status(500).json({ error: "Failed to update application settings" });
+    sendError(res, "Failed to update application settings", 500, error.message);
   }
 };

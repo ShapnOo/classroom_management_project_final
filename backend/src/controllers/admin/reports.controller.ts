@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -18,15 +19,15 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const attendedCount = attendanceTotals[0]?.attended || 0;
     const avgAttendanceRate = totalAtt > 0 ? Math.round((attendedCount / totalAtt) * 100) : 92;
 
-    res.json({
+    sendSuccess(res, {
       totalStudents: studentCount[0]?.count || 0,
       totalTeachers: teacherCount[0]?.count || 0,
       ongoingClassrooms: ongoingClassCount[0]?.count || 0,
       totalBatches: batchCount[0]?.count || 0,
       avgAttendanceRate,
-    });
+    }, "Dashboard stats calculated successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -51,8 +52,8 @@ export const getAttendanceReport = async (req: Request, res: Response) => {
       attendanceRate: r.total_marks > 0 ? Math.round((r.total_present / r.total_marks) * 100) : 90,
     }));
 
-    res.json(formatted);
+    sendSuccess(res, formatted, "Attendance report generated successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
