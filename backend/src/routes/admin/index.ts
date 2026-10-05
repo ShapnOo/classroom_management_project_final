@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken, authorizeRoles } from "../../middleware/auth.js";
+import dashboardRoutes from "./dashboard.routes.js";
 import academicRoutes from "./academic.routes.js";
 import usersRoutes from "./users.routes.js";
 import classroomsRoutes from "./classrooms.routes.js";
@@ -14,6 +15,7 @@ const router = Router();
 router.use(authenticateToken, authorizeRoles("admin"));
 
 // Mount all admin sub-modules
+router.use("/dashboard", dashboardRoutes);
 router.use("/academic", academicRoutes);
 router.use("/users", usersRoutes);
 router.use("/classrooms", classroomsRoutes);

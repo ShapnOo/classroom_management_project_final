@@ -450,4 +450,54 @@ export const api = {
     request<Announcement>(`/admin/announcements/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteAnnouncement: (id: string) =>
     request<{ message: string }>(`/admin/announcements/${id}`, { method: "DELETE" }),
+
+  // ── Consolidated Dashboard API ──
+  getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
 };
+
+export interface AdminDashboardData {
+  metrics: {
+    totalStudents: number;
+    totalTeachers: number;
+    ongoingClassrooms: number;
+    totalCourses: number;
+    totalBatches: number;
+    avgAttendanceRate: number;
+  };
+  departmentDistribution: Array<{
+    id?: string;
+    name: string;
+    fullName?: string;
+    rawCount?: number;
+    value: number;
+  }>;
+  trendData: Array<{
+    month: string;
+    enrollment: number;
+    attendance: number;
+  }>;
+  recentActivities: Array<{
+    id: string;
+    user: string;
+    action: string;
+    target: string;
+    time: string;
+    color: string;
+    timestamp?: string;
+  }>;
+  ongoingClassrooms: Array<{
+    id: string;
+    room: string;
+    status: string;
+    classes_completed: number;
+    total_classes: number;
+    color_index: number;
+    course_title: string;
+    course_code: string;
+    batch_name: string;
+    batch_code: string;
+    teacher_name: string;
+    student_count: number;
+    progress: number;
+  }>;
+}

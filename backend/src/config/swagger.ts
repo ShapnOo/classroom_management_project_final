@@ -135,6 +135,54 @@ export const swaggerSpec = {
         },
       },
     },
+    "/api/admin/dashboard": {
+      get: {
+        tags: ["Reports & Analytics"],
+        summary: "Get consolidated Admin Dashboard summary",
+        description: "Returns aggregated metrics (students, teachers, ongoing classes, batches, attendance rate), department distribution, monthly trends, recent activities, and ongoing classrooms in a single fast call.",
+        responses: {
+          200: {
+            description: "Dashboard summary retrieved successfully",
+            content: {
+              "application/json": {
+                example: {
+                  success: true,
+                  message: "Admin dashboard summary loaded successfully",
+                  data: {
+                    metrics: {
+                      totalStudents: 340,
+                      totalTeachers: 28,
+                      ongoingClassrooms: 14,
+                      totalCourses: 45,
+                      totalBatches: 12,
+                      avgAttendanceRate: 92,
+                    },
+                    departmentDistribution: [
+                      { id: "dept-1", name: "CSE", fullName: "Computer Science & Engineering", rawCount: 8, value: 45 },
+                      { id: "dept-2", name: "EEE", fullName: "Electrical & Electronic Engineering", rawCount: 5, value: 30 }
+                    ],
+                    trendData: [
+                      { month: "Jan", enrollment: 280, attendance: 90 },
+                      { month: "Feb", enrollment: 295, attendance: 92 }
+                    ],
+                    recentActivities: [
+                      { id: "ann-1", user: "Admin", action: "published an announcement", target: "Mid-Term Schedule", time: "Recent Notice", color: "bg-blue-50 text-blue-600" }
+                    ],
+                    ongoingClassrooms: []
+                  }
+                }
+              }
+            }
+          },
+          401: {
+            description: "Unauthorized",
+          },
+          403: {
+            description: "Forbidden - Admin access only",
+          }
+        }
+      }
+    },
     "/api/health": {
       get: {
         tags: ["System"],
