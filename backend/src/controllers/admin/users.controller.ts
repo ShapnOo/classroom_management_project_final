@@ -94,7 +94,9 @@ export const getStudents = async (req: Request, res: Response) => {
   try {
     const { batchId } = req.query;
     let queryText = `
-      SELECT s.*, b.name as batch_name, b.code as batch_code, p.name as program_name
+      SELECT s.id, s.roll_no as "rollNo", s.name, s.email, s.batch_id as "batchId", s.phone,
+             COALESCE(s.documents, '[]'::jsonb) as documents, s.created_at,
+             b.name as "batchName", b.code as "batchCode", p.name as "programName"
       FROM students s
       JOIN batches b ON s.batch_id = b.id
       JOIN programs p ON b.program_id = p.id
@@ -116,9 +118,9 @@ export const getStudents = async (req: Request, res: Response) => {
 export const createStudent = async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { rollNo, name, email, batchId, phone } = req.body;
-    if (!rollNo || !name || !email || !batchId) {
-      return sendError(res, "Roll number, name, email, and batch are required", 400);
+    const { rollNo, name, email, batchId, phone, documents } = req.body;
+    if (!rollNo || !name || !email || !batchId || !phone) {
+      return sendError(res, "Roll number, name, email, batch, and phone number are required", 400);
     }
     const id = genId();
     await client.query("BEGIN");
@@ -128,10 +130,12 @@ export const createStudent = async (req: Request, res: Response) => {
       ON CONFLICT (id) DO NOTHING
     `, [id, name, email]);
 
+    const docsJson = JSON.stringify(documents || []);
     const { rows } = await client.query(`
-      INSERT INTO students (id, roll_no, name, email, batch_id, phone)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-    `, [id, rollNo, name, email, batchId, phone || null]);
+      INSERT INTO students (id, roll_no, name, email, batch_id, phone, documents)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb) 
+      RETURNING id, roll_no as "rollNo", name, email, batch_id as "batchId", phone, COALESCE(documents, '[]'::jsonb) as documents, created_at
+    `, [id, rollNo, name, email, batchId, phone, docsJson]);
     await client.query("COMMIT");
     sendSuccess(res, rows[0], "Student enrolled successfully", 201);
   } catch (err: any) {
@@ -145,16 +149,20 @@ export const createStudent = async (req: Request, res: Response) => {
 export const updateStudent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { rollNo, name, email, batchId, phone } = req.body;
+    const { rollNo, name, email, batchId, phone, documents } = req.body;
+    const docsJson = documents ? JSON.stringify(documents) : null;
+
     const { rows } = await pool.query(`
       UPDATE students 
       SET roll_no = COALESCE($1, roll_no),
           name = COALESCE($2, name),
           email = COALESCE($3, email),
           batch_id = COALESCE($4, batch_id),
-          phone = COALESCE($5, phone)
-      WHERE id = $6 RETURNING *
-    `, [rollNo, name, email, batchId, phone, id]);
+          phone = COALESCE($5, phone),
+          documents = COALESCE($6::jsonb, documents)
+      WHERE id = $7 
+      RETURNING id, roll_no as "rollNo", name, email, batch_id as "batchId", phone, COALESCE(documents, '[]'::jsonb) as documents, created_at
+    `, [rollNo, name, email, batchId, phone, docsJson, id]);
 
     if (rows.length === 0) return sendError(res, "Student not found", 404);
     await pool.query("UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3", [name, email, id]);

@@ -215,12 +215,16 @@ export default function AdminStudentTranscripts({ initialStudentId }: AdminStude
 
   const handleSelectStudent = (id: string) => {
     setSelectedStudentId(id);
-    router.push(`/dashboard/admin/reports/transcripts/${id}`);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", `/dashboard/admin/reports/transcripts/${id}`);
+    }
   };
 
   const handleGoBack = () => {
     setSelectedStudentId(null);
-    router.push(`/dashboard/admin/reports/transcripts`);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", `/dashboard/admin/reports/transcripts`);
+    }
   };
 
   const handlePrint = () => {

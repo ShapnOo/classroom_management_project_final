@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS students (
   email VARCHAR(255) NOT NULL,
   batch_id VARCHAR(64) REFERENCES batches(id) ON DELETE CASCADE,
   phone VARCHAR(50),
+  documents JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -229,4 +230,14 @@ CREATE TABLE IF NOT EXISTS student_transcripts (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT unique_student_course UNIQUE(student_id, course_id)
 );
+
+-- 11. Performance Optimization Indexes
+CREATE INDEX IF NOT EXISTS idx_student_transcripts_student ON student_transcripts(student_id);
+CREATE INDEX IF NOT EXISTS idx_student_transcripts_course ON student_transcripts(course_id);
+CREATE INDEX IF NOT EXISTS idx_student_transcripts_semester ON student_transcripts(semester);
+CREATE INDEX IF NOT EXISTS idx_students_batch ON students(batch_id);
+CREATE INDEX IF NOT EXISTS idx_classrooms_batch ON classrooms(batch_id);
+CREATE INDEX IF NOT EXISTS idx_grade_records_student ON grade_records(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(student_id);
+
 

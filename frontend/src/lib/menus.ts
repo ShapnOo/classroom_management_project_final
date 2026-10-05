@@ -70,6 +70,7 @@ export const adminMenu: MenuItem[] = [
     title: "Reports & Analytics", icon: BarChart3,
     submenu: [
       { title: "Student Transcripts", href: "/dashboard/admin/reports/transcripts" },
+      { title: "Session & Semester Results", href: "/dashboard/admin/reports/results" },
       { title: "Attendance Reports", href: "/dashboard/admin/reports/attendance" },
       { title: "Course Progress", href: "/dashboard/admin/academic/syllabus" },
       { title: "Assignment Reports", href: "/dashboard/admin/academic/assignments" },

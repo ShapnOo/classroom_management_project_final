@@ -15,8 +15,16 @@ export async function initDatabase() {
     await pool.query(`
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
+      CREATE INDEX IF NOT EXISTS idx_student_transcripts_student ON student_transcripts(student_id);
+      CREATE INDEX IF NOT EXISTS idx_student_transcripts_course ON student_transcripts(course_id);
+      CREATE INDEX IF NOT EXISTS idx_student_transcripts_semester ON student_transcripts(semester);
+      CREATE INDEX IF NOT EXISTS idx_students_batch ON students(batch_id);
+      CREATE INDEX IF NOT EXISTS idx_classrooms_batch ON classrooms(batch_id);
+      CREATE INDEX IF NOT EXISTS idx_grade_records_student ON grade_records(student_id);
+      CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(student_id);
     `);
-    console.log("Database schema initialized successfully.");
+    console.log("Database schema & performance indexes initialized successfully.");
 
     // Check if initial settings exist
     const { rows } = await pool.query("SELECT id FROM departments LIMIT 1");
@@ -343,6 +351,32 @@ export async function seedInitialData() {
 }
 
 export async function seedStudentTranscripts(clientOrPool: any = pool) {
+  // 1. Ensure all 20 Courses exist in database
+  await clientOrPool.query(`
+    INSERT INTO courses (id, code, title, program_id, credits) VALUES
+    ('course-1', 'CSE-101', 'Structured Programming Language', 'prog-1', 3.0),
+    ('course-2', 'CSE-102', 'Structured Programming Lab', 'prog-1', 1.5),
+    ('course-3', 'CSE-103', 'Discrete Mathematics', 'prog-1', 3.0),
+    ('course-4', 'CSE-104', 'Electrical Circuits & Electronics', 'prog-1', 3.0),
+    ('course-5', 'CSE-201', 'Data Structures & Algorithms', 'prog-1', 3.0),
+    ('course-6', 'CSE-202', 'Data Structures Lab', 'prog-1', 1.5),
+    ('course-7', 'CSE-203', 'Object Oriented Programming', 'prog-1', 3.0),
+    ('course-8', 'CSE-204', 'Digital Logic Design', 'prog-1', 3.0),
+    ('course-9', 'CSE-301', 'Algorithm Analysis & Design', 'prog-1', 3.0),
+    ('course-10', 'CSE-302', 'Computer Architecture', 'prog-1', 3.0),
+    ('course-11', 'CSE-303', 'Operating Systems', 'prog-1', 3.0),
+    ('course-12', 'CSE-304', 'Operating Systems Lab', 'prog-1', 1.5),
+    ('course-13', 'CSE-305', 'Database Management Systems', 'prog-1', 3.0),
+    ('course-14', 'CSE-306', 'Database Management Systems Lab', 'prog-1', 1.5),
+    ('course-15', 'CSE-401', 'Computer Networks', 'prog-1', 3.0),
+    ('course-16', 'CSE-402', 'Computer Networks Lab', 'prog-1', 1.5),
+    ('course-17', 'CSE-412', 'Software Engineering & System Design', 'prog-1', 3.0),
+    ('course-18', 'CSE-425', 'Artificial Intelligence & Machine Learning', 'prog-1', 3.0),
+    ('course-19', 'CSE-426', 'Artificial Intelligence Lab', 'prog-1', 1.5),
+    ('course-20', 'CSE-499', 'B.Sc. Thesis / Capstone Project', 'prog-1', 6.0)
+    ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, credits = EXCLUDED.credits;
+  `);
+
   const allCoursesList = [
     { id: "course-1", semester: "Semester 1" },
     { id: "course-2", semester: "Semester 1" },

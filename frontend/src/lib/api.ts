@@ -505,6 +505,8 @@ export const api = {
 
   // ── Reports API ──
   getStudentTranscript: (studentId: string) => request<any>(`/admin/reports/transcripts/${studentId}`),
+  getSessionSemesterResults: (sessionId: string, batchId: string, semester: string) =>
+    request<any>(`/admin/reports/session-semester-results?sessionId=${sessionId}&batchId=${batchId}&semester=${encodeURIComponent(semester)}`),
 };
 
 

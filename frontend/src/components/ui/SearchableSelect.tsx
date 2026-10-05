@@ -17,6 +17,8 @@ interface SearchableSelectProps {
   className?: string;
   /** Optionally render a blank placeholder option to "unselect" */
   allowClear?: boolean;
+  /** Force drop direction or let auto-detect based on screen position */
+  direction?: "auto" | "up" | "down";
 }
 
 export function SearchableSelect({
@@ -27,9 +29,11 @@ export function SearchableSelect({
   disabled = false,
   className = "",
   allowClear = false,
+  direction = "auto",
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDropUp, setIsDropUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,13 +48,24 @@ export function SearchableSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Focus search input when opened
+  // Auto-detect viewport position when opened
   useEffect(() => {
     if (isOpen) {
       setSearchTerm("");
       setTimeout(() => searchInputRef.current?.focus(), 50);
+
+      if (direction === "up") {
+        setIsDropUp(true);
+      } else if (direction === "down") {
+        setIsDropUp(false);
+      } else if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // If less than 240px below, drop UPWARDS above the select input
+        setIsDropUp(spaceBelow < 240);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, direction]);
 
   const filteredOptions = useMemo(() => {
     const filtered = options.filter(opt =>
@@ -83,7 +98,11 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div
+          className={`absolute left-0 z-[100] w-full bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${
+            isDropUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           <div className="p-2 border-b border-slate-100 bg-slate-50/50">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -109,12 +128,12 @@ export function SearchableSelect({
                     setIsOpen(false);
                   }}
                   className={`w-full text-left px-3 py-2 text-[11px] flex items-center justify-between hover:bg-slate-50 transition-colors
-                    ${option.value === value ? "bg-brand-50 text-brand-700 font-medium" : "text-slate-700"}
+                    ${option.value === value ? "bg-slate-100 text-slate-900 font-medium" : "text-slate-700"}
                   `}
                 >
                   <span className="truncate pr-2">{option.label}</span>
                   {option.value === value && option.value !== "" && (
-                    <Check className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-slate-900 shrink-0" />
                   )}
                 </button>
               ))
