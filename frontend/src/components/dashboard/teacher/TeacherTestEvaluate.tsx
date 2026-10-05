@@ -27,7 +27,16 @@ interface TeacherTestEvaluateProps {
 export default function TeacherTestEvaluate({ courseId = "", testId = "", role = "teacher" }: TeacherTestEvaluateProps) {
   const { tests, fetchTests, fetchGradeRecords, fetchStudents, fetchClassrooms, fetchCourses, fetchBatches } = useStore();
 
-  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "info" | "warning" | "danger" | "confirm" }>({
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: "success" | "info" | "warning" | "danger" | "confirm";
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }>({
     isOpen: false,
     title: "",
     message: "",
@@ -49,13 +58,24 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
   const { view, roster, draft, setMarks, save, saving, gradedCount } =
     useGradingData(courseId, { testId }, maxMarks);
 
-  const handleSave = async () => {
-    const count = await save();
+  const handleSave = () => {
     setModalConfig({
       isOpen: true,
-      title: "Class Test Marks Saved",
-      message: `Test marks have been successfully recorded into the database for ${count} student${count === 1 ? "" : "s"}.`,
-      type: "success"
+      title: "Are you sure?",
+      message: "Do you want to save class test marks for all students?",
+      type: "confirm",
+      confirmLabel: "Yes, Save Marks",
+      cancelLabel: "Cancel",
+      onConfirm: async () => {
+        const count = await save();
+        setModalConfig({
+          isOpen: true,
+          title: "Class Test Marks Saved",
+          message: `Test marks have been successfully recorded into the database for ${count} student${count === 1 ? "" : "s"}.`,
+          type: "success"
+        });
+      },
+      onCancel: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
     });
   };
 
@@ -239,7 +259,10 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
         title={modalConfig.title}
         message={modalConfig.message}
         type={modalConfig.type}
-        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+        confirmLabel={(modalConfig as any).confirmLabel}
+        cancelLabel={(modalConfig as any).cancelLabel}
+        onConfirm={(modalConfig as any).onConfirm || (() => setModalConfig(prev => ({ ...prev, isOpen: false })))}
+        onCancel={(modalConfig as any).onCancel}
       />
     </div>
   );

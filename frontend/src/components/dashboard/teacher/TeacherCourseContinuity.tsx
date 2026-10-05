@@ -12,9 +12,11 @@ interface TeacherCourseContinuityProps {
   courseId?: string;
 }
 
+import { GridSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherCourseContinuity({ courseId }: TeacherCourseContinuityProps) {
   const {
-    getMyClassroomViews, updateSyllabusTopic,
+    getMyClassroomViews, updateSyllabusTopic, isLoading,
     fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchPrograms, fetchSyllabusTopics
   } = useStore();
 
@@ -28,6 +30,10 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
   }, []);
 
   const myClassrooms = getMyClassroomViews();
+
+  if (isLoading && myClassrooms.length === 0) {
+    return <GridSkeleton count={4} />;
+  }
 
 
   // If courseId given, find that classroom view, else show list

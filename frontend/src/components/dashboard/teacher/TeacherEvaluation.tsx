@@ -6,8 +6,9 @@ import Link from "next/link";
 import {
   ArrowLeft, Users, Search, Download, CheckCircle2,
   AlertTriangle, TrendingUp, Star, Settings2, Sliders, Check,
-  Save, RefreshCw, Layers, Award, FileText, CheckSquare, X, Info
+  Save, X, Info, FileText, CheckSquare
 } from "lucide-react";
+import ModalDialog from "@/components/ui/ModalDialog";
 
 export type EvaluationPolicyComponent = {
   enabled: boolean;
@@ -132,14 +133,34 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
     .filter(c => c.enabled)
     .reduce((sum, c) => sum + Number(c.weight || 0), 0);
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
   // Save Policy to LocalStorage
   const handleSavePolicy = () => {
-    if (selectedClassId) {
-      localStorage.setItem(`scholaris_eval_policy_${selectedClassId}`, JSON.stringify(policy));
-      setShowPolicyModal(false);
-      setPolicySavedToast(true);
-      setTimeout(() => setPolicySavedToast(false), 3000);
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to save this evaluation & grading policy for ${selectedClass?.code || "this course"}?`,
+      onConfirm: () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        if (selectedClassId) {
+          localStorage.setItem(`scholaris_eval_policy_${selectedClassId}`, JSON.stringify(policy));
+          setShowPolicyModal(false);
+          setPolicySavedToast(true);
+          setTimeout(() => setPolicySavedToast(false), 3000);
+        }
+      },
+    });
   };
 
   // Compute student final grades dynamically based on Teacher's Policy
@@ -939,6 +960,17 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
           </div>
         </div>
       )}
+
+      <ModalDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type="confirm"
+        confirmLabel="Yes, Save Policy"
+        cancelLabel="Cancel"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
 
     </div>
   );

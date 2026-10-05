@@ -25,9 +25,11 @@ function pct(a: number, b: number) {
   return b === 0 ? 0 : Math.round((a / b) * 100);
 }
 
+import { TableSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherTests({ courseId }: TeacherTestsProps) {
   const {
-    getMyClassroomViews, tests, addTest, updateTest, deleteTest,
+    getMyClassroomViews, tests, isLoading, addTest, updateTest, deleteTest,
     fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchTests
   } = useStore();
 
@@ -38,6 +40,10 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
     fetchStudents();
     fetchTests();
   }, []);
+
+  if (isLoading && tests.length === 0) {
+    return <TableSkeleton rows={5} cols={5} />;
+  }
 
   const myClassrooms = getMyClassroomViews();
 

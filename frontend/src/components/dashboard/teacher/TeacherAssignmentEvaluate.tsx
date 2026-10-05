@@ -41,20 +41,40 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
 
   const backHref = `/dashboard/${role === "admin" ? "admin/academic" : "teacher"}/assignments/${courseId}`;
 
-  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "info" | "warning" | "danger" | "confirm" }>({
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: "success" | "info" | "warning" | "danger" | "confirm";
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }>({
     isOpen: false,
     title: "",
     message: "",
     type: "success"
   });
 
-  const handleSave = async () => {
-    const count = await save();
+  const handleSave = () => {
     setModalConfig({
       isOpen: true,
-      title: "Marks Saved Successfully",
-      message: `Marks & feedback have been successfully recorded for ${count} student${count === 1 ? "" : "s"}.`,
-      type: "success"
+      title: "Are you sure?",
+      message: "Do you want to save assignment marks and feedback for all students?",
+      type: "confirm",
+      confirmLabel: "Yes, Save Marks",
+      cancelLabel: "Cancel",
+      onConfirm: async () => {
+        const count = await save();
+        setModalConfig({
+          isOpen: true,
+          title: "Marks Saved Successfully",
+          message: `Marks & feedback have been successfully recorded for ${count} student${count === 1 ? "" : "s"}.`,
+          type: "success"
+        });
+      },
+      onCancel: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
     });
   };
 
@@ -241,7 +261,10 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
         title={modalConfig.title}
         message={modalConfig.message}
         type={modalConfig.type}
-        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+        confirmLabel={(modalConfig as any).confirmLabel}
+        cancelLabel={(modalConfig as any).cancelLabel}
+        onConfirm={(modalConfig as any).onConfirm || (() => setModalConfig(prev => ({ ...prev, isOpen: false })))}
+        onCancel={(modalConfig as any).onCancel}
       />
     </div>
   );

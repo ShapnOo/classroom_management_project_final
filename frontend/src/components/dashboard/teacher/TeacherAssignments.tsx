@@ -22,9 +22,11 @@ const EMPTY: Form = {
   dueDate: "", totalMarks: 10, status: "Active"
 };
 
+import { TableSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps) {
   const {
-    getMyClassroomViews, assignments, addAssignment, updateAssignment, deleteAssignment,
+    getMyClassroomViews, assignments, isLoading, addAssignment, updateAssignment, deleteAssignment,
     fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchAssignments
   } = useStore();
 
@@ -35,6 +37,10 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
     fetchStudents();
     fetchAssignments();
   }, []);
+
+  if (isLoading && assignments.length === 0) {
+    return <TableSkeleton rows={5} cols={5} />;
+  }
 
   const myClassrooms = getMyClassroomViews();
 

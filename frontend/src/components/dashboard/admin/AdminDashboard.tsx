@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { api, AdminDashboardData } from "@/lib/api";
 import { useStore } from "@/lib/store";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -84,6 +85,10 @@ export default function AdminDashboard() {
   const trendData = dashboardData?.trendData || [];
   const recentActivities = dashboardData?.recentActivities || [];
   const ongoingClassrooms = dashboardData?.ongoingClassrooms || [];
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="w-full mx-auto space-y-5 pb-8 animate-in fade-in slide-in-from-right-4 duration-300">

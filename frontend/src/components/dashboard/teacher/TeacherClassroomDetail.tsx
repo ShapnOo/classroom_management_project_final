@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { SyllabusTopic, Assignment, Test, Announcement, AttendanceRecord } from "@/lib/types";
+import ModalDialog from "@/components/ui/ModalDialog";
+import { ClassroomDetailSkeleton } from "@/components/ui/Skeleton";
 
 interface TeacherClassroomDetailProps {
   classroomId: string;
@@ -22,7 +24,7 @@ type AttendanceStatus = AttendanceRecord["status"];
 
 export default function TeacherClassroomDetail({ classroomId }: TeacherClassroomDetailProps) {
   const {
-    getClassroomView,
+    getClassroomView, isLoading,
     classSessions,
     attendanceRecords,
     announcements,
@@ -92,6 +94,31 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     completedSlides: 0,
   });
   const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState(false);
+
+  // Confirmation & Success Dialog States
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: "confirm" | "danger" | "success" | "warning";
+    confirmLabel?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const [successModal, setSuccessModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
 
   // Quick Attendance Form State
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceStatus>>({});
@@ -179,6 +206,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     }
   }, [classroomId, view?.students?.length]);
 
+  if (isLoading && !view) {
+    return <ClassroomDetailSkeleton />;
+  }
+
   if (!view) {
     return (
       <div className="py-20 text-center space-y-4 max-w-md mx-auto">
@@ -259,38 +290,51 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     e.preventDefault();
     if (!sessionTopic) return;
 
-    const newSessionId = Date.now().toString(36);
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to finalize and save class session & attendance for "${sessionTopic}"?`,
+      type: "confirm",
+      confirmLabel: "Yes, Save Attendance",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const newSessionId = Date.now().toString(36);
 
-    // 1. Add Class Session record
-    addClassSession({
-      classroomId: cls.id,
-      date: sessionDate,
-      topicCovered: sessionTopic,
-      notes: sessionNotes,
-      duration: sessionDuration,
-      conductedAt: new Date().toISOString(),
+        // 1. Add Class Session record
+        addClassSession({
+          classroomId: cls.id,
+          date: sessionDate,
+          topicCovered: sessionTopic,
+          notes: sessionNotes,
+          duration: sessionDuration,
+          conductedAt: new Date().toISOString(),
+        });
+
+        // 2. Save Attendance Records for all enrolled students
+        Object.entries(attendanceMap).forEach(([studentId, status]) => {
+          upsertAttendance(newSessionId, cls.id, studentId, status);
+        });
+
+        // 3. Increment Classes Completed for Classroom
+        updateClassroom(cls.id, {
+          classesCompleted: (cls.classesCompleted || 0) + 1,
+        });
+
+        // 4. If matched a syllabus topic, update status
+        const matchedTopic = courseSyllabus.find((t) => t.topic.toLowerCase() === sessionTopic.toLowerCase());
+        if (matchedTopic && matchedTopic.teacherStatus !== "done") {
+          updateSyllabusTopic(matchedTopic.id, { teacherStatus: "done" });
+        }
+
+        setShowAttendanceModal(false);
+        setSessionNotes("");
+        setSuccessModal({
+          isOpen: true,
+          title: "Attendance Saved Successfully",
+          message: `Attendance & session details for "${sessionTopic}" have been recorded for ${students.length} students.`,
+        });
+      },
     });
-
-    // 2. Save Attendance Records for all enrolled students
-    Object.entries(attendanceMap).forEach(([studentId, status]) => {
-      upsertAttendance(newSessionId, cls.id, studentId, status);
-    });
-
-    // 3. Increment Classes Completed for Classroom
-    updateClassroom(cls.id, {
-      classesCompleted: (cls.classesCompleted || 0) + 1,
-    });
-
-    // 4. If matched a syllabus topic, update status
-    const matchedTopic = courseSyllabus.find((t) => t.topic.toLowerCase() === sessionTopic.toLowerCase());
-    if (matchedTopic && matchedTopic.teacherStatus !== "done") {
-      updateSyllabusTopic(matchedTopic.id, { teacherStatus: "done" });
-    }
-
-    setShowAttendanceModal(false);
-    setSessionNotes("");
-    setAttendanceSuccessMessage(true);
-    setTimeout(() => setAttendanceSuccessMessage(false), 4000);
   };
 
   // Syllabus Status toggle
@@ -324,123 +368,200 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     setShowSyllabusModal(true);
   };
 
-  const handleSaveSyllabus = async () => {
+  const handleSaveSyllabus = () => {
     if (!syllabusForm.topic.trim()) return;
-    const cleanSubTopics = syllabusForm.subTopics.filter((t) => t.trim());
-    if (editingSyllabus) {
-      await updateSyllabusTopic(editingSyllabus.id, {
-        topic: syllabusForm.topic,
-        week: syllabusForm.week,
-        subTopics: cleanSubTopics,
-        teacherStatus: syllabusForm.teacherStatus,
-        totalSlides: Number(syllabusForm.totalSlides) || 0,
-        completedSlides: Number(syllabusForm.completedSlides) || 0,
-      });
-    } else {
-      await addSyllabusTopic({
-        courseId: course.id,
-        topic: syllabusForm.topic,
-        week: syllabusForm.week,
-        subTopics: cleanSubTopics,
-        teacherStatus: syllabusForm.teacherStatus,
-        adminStatus: "Published",
-        totalSlides: Number(syllabusForm.totalSlides) || 0,
-        completedSlides: Number(syllabusForm.completedSlides) || 0,
-      });
-    }
-    setShowSyllabusModal(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: editingSyllabus
+        ? `Are you sure you want to update topic "${syllabusForm.topic}"?`
+        : `Are you sure you want to add "${syllabusForm.topic}" to the course outline?`,
+      type: "confirm",
+      confirmLabel: "Yes, Save Topic",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        const cleanSubTopics = syllabusForm.subTopics.filter((t) => t.trim());
+        if (editingSyllabus) {
+          await updateSyllabusTopic(editingSyllabus.id, {
+            topic: syllabusForm.topic,
+            week: syllabusForm.week,
+            subTopics: cleanSubTopics,
+            teacherStatus: syllabusForm.teacherStatus,
+            totalSlides: Number(syllabusForm.totalSlides) || 0,
+            completedSlides: Number(syllabusForm.completedSlides) || 0,
+          });
+        } else {
+          await addSyllabusTopic({
+            courseId: course.id,
+            topic: syllabusForm.topic,
+            week: syllabusForm.week,
+            subTopics: cleanSubTopics,
+            teacherStatus: syllabusForm.teacherStatus,
+            adminStatus: "Published",
+            totalSlides: Number(syllabusForm.totalSlides) || 0,
+            completedSlides: Number(syllabusForm.completedSlides) || 0,
+          });
+        }
+        setShowSyllabusModal(false);
+        setSuccessModal({
+          isOpen: true,
+          title: "Syllabus Topic Saved",
+          message: `The course outline topic "${syllabusForm.topic}" has been saved successfully.`,
+        });
+      },
+    });
   };
 
   const handleCreateAssignment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAssignment.title) return;
-    addAssignment({
-      classroomId: cls.id,
-      title: newAssignment.title,
-      description: newAssignment.description,
-      dueDate: newAssignment.dueDate,
-      totalMarks: Number(newAssignment.totalMarks) || 20,
-      status: "Active",
-      submissions: 0,
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to create and publish assignment "${newAssignment.title}"?`,
+      type: "confirm",
+      confirmLabel: "Yes, Create Assignment",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        addAssignment({
+          classroomId: cls.id,
+          title: newAssignment.title,
+          description: newAssignment.description,
+          dueDate: newAssignment.dueDate,
+          totalMarks: Number(newAssignment.totalMarks) || 20,
+          status: "Active",
+          submissions: 0,
+        });
+        setNewAssignment({
+          title: "",
+          description: "",
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          totalMarks: 20,
+        });
+        setShowAssignmentModal(false);
+        setSuccessModal({
+          isOpen: true,
+          title: "Assignment Published",
+          message: `Assignment "${newAssignment.title}" has been published to all enrolled students.`,
+        });
+      },
     });
-    setNewAssignment({
-      title: "",
-      description: "",
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      totalMarks: 20,
-    });
-    setShowAssignmentModal(false);
   };
 
   const handleCreateTest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTest.title) return;
-    addTest({
-      classroomId: cls.id,
-      title: newTest.title,
-      description: newTest.description,
-      testDate: newTest.testDate,
-      duration: newTest.duration,
-      totalMarks: Number(newTest.totalMarks) || 25,
-      status: "Upcoming",
-      submissions: 0,
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to schedule class test "${newTest.title}"?`,
+      type: "confirm",
+      confirmLabel: "Yes, Schedule Test",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        addTest({
+          classroomId: cls.id,
+          title: newTest.title,
+          description: newTest.description,
+          testDate: newTest.testDate,
+          duration: newTest.duration,
+          totalMarks: Number(newTest.totalMarks) || 25,
+          status: "Upcoming",
+          submissions: 0,
+        });
+        setNewTest({
+          title: "",
+          description: "",
+          testDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          duration: "1h",
+          totalMarks: 25,
+        });
+        setShowTestModal(false);
+        setSuccessModal({
+          isOpen: true,
+          title: "Class Test Scheduled",
+          message: `Class test "${newTest.title}" has been scheduled successfully.`,
+        });
+      },
     });
-    setNewTest({
-      title: "",
-      description: "",
-      testDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      duration: "1h",
-      totalMarks: 25,
-    });
-    setShowTestModal(false);
   };
 
   const handlePostAnnouncement = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAnnouncement.title || !newAnnouncement.content) return;
-    addAnnouncement({
-      title: newAnnouncement.title,
-      content: newAnnouncement.content,
-      date: new Date().toISOString().split("T")[0],
-      authorId: cls.teacherId,
-      authorName: view.teacher.name,
-      authorRole: "Teacher",
-      audienceType: "Course",
-      courseId: course.id,
-      batchId: batch.id,
-      status: "Published",
-      priority: newAnnouncement.priority,
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to post this announcement to students?`,
+      type: "confirm",
+      confirmLabel: "Yes, Post Announcement",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        addAnnouncement({
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
+          date: new Date().toISOString().split("T")[0],
+          authorId: cls.teacherId,
+          authorName: view.teacher.name,
+          authorRole: "Teacher",
+          audienceType: "Course",
+          courseId: course.id,
+          batchId: batch.id,
+          status: "Published",
+          priority: newAnnouncement.priority,
+        });
+        setNewAnnouncement({
+          title: "",
+          content: "",
+          priority: "Normal",
+        });
+        setShowAnnouncementModal(false);
+        setSuccessModal({
+          isOpen: true,
+          title: "Announcement Posted",
+          message: `Your announcement has been posted successfully.`,
+        });
+      },
     });
-    setNewAnnouncement({
-      title: "",
-      content: "",
-      priority: "Normal",
-    });
-    setShowAnnouncementModal(false);
   };
 
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMaterial.title) return;
-    setMaterials((prev) => [
-      {
-        id: `mat-${Date.now()}`,
-        title: newMaterial.title,
-        category: newMaterial.category,
-        fileType: newMaterial.fileType,
-        size: newMaterial.size || "2.0 MB",
-        date: "Just now",
-        downloads: 0,
+    setConfirmDialog({
+      isOpen: true,
+      title: "Are you sure?",
+      message: `Are you sure you want to upload material "${newMaterial.title}"?`,
+      type: "confirm",
+      confirmLabel: "Yes, Upload",
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        setMaterials((prev) => [
+          {
+            id: `mat-${Date.now()}`,
+            title: newMaterial.title,
+            category: newMaterial.category,
+            fileType: newMaterial.fileType,
+            size: newMaterial.size || "2.0 MB",
+            date: "Just now",
+            downloads: 0,
+          },
+          ...prev,
+        ]);
+        setNewMaterial({
+          title: "",
+          category: "Slides",
+          fileType: "PDF",
+          size: "2.5 MB",
+        });
+        setShowMaterialModal(false);
+        setSuccessModal({
+          isOpen: true,
+          title: "Material Uploaded",
+          message: `Material "${newMaterial.title}" has been uploaded successfully.`,
+        });
       },
-      ...prev,
-    ]);
-    setNewMaterial({
-      title: "",
-      category: "Slides",
-      fileType: "PDF",
-      size: "2.5 MB",
     });
-    setShowMaterialModal(false);
   };
 
   const filteredStudents = students.filter(
@@ -1205,7 +1326,24 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteSyllabusTopic(top.id)}
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: "Are you sure?",
+                              message: `Are you sure you want to delete topic "${top.topic}"? This action cannot be undone.`,
+                              type: "danger",
+                              confirmLabel: "Yes, Delete Topic",
+                              onConfirm: async () => {
+                                setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+                                await deleteSyllabusTopic(top.id);
+                                setSuccessModal({
+                                  isOpen: true,
+                                  title: "Topic Deleted",
+                                  message: `Topic "${top.topic}" has been removed from the course outline.`,
+                                });
+                              },
+                            });
+                          }}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                           title="Delete Topic"
                         >
@@ -2334,6 +2472,28 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ModalDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type || "confirm"}
+        confirmLabel={confirmDialog.confirmLabel || "Confirm"}
+        cancelLabel="Cancel"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Success Dialog */}
+      <ModalDialog
+        isOpen={successModal.isOpen}
+        title={successModal.title}
+        message={successModal.message}
+        type="success"
+        confirmLabel="Got it"
+        onConfirm={() => setSuccessModal((prev) => ({ ...prev, isOpen: false }))}
+      />
 
     </div>
   );

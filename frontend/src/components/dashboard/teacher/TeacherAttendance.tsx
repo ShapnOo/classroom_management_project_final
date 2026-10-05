@@ -23,9 +23,11 @@ function statusColor(p: number) {
   return { bg: "bg-red-100", text: "text-red-700", label: "Critical" };
 }
 
+import { TableSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) {
   const {
-    getMyClassroomViews, classSessions, attendanceRecords,
+    getMyClassroomViews, classSessions, attendanceRecords, isLoading,
     fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchStudents,
     fetchClassSessions, fetchAttendanceRecords,
   } = useStore();
@@ -41,6 +43,10 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
   }, []);
 
   const myClassrooms = getMyClassroomViews();
+
+  if (isLoading && myClassrooms.length === 0) {
+    return <TableSkeleton rows={5} cols={5} />;
+  }
 
 
   const [activeTab, setActiveTab] = useState<"students" | "sessions">("students");

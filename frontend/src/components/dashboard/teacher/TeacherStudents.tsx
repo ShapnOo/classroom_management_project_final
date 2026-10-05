@@ -18,9 +18,11 @@ interface TeacherStudentsProps {
   courseId?: string; // classroomId
 }
 
+import { TableSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
   const {
-    getMyClassroomViews, attendanceRecords, gradeRecords, assignments,
+    getMyClassroomViews, attendanceRecords, gradeRecords, assignments, isLoading,
     fetchClassrooms, fetchCourses, fetchBatches, fetchStudents,
     fetchAttendanceRecords, fetchGradeRecords, fetchAssignments
   } = useStore();
@@ -37,6 +39,10 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const myClassrooms = getMyClassroomViews();
+
+  if (isLoading && myClassrooms.length === 0) {
+    return <TableSkeleton rows={6} cols={4} />;
+  }
   const view = courseId ? myClassrooms.find(v => v.classroom.id === courseId) : myClassrooms[0];
 
   const courseName = view?.course.title || "Course Students";

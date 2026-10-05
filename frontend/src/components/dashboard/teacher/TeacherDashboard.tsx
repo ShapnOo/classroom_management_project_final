@@ -29,6 +29,8 @@ import {
 import { useState, useEffect } from "react";
 import { api, TeacherDashboardData } from "@/lib/api";
 
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherDashboard() {
   const [dashboardData, setDashboardData] = useState<TeacherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,12 +48,7 @@ export default function TeacherDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="w-full h-64 flex flex-col items-center justify-center gap-3 text-slate-500">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-dark" />
-        <p className="text-xs font-medium">Loading Teacher Dashboard...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const metrics = dashboardData?.metrics;

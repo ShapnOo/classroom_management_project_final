@@ -26,9 +26,11 @@ interface TeacherMaterialsProps {
 
 const filterTypes = ["All", "Lecture Notes", "Slides", "PDF", "Video", "Practical", "Reference"];
 
+import { TableSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
   const {
-    getMyClassroomViews, materials, addMaterial, deleteMaterial,
+    getMyClassroomViews, materials, isLoading, addMaterial, deleteMaterial,
     fetchClassrooms, fetchCourses, fetchBatches, fetchMaterials
   } = useStore();
 
@@ -38,6 +40,10 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
     fetchBatches();
     fetchMaterials(courseId);
   }, [courseId]);
+
+  if (isLoading && materials.length === 0) {
+    return <TableSkeleton rows={5} cols={4} />;
+  }
 
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");

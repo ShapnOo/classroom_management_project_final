@@ -10,9 +10,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
+import { GridSkeleton } from "@/components/ui/Skeleton";
+
 export default function TeacherClassrooms() {
   const {
-    getMyClassroomViews,
+    getMyClassroomViews, isLoading,
     fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchPrograms,
     fetchSchedules, fetchStudents, fetchSyllabusTopics,
   } = useStore();
@@ -29,6 +31,10 @@ export default function TeacherClassrooms() {
   }, []);
 
   const myClassrooms = getMyClassroomViews();
+
+  if (isLoading && myClassrooms.length === 0) {
+    return <GridSkeleton count={6} />;
+  }
 
 
   const [searchTerm, setSearchTerm] = useState("");
