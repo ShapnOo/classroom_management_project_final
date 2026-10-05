@@ -321,3 +321,57 @@ export const saveGradeRecord = async (req: Request, res: Response) => {
     sendError(res, err.message);
   }
 };
+
+// ── COURSE MATERIALS ─────────────────────────────────────────────────────────
+export const getMaterials = async (req: Request, res: Response) => {
+  try {
+    const { classroomId, courseId } = req.query;
+    let queryText = `
+      SELECT cm.*, cr.title as course_title, cr.code as course_code
+      FROM course_materials cm
+      LEFT JOIN courses cr ON cm.course_id = cr.id
+    `;
+    const params: any[] = [];
+    if (classroomId) {
+      queryText += " WHERE cm.classroom_id = $1";
+      params.push(classroomId);
+    } else if (courseId) {
+      queryText += " WHERE cm.course_id = $1";
+      params.push(courseId);
+    }
+    queryText += " ORDER BY cm.uploaded_at DESC";
+
+    const { rows } = await pool.query(queryText, params);
+    sendSuccess(res, rows, "Course materials retrieved successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const createMaterial = async (req: Request, res: Response) => {
+  try {
+    const { classroomId, courseId, title, description, fileName, fileType, fileData, fileSize } = req.body;
+    if (!title || !fileName) {
+      return sendError(res, "Title and fileName are required", 400);
+    }
+    const id = genId();
+    const { rows } = await pool.query(`
+      INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_data, file_size)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+    `, [id, classroomId || null, courseId || null, title, description || "", fileName, fileType || "application/pdf", fileData || "", fileSize || "1.0 MB"]);
+    sendSuccess(res, rows[0], "Material uploaded successfully", 201);
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const deleteMaterial = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM course_materials WHERE id = $1", [id]);
+    sendSuccess(res, { id }, "Material deleted successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+

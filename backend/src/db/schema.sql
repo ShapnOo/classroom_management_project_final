@@ -208,3 +208,17 @@ CREATE TABLE IF NOT EXISTS app_settings (
   logo_base64 TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 9. Course Materials & Documents
+CREATE TABLE IF NOT EXISTS course_materials (
+  id VARCHAR(64) PRIMARY KEY,
+  classroom_id VARCHAR(64) REFERENCES classrooms(id) ON DELETE CASCADE,
+  course_id VARCHAR(64) REFERENCES courses(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  file_name VARCHAR(255) NOT NULL,
+  file_type VARCHAR(100) DEFAULT 'application/pdf',
+  file_data TEXT, -- Base64 file payload string
+  file_size VARCHAR(50),
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

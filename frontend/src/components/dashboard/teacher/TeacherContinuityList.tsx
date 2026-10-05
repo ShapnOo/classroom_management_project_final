@@ -6,48 +6,47 @@ import {
   Calendar,
   AlertCircle
 } from "lucide-react";
+import { useEffect } from "react";
 import Link from "next/link";
-
-// Mock Data for courses
-const mockCourses = [
-  { 
-    id: "cls-1", 
-    name: "Database Management Systems", 
-    batch: "Spring 2026", 
-    code: "CSE-305",
-    progress: 68,
-    classesCompleted: 18,
-    nextTopic: "Continue → BCNF Examples"
-  },
-  { 
-    id: "cls-2", 
-    name: "Software Engineering", 
-    batch: "Spring 2026", 
-    code: "CSE-412",
-    progress: 74,
-    classesCompleted: 15,
-    nextTopic: "Agile Methodologies (Scrum)"
-  },
-  { 
-    id: "cls-3", 
-    name: "Computer Networks", 
-    batch: "Fall 2025", 
-    code: "CSE-301",
-    progress: 92,
-    classesCompleted: 24,
-    nextTopic: "Network Security Overview"
-  }
-];
+import { useStore } from "@/lib/store";
 
 export default function TeacherContinuityList() {
+  const {
+    getMyClassroomViews,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSyllabusTopics, fetchClassSessions,
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSyllabusTopics();
+    fetchClassSessions();
+  }, []);
+
+  const myClassrooms = getMyClassroomViews();
+
+  const formattedCourses = myClassrooms.map(({ classroom: cls, course, batch, syllabusTopics, progress }) => {
+    const nextTopicObj = syllabusTopics.find(t => t.teacherStatus === "current" || t.teacherStatus === "pending");
+    const nextTopic = nextTopicObj ? nextTopicObj.topic : "All topics completed!";
+
+    return {
+      id: cls.id,
+      name: course.title,
+      batch: batch.name,
+      code: course.code,
+      progress,
+      classesCompleted: cls.classesCompleted,
+      nextTopic,
+    };
+  });
+
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-
 
       {/* Course List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCourses.map((course) => (
+        {formattedCourses.map((course) => (
           <div key={course.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group">
             <div className="p-5 flex-1 flex flex-col">
               
@@ -110,3 +109,4 @@ export default function TeacherContinuityList() {
     </div>
   );
 }
+

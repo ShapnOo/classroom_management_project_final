@@ -7,12 +7,29 @@ import {
   TrendingUp, Sparkles, Filter, ChevronRight
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 export default function TeacherClassrooms() {
-  const { getMyClassroomViews } = useStore();
+  const {
+    getMyClassroomViews,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchPrograms,
+    fetchSchedules, fetchStudents, fetchSyllabusTopics,
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchPrograms();
+    fetchSchedules();
+    fetchStudents();
+    fetchSyllabusTopics();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

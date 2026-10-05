@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import crypto from "crypto";
 
 const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
@@ -23,9 +24,13 @@ export const getAnnouncements = async (req: Request, res: Response) => {
   }
 };
 
-export const createAnnouncement = async (req: Request, res: Response) => {
+export const createAnnouncement = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { title, content, authorName, authorId, audienceType, programId, batchId, courseId, priority, status } = req.body;
+    const { title, content, audienceType, programId, batchId, courseId, priority, status } = req.body;
+    const author = req.user;
+    if (!author) {
+      return sendError(res, "Unauthorized", 401);
+    }
     if (!title || !content) {
       return sendError(res, "Title and content are required", 400);
     }
@@ -38,9 +43,9 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       title,
       content,
       new Date().toISOString().split("T")[0],
-      authorId || "admin-1",
-      authorName || "Administration",
-      "Admin",
+      author.id,
+      author.name || "Administration",
+      author.role === "teacher" ? "Teacher" : "Admin",
       audienceType || "Global",
       programId || null,
       batchId || null,

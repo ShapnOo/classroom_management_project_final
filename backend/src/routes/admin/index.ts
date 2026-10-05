@@ -11,8 +11,8 @@ import reportsRoutes from "./reports.routes.js";
 
 const router = Router();
 
-// Apply JWT Authentication and Admin Role Requirement to all Admin API routes
-router.use(authenticateToken, authorizeRoles("admin"));
+// Apply JWT Authentication and Role Authorization (Admin, Teacher, Student) to shared API routes
+router.use(authenticateToken, authorizeRoles("admin", "teacher", "student"));
 
 // Mount all admin sub-modules
 router.use("/dashboard", dashboardRoutes);

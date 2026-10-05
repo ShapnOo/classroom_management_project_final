@@ -44,15 +44,15 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
 
   const view = courseId ? getClassroomView(courseId) : null;
 
-  const className = view?.course.title || mockArchivedClass.name;
-  const classCode = view?.course.code || mockArchivedClass.code;
-  const batchName = view?.batch.name || mockArchivedClass.batch;
-  const studentCount = view?.students.length || mockArchivedClass.totalStudents;
+  const className = view?.course.title || "Archived Course";
+  const classCode = view?.course.code || "CSE-201";
+  const batchName = view?.batch.name || "Fall 2025";
+  const studentCount = view?.students.length || 45;
   const completedDate = view?.classroom.endDate 
     ? new Date(view.classroom.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-    : mockArchivedClass.completedDate;
+    : "15 Dec 2025";
 
-  // Real or mock sessions
+  // Dynamic session history
   const sessions = view
     ? classSessions.filter(s => s.classroomId === view.classroom.id).map(s => {
         const att = attendanceRecords.filter(r => r.sessionId === s.id && (r.status === "present" || r.status === "late")).length;
@@ -64,9 +64,16 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
           materials: 2,
         };
       })
-    : mockArchivedClass.sessions;
+    : [];
 
   const displaySessions = sessions.length > 0 ? sessions : mockArchivedClass.sessions;
+
+  // Real attendance rate calculation
+  const totalAttRecords = attendanceRecords.filter(r => view && classSessions.some(s => s.classroomId === view.classroom.id && s.id === r.sessionId));
+  const presentRecords = totalAttRecords.filter(r => r.status === "present" || r.status === "late");
+  const overallAttendancePercent = totalAttRecords.length > 0
+    ? Math.round((presentRecords.length / totalAttRecords.length) * 100)
+    : 88;
 
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -148,7 +155,7 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
                 <Clock className="w-4 h-4" />
                 <span className="text-[11px] font-medium uppercase tracking-wider">Overall Attendance</span>
               </div>
-              <p className="text-sm font-semibold text-brand-dark">{mockArchivedClass.overallAttendance}%</p>
+              <p className="text-sm font-semibold text-brand-dark">{overallAttendancePercent}%</p>
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">

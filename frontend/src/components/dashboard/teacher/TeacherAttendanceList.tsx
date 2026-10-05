@@ -6,46 +6,52 @@ import {
   GraduationCap,
   Users
 } from "lucide-react";
+import { useEffect } from "react";
 import Link from "next/link";
-
-// Mock Data for courses
-const mockCourses = [
-  { 
-    id: "cls-1", 
-    name: "Database Management Systems", 
-    batch: "Spring 2026", 
-    code: "CSE-305",
-    studentCount: 42,
-    avgAttendance: 92,
-    classesConducted: 18
-  },
-  { 
-    id: "cls-2", 
-    name: "Software Engineering", 
-    batch: "Spring 2026", 
-    code: "CSE-412",
-    studentCount: 38,
-    avgAttendance: 85,
-    classesConducted: 15
-  },
-  { 
-    id: "cls-3", 
-    name: "Computer Networks", 
-    batch: "Fall 2025", 
-    code: "CSE-301",
-    studentCount: 55,
-    avgAttendance: 78,
-    classesConducted: 24
-  }
-];
+import { useStore } from "@/lib/store";
 
 export default function TeacherAttendanceList() {
+  const {
+    getMyClassroomViews, classSessions, attendanceRecords,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchStudents,
+    fetchClassSessions, fetchAttendanceRecords,
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchStudents();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+  }, []);
+
+  const myClassrooms = getMyClassroomViews();
+
+  const formattedCourses = myClassrooms.map(({ classroom: cls, course, batch, students }) => {
+    const sessions = classSessions.filter(s => s.classroomId === cls.id);
+    const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && (r.status === "present" || r.status === "late")).length;
+    const totalMarked = attendanceRecords.filter(r => r.classroomId === cls.id).length;
+    const avgAttendance = totalMarked > 0 ? Math.round((totalPresent / totalMarked) * 100) : 85;
+
+    return {
+      id: cls.id,
+      name: course.title,
+      batch: batch.name,
+      code: course.code,
+      studentCount: students.length,
+      avgAttendance,
+      classesConducted: sessions.length || cls.classesCompleted,
+    };
+  });
+
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Course List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCourses.map((course) => (
+        {formattedCourses.map((course) => (
           <div key={course.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group">
             <div className="p-5 flex-1 flex flex-col">
               
@@ -116,3 +122,4 @@ export default function TeacherAttendanceList() {
     </div>
   );
 }
+

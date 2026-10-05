@@ -4,7 +4,8 @@ import {
   getAttendanceLogs, saveAttendance,
   getAssignments, createAssignment, updateAssignment, deleteAssignment,
   getTests, createTest, updateTest, deleteTest,
-  getResults, saveGradeRecord
+  getResults, saveGradeRecord,
+  getMaterials, createMaterial, deleteMaterial
 } from "../../controllers/admin/activities.controller.js";
 
 const router = Router();
@@ -31,4 +32,10 @@ router.delete("/tests/:id", deleteTest);
 router.get("/results", getResults);
 router.post("/results", saveGradeRecord);
 
+// Materials
+router.get("/materials", getMaterials);
+router.post("/materials", createMaterial);
+router.delete("/materials/:id", deleteMaterial);
+
 export default router;
+

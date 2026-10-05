@@ -25,23 +25,72 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { api, TeacherDashboardData } from "@/lib/api";
 
 export default function TeacherDashboard() {
-  const { getMyClassroomViews, getTodaysSchedule, getUpNextTopic } = useStore();
+  const [dashboardData, setDashboardData] = useState<TeacherDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const {
+    getMyClassroomViews, getTodaysSchedule, getUpNextTopic,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchTeachers, fetchSessions, fetchPrograms,
+    fetchStudents, fetchSyllabusTopics, fetchSchedules, fetchAssignments, fetchTests,
+    fetchClassSessions, fetchAttendanceRecords, fetchGradeRecords, fetchAnnouncements,
+  } = useStore();
+
+  useEffect(() => {
+    // 1. Fetch backend consolidated teacher dashboard API
+    api.getTeacherDashboard()
+      .then(data => {
+        setDashboardData(data);
+      })
+      .catch(err => {
+        console.warn("Could not load backend teacher dashboard API, relying on store state:", err);
+      })
+      .finally(() => setLoading(false));
+
+    // 2. Hydrate full store entities
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchTeachers();
+    fetchSessions();
+    fetchPrograms();
+    fetchStudents();
+    fetchSyllabusTopics();
+    fetchSchedules();
+    fetchAssignments();
+    fetchTests();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+    fetchGradeRecords();
+    fetchAnnouncements();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
   const todaysSchedule = getTodaysSchedule();
   const upNext = getUpNextTopic();
 
-  const totalStudents = myClassrooms.reduce((sum, v) => sum + v.studentCount, 0);
-  const ongoingClassrooms = myClassrooms.filter(v => v.classroom.status === "ongoing").length;
+  const totalClassroomsCount = dashboardData?.metrics.totalClassrooms ?? myClassrooms.length;
+  const totalStudents = dashboardData?.metrics.totalStudents ?? myClassrooms.reduce((sum, v) => sum + v.studentCount, 0);
+  const ongoingClassrooms = dashboardData?.myClassrooms.filter(c => c.status === "ongoing").length ?? myClassrooms.filter(v => v.classroom.status === "ongoing").length;
+  const todayClassesCount = dashboardData?.metrics.todayClassesCount ?? todaysSchedule.length;
+  const totalAssignmentsCount = dashboardData?.metrics.totalAssignments ?? myClassrooms.reduce((sum, v) => sum + v.assignments.filter(a => a.status !== "Completed").length, 0);
 
-  // Build performance data from real classroom views
-  const performanceData = myClassrooms.slice(0, 5).map(v => ({
-    name: v.course.code,
-    attendance: 75 + Math.round(v.progress * 0.2),
-    avgScore: 65 + Math.round(v.progress * 0.25),
-  }));
+  // Build performance data from real API data or classroom views
+  const performanceData = dashboardData?.syllabusProgress.length 
+    ? dashboardData.syllabusProgress.map(sp => ({
+        name: sp.courseCode,
+        attendance: dashboardData.metrics.avgAttendanceRate,
+        avgScore: sp.progress,
+      }))
+    : myClassrooms.slice(0, 5).map(v => ({
+        name: v.course.code,
+        attendance: 75 + Math.round(v.progress * 0.2),
+        avgScore: 65 + Math.round(v.progress * 0.25),
+      }));
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -74,10 +123,10 @@ export default function TeacherDashboard() {
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "My Classrooms", value: String(myClassrooms.length), icon: MonitorPlay, color: "text-blue-600", bg: "bg-blue-50", trend: `${ongoingClassrooms} ongoing`, trendColor: "text-blue-600" },
+          { label: "My Classrooms", value: String(totalClassroomsCount), icon: MonitorPlay, color: "text-blue-600", bg: "bg-blue-50", trend: `${ongoingClassrooms} ongoing`, trendColor: "text-blue-600" },
           { label: "Total Students", value: String(totalStudents), icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", trend: "Enrolled", trendColor: "text-emerald-600" },
-          { label: "Today's Classes", value: String(todaysSchedule.length), icon: Calendar, color: "text-amber-600", bg: "bg-amber-50", trend: todaysSchedule.length > 0 ? todaysSchedule[0].startTime : "None today", trendColor: "text-amber-600" },
-          { label: "Pending Reviews", value: String(myClassrooms.reduce((sum, v) => sum + v.assignments.filter(a => a.status !== "Completed").length, 0)), icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50", trend: "to grade", trendColor: "text-purple-600" },
+          { label: "Today's Classes", value: String(todayClassesCount), icon: Calendar, color: "text-amber-600", bg: "bg-amber-50", trend: todayClassesCount > 0 ? "Scheduled" : "None today", trendColor: "text-amber-600" },
+          { label: "Assignments & Reviews", value: String(totalAssignmentsCount), icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50", trend: "active tasks", trendColor: "text-purple-600" },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden group hover:border-brand-dark/30 transition-colors">
             <div className="flex justify-between items-start mb-3">

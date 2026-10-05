@@ -451,9 +451,33 @@ export const api = {
   deleteAnnouncement: (id: string) =>
     request<{ message: string }>(`/admin/announcements/${id}`, { method: "DELETE" }),
 
+  // ── Course Materials ──
+  getMaterials: async (classroomId?: string): Promise<any[]> => {
+    const url = classroomId ? `/admin/activities/materials?classroomId=${classroomId}` : "/admin/activities/materials";
+    const rows = await request<any[]>(url);
+    return rows.map(r => ({
+      id: r.id,
+      classroomId: r.classroom_id,
+      courseId: r.course_id,
+      title: r.title,
+      description: r.description || "",
+      fileName: r.file_name,
+      fileType: r.file_type,
+      fileData: r.file_data,
+      fileSize: r.file_size,
+      uploadedAt: r.uploaded_at,
+    }));
+  },
+  createMaterial: (data: any) =>
+    request<any>("/admin/activities/materials", { method: "POST", body: JSON.stringify(data) }),
+  deleteMaterial: (id: string) =>
+    request<{ message: string }>(`/admin/activities/materials/${id}`, { method: "DELETE" }),
+
   // ── Consolidated Dashboard API ──
   getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
+  getTeacherDashboard: () => request<TeacherDashboardData>("/admin/dashboard/teacher-stats"),
 };
+
 
 export interface AdminDashboardData {
   metrics: {
@@ -499,5 +523,66 @@ export interface AdminDashboardData {
     teacher_name: string;
     student_count: number;
     progress: number;
+  }>;
+}
+
+export interface TeacherDashboardData {
+  teacher: {
+    id: string;
+    name: string;
+  };
+  metrics: {
+    totalClassrooms: number;
+    totalStudents: number;
+    totalSessionsConducted: number;
+    totalAssignments: number;
+    totalTests: number;
+    avgAttendanceRate: number;
+    todayClassesCount: number;
+  };
+  myClassrooms: Array<{
+    id: string;
+    room: string;
+    status: string;
+    classes_completed: number;
+    total_classes: number;
+    color_index: number;
+    course_id: string;
+    course_title: string;
+    course_code: string;
+    credits: number;
+    batch_name: string;
+    batch_code: string;
+    student_count: number;
+    progress: number;
+  }>;
+  todaySchedules: Array<{
+    id: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+    room: string;
+    course_title: string;
+    course_code: string;
+    batch_name: string;
+  }>;
+  syllabusProgress: Array<{
+    courseId: string;
+    courseCode: string;
+    courseTitle: string;
+    totalTopics: number;
+    completedTopics: number;
+    progress: number;
+  }>;
+  recentSessions: Array<{
+    id: string;
+    topic_covered: string;
+    duration: string;
+    date: string;
+    course_title: string;
+    course_code: string;
+    batch_name: string;
+    present_count: number;
+    total_attendance_count: number;
   }>;
 }

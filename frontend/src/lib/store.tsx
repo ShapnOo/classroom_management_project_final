@@ -16,7 +16,7 @@ import {
   seedAssignments, seedTests, seedAnnouncements, seedAdmins, CURRENT_TEACHER_ID,
   seedClassSessions, seedAttendanceRecords, seedGradeRecords, seedSettings
 } from "./seedData";
-import { api } from "./api";
+import { api, authStorage } from "./api";
 
 // ─── State Shape ─────────────────────────────────────────────────────────────
 
@@ -37,6 +37,7 @@ type AppState = {
   attendanceRecords: AttendanceRecord[];
   gradeRecords: GradeRecord[];
   announcements: Announcement[];
+  materials: any[];
   admins: AdminUser[];
   settings: AppSettings;
   isLoading: boolean;
@@ -64,10 +65,15 @@ type AppActions = {
   fetchAttendanceRecords: () => Promise<AttendanceRecord[]>;
   fetchGradeRecords: () => Promise<GradeRecord[]>;
   fetchAnnouncements: () => Promise<Announcement[]>;
+  fetchMaterials: (classroomId?: string) => Promise<any[]>;
   fetchSettings: () => Promise<AppSettings>;
 
   // Sync / Refresh
   refreshFromBackend: () => Promise<void>;
+
+  addMaterial: (m: any) => Promise<void>;
+  deleteMaterial: (id: string) => Promise<void>;
+
 
   // Sessions
   addSession: (s: Omit<Session, "id">) => Promise<void>;
@@ -164,6 +170,7 @@ const initialState: AppState = {
   attendanceRecords: seedAttendanceRecords,
   gradeRecords: seedGradeRecords,
   announcements: seedAnnouncements,
+  materials: [],
   admins: seedAdmins,
   settings: seedSettings,
   isLoading: false,
@@ -397,6 +404,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     return [];
   }, []);
+
+  const fetchMaterials = useCallback(async (classroomId?: string) => {
+    try {
+      const data = await api.getMaterials(classroomId);
+      if (data) {
+        setState(prev => ({ ...prev, materials: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchMaterials fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const addMaterial = useCallback(async (m: any) => {
+    try {
+      const created = await api.createMaterial(m);
+      if (created) {
+        setState(prev => ({ ...prev, materials: [created, ...prev.materials] }));
+        return;
+      }
+    } catch (e) {
+      console.warn("addMaterial fallback:", e);
+    }
+    setState(prev => ({ ...prev, materials: [{ ...m, id: genId(), uploadedAt: new Date().toISOString() }, ...prev.materials] }));
+  }, []);
+
+  const deleteMaterial = useCallback(async (id: string) => {
+    try {
+      await api.deleteMaterial(id);
+    } catch (e) {
+      console.warn("deleteMaterial fallback:", e);
+    }
+    setState(prev => ({ ...prev, materials: prev.materials.filter(x => x.id !== id) }));
+  }, []);
+
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -804,12 +847,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return cls ? buildView(cls) : null;
   }, [state.classrooms, buildView]);
 
-  const getMyClassroomViews = useCallback(() =>
-    state.classrooms
-      .filter(c => c.teacherId === CURRENT_TEACHER_ID)
+  const getActiveTeacherId = useCallback(() => {
+    const user = authStorage.getUser();
+    if (user?.email && state.teachers.length > 0) {
+      const found = state.teachers.find(t => t.email.toLowerCase() === user.email.toLowerCase());
+      if (found) return found.id;
+    }
+    return CURRENT_TEACHER_ID;
+  }, [state.teachers]);
+
+  const getMyClassroomViews = useCallback(() => {
+    const teacherId = getActiveTeacherId();
+    return state.classrooms
+      .filter(c => c.teacherId === teacherId)
       .map(c => buildView(c))
-      .filter(Boolean) as ClassroomView[]
-  , [state.classrooms, buildView]);
+      .filter(Boolean) as ClassroomView[];
+  }, [state.classrooms, buildView, getActiveTeacherId]);
 
   const getAllClassroomViews = useCallback(() =>
     state.classrooms
@@ -820,8 +873,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const getTodaysSchedule = useCallback(() => {
     const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const today = dayNames[new Date().getDay()];
+    const teacherId = getActiveTeacherId();
     const myClassroomIds = state.classrooms
-      .filter(c => c.teacherId === CURRENT_TEACHER_ID)
+      .filter(c => c.teacherId === teacherId)
       .map(c => c.id);
     return state.schedules
       .filter(s => s.day === today && myClassroomIds.includes(s.classroomId))
@@ -830,16 +884,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return view ? { ...s, classroomView: view } : null;
       })
       .filter(Boolean) as (ClassSchedule & { classroomView: ClassroomView })[];
-  }, [state.classrooms, state.schedules, getClassroomView]);
+  }, [state.classrooms, state.schedules, getClassroomView, getActiveTeacherId]);
 
   const getUpNextTopic = useCallback(() => {
+    const teacherId = getActiveTeacherId();
     const myCourseIds = state.classrooms
-      .filter(c => c.teacherId === CURRENT_TEACHER_ID)
+      .filter(c => c.teacherId === teacherId)
       .map(c => c.courseId);
     return state.syllabusTopics.find(
       t => myCourseIds.includes(t.courseId) && t.teacherStatus === "current"
     ) || null;
-  }, [state.classrooms, state.syllabusTopics]);
+  }, [state.classrooms, state.syllabusTopics, getActiveTeacherId]);
 
   const store: AppStore = {
     ...state,
@@ -860,6 +915,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchAttendanceRecords,
     fetchGradeRecords,
     fetchAnnouncements,
+    fetchMaterials,
     fetchSettings,
     refreshFromBackend,
     addSession, updateSession, deleteSession,
@@ -877,6 +933,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addAttendanceRecord, updateAttendanceRecord, upsertAttendance,
     addGradeRecord, updateGradeRecord, upsertGradeRecord,
     addAnnouncement, updateAnnouncement, deleteAnnouncement,
+    addMaterial, deleteMaterial,
     updateSettings,
     // helpers
     getClassroomView,

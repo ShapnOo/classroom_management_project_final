@@ -12,71 +12,61 @@ import {
   ArrowRight,
   BookOpen
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-
-// Mock Data
-const mockCourses = [
-  "Database Management Systems",
-  "Software Engineering",
-  "Computer Networks",
-  "Web Programming"
-];
-
-const mockHistory = [
-  {
-    id: "session-4",
-    classNumber: "#04",
-    date: "20 Jul 2026",
-    topic: "Normalization",
-    course: "Database Management Systems",
-    batch: "Spring 2026",
-    progress: 100,
-    status: "Completed",
-    materials: 2,
-    attendance: "95%",
-  },
-  {
-    id: "session-3",
-    classNumber: "#03",
-    date: "17 Jul 2026",
-    topic: "Normalization",
-    course: "Database Management Systems",
-    batch: "Spring 2026",
-    progress: 70,
-    status: "Partial",
-    materials: 1,
-    attendance: "88%",
-  },
-  {
-    id: "session-2",
-    classNumber: "#02",
-    date: "13 Jul 2026",
-    topic: "ER Model",
-    course: "Database Management Systems",
-    batch: "Spring 2026",
-    progress: 100,
-    status: "Completed",
-    materials: 3,
-    attendance: "100%",
-  },
-  {
-    id: "session-1",
-    classNumber: "#01",
-    date: "10 Jul 2026",
-    topic: "Introduction to DBMS",
-    course: "Database Management Systems",
-    batch: "Spring 2026",
-    progress: 100,
-    status: "Completed",
-    materials: 1,
-    attendance: "92%",
-  }
-];
+import { useStore } from "@/lib/store";
 
 export default function TeacherClassHistory() {
+  const {
+    classSessions, getMyClassroomViews, attendanceRecords, courses,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchStudents,
+    fetchClassSessions, fetchAttendanceRecords,
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchStudents();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+  }, []);
+
   const [selectedCourse, setSelectedCourse] = useState("All Courses");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const myClassrooms = getMyClassroomViews();
+  const courseOptions = Array.from(new Set(myClassrooms.map(v => v.course.title)));
+
+  const formattedHistory = classSessions.map((sess, i) => {
+    const view = myClassrooms.find(v => v.classroom.id === sess.classroomId);
+    const crs = view?.course.title || "Course Session";
+    const btc = view?.batch.name || "Batch";
+    const attRecs = attendanceRecords.filter(r => r.sessionId === sess.id);
+    const present = attRecs.filter(r => r.status === "present" || r.status === "late").length;
+    const attPct = attRecs.length > 0 ? Math.round((present / attRecs.length) * 100) : 90;
+
+    return {
+      id: sess.id,
+      classNumber: `#${String(classSessions.length - i).padStart(2, "0")}`,
+      date: new Date(sess.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      topic: sess.topicCovered,
+      course: crs,
+      batch: btc,
+      progress: 100,
+      status: "Completed",
+      materials: 1,
+      attendance: `${attPct}%`,
+    };
+  });
+
+  const filteredHistory = formattedHistory.filter(session => {
+    const matchesSearch = session.topic.toLowerCase().includes(searchQuery.toLowerCase()) || session.course.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCourse = selectedCourse === "All Courses" || session.course === selectedCourse;
+    return matchesSearch && matchesCourse;
+  });
+
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -133,7 +123,7 @@ export default function TeacherClassHistory() {
               className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2 pl-3 pr-8 rounded-lg text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark cursor-pointer shadow-sm"
             >
               <option value="All Courses">All Courses</option>
-              {mockCourses.map(course => (
+              {courseOptions.map(course => (
                 <option key={course} value={course}>{course}</option>
               ))}
             </select>
@@ -161,7 +151,7 @@ export default function TeacherClassHistory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-[13px]">
-              {mockHistory.map((session) => (
+              {filteredHistory.map((session) => (
                 <tr key={session.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-5 py-4">
                     <span className="inline-flex items-center justify-center px-2 py-1 bg-slate-100 text-slate-600 rounded text-[11px] font-medium font-mono">

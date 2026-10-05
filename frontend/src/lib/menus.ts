@@ -70,15 +70,15 @@ export const adminMenu: MenuItem[] = [
     title: "Reports & Analytics", icon: BarChart3,
     submenu: [
       { title: "Attendance Reports", href: "/dashboard/admin/reports/attendance" },
-      { title: "Course Progress", href: "#" },
-      { title: "Assignment Reports", href: "#" },
+      { title: "Course Progress", href: "/dashboard/admin/academic/syllabus" },
+      { title: "Assignment Reports", href: "/dashboard/admin/academic/assignments" },
       { title: "Test Results", href: "/dashboard/admin/reports/tests" },
-      { title: "Student Performance", href: "#" },
+      { title: "Student Performance", href: "/dashboard/admin/academic/results" },
     ]
   },
-  { title: "Notifications", icon: Bell, href: "#" },
+  { title: "Notifications", icon: Bell, href: "/dashboard/admin/announcements" },
   { title: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
-  { title: "My Profile", icon: User, href: "#" },
+  { title: "My Profile", icon: User, href: "/dashboard/admin/profile" },
 ];
 
 export const teacherMenu: MenuItem[] = [
@@ -104,13 +104,14 @@ export const teacherMenu: MenuItem[] = [
   { 
     title: "Progress & Analytics", icon: BarChart3,
     submenu: [
-      { title: "Reports", href: "#" }
+      { title: "Reports", href: "/dashboard/teacher/results" }
     ]
   },
-  { title: "Notifications", icon: Bell, href: "#" },
-  { title: "My Profile", icon: User, href: "#" },
-  { title: "Settings", icon: Settings, href: "#" },
+  { title: "Notifications", icon: Bell, href: "/dashboard/teacher/announcements" },
+  { title: "My Profile", icon: User, href: "/dashboard/teacher/profile" },
+  { title: "Settings", icon: Settings, href: "/dashboard/teacher/settings" },
 ];
+
 
 export const studentMenu: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard/student" },

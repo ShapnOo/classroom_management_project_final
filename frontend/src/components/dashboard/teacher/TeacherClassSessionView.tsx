@@ -13,42 +13,57 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useStore } from "@/lib/store";
 
 interface TeacherClassSessionViewProps {
   sessionId: string;
 }
 
 export default function TeacherClassSessionView({ sessionId }: TeacherClassSessionViewProps) {
-  // Mock data for the session based on requirements
+  const { classSessions, classrooms, courses, batches, attendanceRecords, syllabusTopics, materials } = useStore();
+
+  const realSession = classSessions.find(s => s.id === sessionId) || classSessions[0];
+  const classroom = realSession ? classrooms.find(c => c.id === realSession.classroomId) : null;
+  const course = classroom ? courses.find(co => co.id === classroom.courseId) : null;
+  const batch = classroom ? batches.find(b => b.id === classroom.batchId) : null;
+
+  const sessionAttendance = realSession ? attendanceRecords.filter(r => r.sessionId === realSession.id) : [];
+  const presentCount = sessionAttendance.filter(r => r.status === "present").length;
+  const lateCount = sessionAttendance.filter(r => r.status === "late").length;
+  const absentCount = sessionAttendance.filter(r => r.status === "absent").length;
+  const totalStudents = sessionAttendance.length || 40;
+
+  const courseSyllabus = course ? syllabusTopics.filter(t => t.courseId === course.id) : [];
+  const coveredTopicsList = courseSyllabus.filter(t => t.teacherStatus === "done").map(t => t.topic);
+  const remainingTopicsList = courseSyllabus.filter(t => t.teacherStatus !== "done").map(t => t.topic);
+  const progressPercent = courseSyllabus.length > 0 
+    ? Math.round((coveredTopicsList.length / courseSyllabus.length) * 100)
+    : 65;
+
+  const courseMaterials = course ? materials.filter(m => m.courseId === course.id) : [];
+
   const session = {
-    classNumber: "#09",
-    date: "12 Aug 2026",
-    time: "10:00 AM - 11:30 AM",
-    course: "Database Management Systems",
-    batch: "Spring 2026",
-    room: "Room 402",
-    progress: 65,
-    coveredTopics: [
-      "3NF",
-      "Functional Dependency",
-      "BCNF Introduction"
-    ],
-    remainingTopics: [
-      "BCNF Examples",
-      "Practical Problems"
-    ],
-    nextClassTopic: "Continue → BCNF Examples",
-    materials: [
+    classNumber: "#01",
+    date: realSession?.date ? new Date(realSession.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Today",
+    time: realSession?.duration ? `${realSession.duration}` : "10:00 AM - 11:30 AM",
+    course: course?.title || "Database Management Systems",
+    batch: batch?.name || "Spring 2026",
+    room: classroom?.room || "Room 402",
+    progress: progressPercent,
+    coveredTopics: coveredTopicsList.length > 0 ? coveredTopicsList : [realSession?.topicCovered || "Database Architecture"],
+    remainingTopics: remainingTopicsList.length > 0 ? remainingTopicsList : ["Advanced Indexing", "Transactions"],
+    nextClassTopic: remainingTopicsList[0] ? `Continue → ${remainingTopicsList[0]}` : "Continue Next Module",
+    materials: courseMaterials.length > 0 ? courseMaterials.map(m => ({ name: m.title, size: "1.5 MB" })) : [
       { name: "Lecture Slides (PDF)", size: "2.4 MB" },
       { name: "Code Examples (ZIP)", size: "1.1 MB" }
     ],
     attendance: {
-      present: 40,
-      absent: 2,
-      late: 0,
-      total: 42
+      present: presentCount || 38,
+      absent: absentCount || 2,
+      late: lateCount || 0,
+      total: totalStudents
     },
-    teacherNotes: "Students grasped 3NF well, but we need more time on BCNF examples next class."
+    teacherNotes: realSession?.notes || "Students grasped the core concepts well during today's interactive session."
   };
 
   return (

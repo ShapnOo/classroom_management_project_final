@@ -298,6 +298,16 @@ export async function seedInitialData() {
       ON CONFLICT (id) DO NOTHING;
     `);
 
+    // 16. Course Materials
+    await client.query(`
+      INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_size) VALUES
+      ('mat-1', 'cls-1', 'course-1', 'Lecture 1: ER Modeling & Relational Diagrams', 'Comprehensive slide deck introducing ER entity types, weak entities, and cardinality constraints.', 'ER_Modeling_Lecture1.pdf', 'application/pdf', '2.4 MB'),
+      ('mat-2', 'cls-1', 'course-1', 'SQL Lab Exercises & Sample Dataset', 'Hands-on practice script for inner/outer joins, grouping, and subqueries.', 'SQL_Lab_Practice_Spring2026.sql', 'text/plain', '180 KB'),
+      ('mat-3', 'cls-2', 'course-2', 'Agile & Scrum Process Guide', 'Overview of sprint planning, backlog grooming, daily standups, and retrospective templates.', 'Scrum_Guide_2026.pdf', 'application/pdf', '1.8 MB'),
+      ('mat-4', 'cls-4', 'course-4', 'A* Search Algorithm Python Notebook', 'Interactive Python code implementing A* search with heuristic visualization.', 'A_Star_Search_Implementation.ipynb', 'application/json', '520 KB')
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
     await client.query("COMMIT");
     console.log("Full realistic demo data populated successfully in PostgreSQL!");
   } catch (err) {

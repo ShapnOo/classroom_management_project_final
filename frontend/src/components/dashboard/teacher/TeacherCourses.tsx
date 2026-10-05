@@ -15,108 +15,60 @@ import {
   List as ListIcon
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-
-const mockCourses = [
-  {
-    id: "crs-1",
-    courseCode: "CSE-305",
-    courseTitle: "Database Management Systems",
-    department: "Computer Science & Engineering",
-    credits: "3.0",
-    semester: "5th Semester",
-    type: "Core",
-    activeBatches: 2,
-    color: "bg-blue-500",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-700",
-    syllabus: [
-      "Introduction to Database Systems",
-      "Entity-Relationship Model",
-      "Relational Model and Algebra",
-      "SQL and Advanced SQL",
-      "Database Normalization (1NF to BCNF)",
-      "Transaction Management & Concurrency",
-      "Database Security and Recovery"
-    ]
-  },
-  {
-    id: "crs-2",
-    courseCode: "CSE-412",
-    courseTitle: "Software Engineering",
-    department: "Computer Science & Engineering",
-    credits: "3.0",
-    semester: "7th Semester",
-    type: "Core",
-    activeBatches: 1,
-    color: "bg-emerald-500",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-700",
-    syllabus: [
-      "Software Development Life Cycles (SDLC)",
-      "Agile and Scrum Methodologies",
-      "Requirements Engineering",
-      "System Modeling (UML)",
-      "Software Architecture and Design Patterns",
-      "Software Testing and Quality Assurance",
-      "Project Management & Estimation"
-    ]
-  },
-  {
-    id: "crs-3",
-    courseCode: "CSE-101",
-    courseTitle: "Introduction to Computer Science",
-    department: "Computer Science & Engineering",
-    credits: "2.0",
-    semester: "1st Semester",
-    type: "Foundation",
-    activeBatches: 1,
-    color: "bg-slate-500",
-    lightColor: "bg-slate-50",
-    textColor: "text-slate-700",
-    syllabus: [
-      "History of Computing",
-      "Computer Hardware & Architecture basics",
-      "Number Systems and Logic Gates",
-      "Introduction to Operating Systems",
-      "Basics of Computer Networks",
-      "Problem Solving and Algorithms",
-      "Introduction to Programming (C/Python)"
-    ]
-  },
-  {
-    id: "crs-4",
-    courseCode: "CSE-425",
-    courseTitle: "Artificial Intelligence",
-    department: "Computer Science & Engineering",
-    credits: "3.0",
-    semester: "8th Semester",
-    type: "Core",
-    activeBatches: 1,
-    color: "bg-purple-500",
-    lightColor: "bg-purple-50",
-    textColor: "text-purple-700",
-    syllabus: [
-      "Intelligent Agents & Problem Solving",
-      "Search Algorithms (A*, Minimax)",
-      "Knowledge Representation (Propositional Logic)",
-      "Machine Learning Basics",
-      "Neural Networks & Deep Learning",
-      "Natural Language Processing",
-      "AI Ethics and Future Trends"
-    ]
-  },
-];
+import { useState, useEffect } from "react";
+import { useStore } from "@/lib/store";
 
 export default function TeacherCourses() {
+  const {
+    courses, syllabusTopics, departments, programs, classrooms,
+    fetchCourses, fetchSyllabusTopics, fetchDepartments, fetchPrograms, fetchClassrooms
+  } = useStore();
+
+  useEffect(() => {
+    fetchCourses();
+    fetchSyllabusTopics();
+    fetchDepartments();
+    fetchPrograms();
+    fetchClassrooms();
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedCourse, setSelectedCourse] = useState<typeof mockCourses[0] | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
 
-  const filteredCourses = mockCourses.filter(course => 
+  const colorsList = [
+    { color: "bg-blue-500", lightColor: "bg-blue-50", textColor: "text-blue-700" },
+    { color: "bg-emerald-500", lightColor: "bg-emerald-50", textColor: "text-emerald-700" },
+    { color: "bg-purple-500", lightColor: "bg-purple-50", textColor: "text-purple-700" },
+    { color: "bg-amber-500", lightColor: "bg-amber-50", textColor: "text-amber-700" },
+  ];
+
+  const formattedCourses = courses.map((crs, idx) => {
+    const prog = programs.find(p => p.id === crs.programId);
+    const dept = departments.find(d => d.id === prog?.departmentId);
+    const topics = syllabusTopics.filter(t => t.courseId === crs.id).map(t => t.topic);
+    const activeBatchesCount = classrooms.filter(c => c.courseId === crs.id && c.status === "ongoing").length;
+    const colorTheme = colorsList[idx % colorsList.length];
+
+    return {
+      id: crs.id,
+      courseCode: crs.code,
+      courseTitle: crs.title,
+      department: dept?.name || "Computer Science & Engineering",
+      credits: String(crs.credits),
+      semester: "Current Term",
+      type: crs.credits >= 3 ? "Core" : "Lab / Foundation",
+      activeBatches: activeBatchesCount || 1,
+      ...colorTheme,
+      syllabus: topics.length > 0 ? topics : ["Syllabus topics to be uploaded by course coordinator"]
+    };
+  });
+
+  const filteredCourses = formattedCourses.filter(course => 
     course.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div className="w-full mx-auto space-y-4 pb-8 relative">
@@ -348,7 +300,7 @@ export default function TeacherCourses() {
               </div>
 
               <div className="space-y-3">
-                {selectedCourse.syllabus.map((topic, idx) => (
+                {selectedCourse.syllabus.map((topic: string, idx: number) => (
                   <div key={idx} className="flex gap-3 items-start group">
                     <div className="flex flex-col items-center mt-0.5">
                       <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-medium text-slate-500 group-hover:bg-brand-dark group-hover:text-white group-hover:border-brand-dark transition-colors">

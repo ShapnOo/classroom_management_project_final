@@ -5,6 +5,7 @@ import {
   ChevronRight, TrendingUp, ListTodo
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 interface TeacherCourseContinuityProps {
@@ -12,8 +13,22 @@ interface TeacherCourseContinuityProps {
 }
 
 export default function TeacherCourseContinuity({ courseId }: TeacherCourseContinuityProps) {
-  const { getMyClassroomViews, updateSyllabusTopic } = useStore();
+  const {
+    getMyClassroomViews, updateSyllabusTopic,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchPrograms, fetchSyllabusTopics
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchPrograms();
+    fetchSyllabusTopics();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
+
 
   // If courseId given, find that classroom view, else show list
   const resolved = courseId

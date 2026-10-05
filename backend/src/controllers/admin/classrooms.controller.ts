@@ -7,7 +7,18 @@ const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("he
 
 export const getClassrooms = async (req: Request, res: Response) => {
   try {
-    const { batchId, teacherId, status } = req.query;
+    const { batchId, status } = req.query;
+    let teacherId = req.query.teacherId as string | undefined;
+
+    // Token-based tenant isolation for teachers
+    const authUser = (req as any).user;
+    if (authUser && authUser.role === "teacher") {
+      const { rows: tRows } = await pool.query("SELECT id FROM teachers WHERE email = $1", [authUser.email]);
+      if (tRows.length > 0) {
+        teacherId = tRows[0].id;
+      }
+    }
+
     let queryText = `
       SELECT c.*,
              cr.title as course_title, cr.code as course_code, cr.credits as course_credits,

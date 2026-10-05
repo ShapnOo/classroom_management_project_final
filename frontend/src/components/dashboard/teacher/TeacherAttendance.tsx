@@ -4,7 +4,7 @@ import {
   ClipboardCheck, Search, ArrowLeft, Download, Calendar,
   Users, AlertCircle, CheckCircle2, Clock, ChevronDown
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 
@@ -24,8 +24,24 @@ function statusColor(p: number) {
 }
 
 export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) {
-  const { getMyClassroomViews, classSessions, attendanceRecords } = useStore();
+  const {
+    getMyClassroomViews, classSessions, attendanceRecords,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchStudents,
+    fetchClassSessions, fetchAttendanceRecords,
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchStudents();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
+
 
   const [activeTab, setActiveTab] = useState<"students" | "sessions">("students");
   const [search, setSearch] = useState("");

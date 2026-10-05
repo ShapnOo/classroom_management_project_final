@@ -7,12 +7,24 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { useState } from "react";
 
 export default function TeacherStudentsList() {
-  const { getMyClassroomViews } = useStore();
+  const {
+    getMyClassroomViews,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
+
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   if (!selectedBatchId) {

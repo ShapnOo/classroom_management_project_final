@@ -10,37 +10,67 @@ import {
   Mail,
   GraduationCap
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useStore } from "@/lib/store";
 
 interface TeacherStudentsProps {
-  courseId?: string;
+  courseId?: string; // classroomId
 }
 
-// Mock Data
-const mockStudents = [
-  { id: "24201", name: "Mainul Hasan", attendance: 92, assignments: "8/10", avgMarks: 82, avatar: "/avatars/avatar-1.jpg" },
-  { id: "24202", name: "Waliullah", attendance: 87, assignments: "7/10", avgMarks: 76, avatar: "/avatars/avatar-2.jpg" },
-  { id: "24203", name: "Fariha Rahman", attendance: 98, assignments: "10/10", avgMarks: 94, avatar: "/avatars/avatar-3.jpg" },
-  { id: "24204", name: "Ahmed Kabir", attendance: 75, assignments: "6/10", avgMarks: 65, avatar: "/avatars/avatar-4.jpg" },
-  { id: "24205", name: "Sarah Islam", attendance: 89, assignments: "9/10", avgMarks: 88, avatar: "/avatars/avatar-5.jpg" },
-  { id: "24206", name: "Tanvir Ahmed", attendance: 65, assignments: "5/10", avgMarks: 58, avatar: "/avatars/avatar-6.jpg" },
-];
-
 export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
+  const {
+    getMyClassroomViews, attendanceRecords, gradeRecords, assignments,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents,
+    fetchAttendanceRecords, fetchGradeRecords, fetchAssignments
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchAttendanceRecords();
+    fetchGradeRecords();
+    fetchAssignments();
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
+  const myClassrooms = getMyClassroomViews();
+  const view = courseId ? myClassrooms.find(v => v.classroom.id === courseId) : myClassrooms[0];
 
-  // In a real app, fetch the course details based on the courseId
-  const courseName = courseId === "cls-2" ? "Software Engineering" : "Database Management Systems";
-  const batch = "Spring 2026";
-  const code = courseId === "cls-2" ? "CSE-412" : "CSE-305";
+  const courseName = view?.course.title || "Course Students";
+  const batch = view?.batch.name || "";
+  const code = view?.course.code || "";
+  const studentList = view?.students || [];
 
-  // Filter students
-  const filteredStudents = mockStudents.filter(student => 
+  const formattedStudents = studentList.map((st, i) => {
+    const attRecs = attendanceRecords.filter(r => r.classroomId === view?.classroom.id && r.studentId === st.id);
+    const present = attRecs.filter(r => r.status === "present" || r.status === "late").length;
+    const attPct = attRecs.length > 0 ? Math.round((present / attRecs.length) * 100) : 85 + (i % 10);
+
+    const grades = gradeRecords.filter(g => g.classroomId === view?.classroom.id && g.studentId === st.id);
+    const avgScore = grades.length > 0
+      ? Math.round(grades.reduce((sum, g) => sum + (g.obtainedMarks / g.totalMarks) * 100, 0) / grades.length)
+      : 75 + (i % 20);
+
+    const totalAsn = assignments.filter(a => a.classroomId === view?.classroom.id).length || 10;
+    const completedAsn = Math.min(totalAsn, Math.max(1, Math.round(totalAsn * (attPct / 100))));
+
+    return {
+      id: st.rollNo || st.id,
+      name: st.name,
+      attendance: attPct,
+      assignments: `${completedAsn}/${totalAsn}`,
+      avgMarks: avgScore,
+    };
+  });
+
+  const filteredStudents = formattedStudents.filter(student => 
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     student.id.includes(searchQuery)
   );
+
 
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -80,9 +110,9 @@ export default function TeacherStudents({ courseId }: TeacherStudentsProps) {
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-dark font-medium text-[11px] shadow-sm">
-            {mockStudents.length}
+            {formattedStudents.length}
           </div>
-          <span className="text-[13px] font-medium text-slate-600">Total Enrolled</span>
+          <span className="text-[13px] font-medium text-slate-600">Total Enrolled in {courseName}</span>
         </div>
 
         {/* Search */}

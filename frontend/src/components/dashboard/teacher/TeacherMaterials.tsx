@@ -16,34 +16,55 @@ import {
   MonitorPlay,
   ArrowLeft
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useStore } from "@/lib/store";
 
 interface TeacherMaterialsProps {
-  courseId?: string;
+  courseId?: string; // classroomId
 }
-
-// Mock Data
-const mockMaterials = [
-  { id: "mat-1", name: "Normalization.pdf", type: "PDF", classNo: "Class #08", date: "05 Aug 2026", size: "2.4 MB" },
-  { id: "mat-2", name: "DBMS Lecture 08.pptx", type: "Slides", classNo: "Class #08", date: "05 Aug 2026", size: "5.1 MB" },
-  { id: "mat-3", name: "Normalization.sql", type: "Practical", classNo: "Class #09", date: "12 Aug 2026", size: "1.1 MB" },
-  { id: "mat-4", name: "ER Diagram Intro.mp4", type: "Video", classNo: "Class #02", date: "13 Jul 2026", size: "45.0 MB" },
-  { id: "mat-5", name: "Entity Types Summary.docx", type: "Lecture Notes", classNo: "Class #02", date: "13 Jul 2026", size: "850 KB" }
-];
 
 const filterTypes = ["All", "Lecture Notes", "Slides", "PDF", "Video", "Practical", "Reference"];
 
 export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
+  const {
+    getMyClassroomViews, materials, addMaterial, deleteMaterial,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchMaterials
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchMaterials(courseId);
+  }, [courseId]);
+
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newFileType, setNewFileType] = useState("PDF");
 
-  // In a real app, fetch the course details based on the courseId
-  const courseName = courseId === "cls-2" ? "Software Engineering" : "Database Management Systems";
-  const batch = "Spring 2026";
-  const code = courseId === "cls-2" ? "CSE-412" : "CSE-305";
+  const myClassrooms = getMyClassroomViews();
+  const view = courseId ? myClassrooms.find(v => v.classroom.id === courseId) : myClassrooms[0];
+
+  const courseName = view?.course.title || "Database Management Systems";
+  const batch = view?.batch.name || "Spring 2026";
+  const code = view?.course.code || "CSE-305";
+
+  // Filter materials for this classroom / course
+  const currentMaterials = materials.filter(m => !courseId || m.classroomId === courseId || m.courseId === view?.course.id);
+
+  const formattedMaterials = currentMaterials.map(m => ({
+    id: m.id,
+    name: m.title || m.fileName,
+    type: m.fileType || "PDF",
+    classNo: m.description ? m.description.slice(0, 12) : "Class Resource",
+    date: m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Recent",
+    size: m.fileSize || "1.5 MB",
+  }));
 
   // Helper for file icons based on type
   const getFileIcon = (type: string) => {
@@ -56,6 +77,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
       default: return <FileDown className="w-6 h-6 text-slate-500" />;
     }
   };
+
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -145,7 +167,11 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
 
       {/* Material List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {mockMaterials.map((mat) => (
+        {formattedMaterials.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-[11px] text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            No course materials uploaded yet. Click "Upload Material" to share slides, PDFs, or lecture notes.
+          </div>
+        ) : formattedMaterials.filter(mat => selectedFilter === "All" || mat.type === selectedFilter).filter(mat => mat.name.toLowerCase().includes(searchQuery.toLowerCase())).map((mat) => (
           <div key={mat.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 group flex flex-col">
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
@@ -155,15 +181,9 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
                   <MoreVertical className="w-4 h-4" />
                 </button>
-                {/* Dropdown Mock */}
+                {/* Dropdown menu */}
                 <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 shadow-lg rounded-lg overflow-hidden opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
-                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                    <Edit2 className="w-3.5 h-3.5 text-slate-400" /> Rename
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
+                  <button onClick={() => deleteMaterial(mat.id)} className="w-full text-left px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
                     <Trash2 className="w-3.5 h-3.5 text-red-400" /> Delete
                   </button>
                 </div>
@@ -223,43 +243,42 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 </div>
               </div>
 
-              {/* Drag and Drop Area */}
-              <div 
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
-                  dragActive ? "border-brand-dark bg-brand-dark/5" : "border-slate-300 bg-slate-50 hover:bg-slate-100/50"
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-4">
-                  <Upload className={`w-5 h-5 ${dragActive ? "text-brand-dark" : "text-slate-400"}`} />
+              {/* Title & description inputs */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 block mb-1">Material Title / Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chapter 4 Relational Algebra Notes"
+                    value={newTitle}
+                    onChange={e => setNewTitle(e.target.value)}
+                    className="w-full px-3 py-2 text-[11px] border border-slate-200 rounded-lg focus:outline-none focus:border-brand-dark"
+                  />
                 </div>
-                <h3 className="text-[13px] font-medium text-slate-900 mb-1">Click to upload or drag and drop</h3>
-                <p className="text-[11px] text-slate-500 mb-4">PDF, PPTX, MP4, ZIP (Max 50MB)</p>
-                <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-                  Select Files
-                </button>
+                <div>
+                  <label className="text-[11px] font-medium text-slate-700 block mb-1">Short Note / Topic (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Class #08"
+                    value={newDesc}
+                    onChange={e => setNewDesc(e.target.value)}
+                    className="w-full px-3 py-2 text-[11px] border border-slate-200 rounded-lg focus:outline-none focus:border-brand-dark"
+                  />
+                </div>
               </div>
 
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-slate-700">Material Type</label>
-                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
+                  <select
+                    value={newFileType}
+                    onChange={e => setNewFileType(e.target.value)}
+                    className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  >
                     {filterTypes.filter(t => t !== "All").map(type => (
                       <option key={type} value={type}>{type}</option>
                     ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-slate-700">Link to Session (Optional)</label>
-                  <select className="w-full appearance-none bg-white border border-slate-200 text-slate-700 py-2.5 px-3 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark">
-                    <option value="">None (General)</option>
-                    <option value="class-9">Class #09</option>
-                    <option value="class-8">Class #08</option>
-                    <option value="class-7">Class #07</option>
                   </select>
                 </div>
               </div>
@@ -274,9 +293,20 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 Cancel
               </button>
               <button 
-                onClick={() => {
-                  alert("Material uploaded successfully!");
+                onClick={async () => {
+                  if (!newTitle) return alert("Please enter a title for the material.");
+                  await addMaterial({
+                    classroomId: courseId || view?.classroom.id,
+                    courseId: view?.course.id,
+                    title: newTitle,
+                    description: newDesc || "Course Resource",
+                    fileName: `${newTitle.replace(/\s+/g, '_')}.${newFileType === "PDF" ? "pdf" : "docx"}`,
+                    fileType: newFileType,
+                    fileSize: "2.4 MB",
+                  });
                   setIsModalOpen(false);
+                  setNewTitle("");
+                  setNewDesc("");
                 }}
                 className="px-6 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm"
               >
@@ -287,6 +317,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           </div>
         </div>
       )}
+
 
     </div>
   );
