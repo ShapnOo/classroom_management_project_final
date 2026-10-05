@@ -4,7 +4,7 @@ import {
   FileText, Search, Plus, ArrowLeft, Calendar,
   Users, Edit2, Trash2, Clock, CheckCircle2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Test } from "@/lib/types";
@@ -13,15 +13,23 @@ interface AdminTestsProps {
   courseId?: string; // classroomId
 }
 
-
-
 function pct(a: number, b: number) {
   return b === 0 ? 0 : Math.round((a / b) * 100);
 }
 
 export default function AdminTests({ courseId }: AdminTestsProps) {
-  const { getAllClassroomViews, tests } = useStore();
+  const { 
+    getAllClassroomViews, tests,
+    fetchTests, fetchClassrooms, fetchCourses, fetchBatches
+  } = useStore();
   const allClassrooms = getAllClassroomViews();
+
+  useEffect(() => {
+    fetchTests();
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+  }, []);
 
   const [search, setSearch]   = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);

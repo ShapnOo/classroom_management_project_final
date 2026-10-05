@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { Announcement, AnnouncementAudienceType } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
@@ -24,7 +24,18 @@ const EMPTY_FORM: Form = {
 };
 
 export default function AnnouncementsManager({ role, authorId, authorName }: AnnouncementsManagerProps) {
-  const { announcements, programs, batches, courses, addAnnouncement, updateAnnouncement, deleteAnnouncement } = useStore();
+  const { 
+    announcements, programs, batches, courses, 
+    addAnnouncement, updateAnnouncement, deleteAnnouncement,
+    fetchAnnouncements, fetchPrograms, fetchBatches, fetchCourses
+  } = useStore();
+
+  useEffect(() => {
+    fetchAnnouncements();
+    fetchPrograms();
+    fetchBatches();
+    fetchCourses();
+  }, []);
   
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

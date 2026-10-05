@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { Student, StudentDocument } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
@@ -8,10 +8,16 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Plus, Search, Edit2, Trash2, Mail, Users, Hash, Phone, Paperclip, FileText } from "lucide-react";
 
 export default function AdminStudents() {
-  const { students, batches, programs, addStudent, updateStudent, deleteStudent } = useStore();
+  const { students, batches, programs, addStudent, updateStudent, deleteStudent, fetchStudents, fetchBatches, fetchPrograms } = useStore();
   const [search, setSearch] = useState("");
   const [programFilter, setProgramFilter] = useState("all");
   const [batchFilter, setBatchFilter] = useState("all");
+
+  useEffect(() => {
+    fetchStudents();
+    fetchBatches();
+    fetchPrograms();
+  }, []);
 
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);

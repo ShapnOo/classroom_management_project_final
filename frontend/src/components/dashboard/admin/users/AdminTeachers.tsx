@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { Teacher } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
@@ -8,9 +8,14 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Plus, Search, Edit2, Trash2, Mail, Briefcase, GraduationCap } from "lucide-react";
 
 export default function AdminTeachers() {
-  const { teachers, departments, addTeacher, updateTeacher, deleteTeacher } = useStore();
+  const { teachers, departments, addTeacher, updateTeacher, deleteTeacher, fetchTeachers, fetchDepartments } = useStore();
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
+
+  useEffect(() => {
+    fetchTeachers();
+    fetchDepartments();
+  }, []);
 
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Teacher | null>(null);

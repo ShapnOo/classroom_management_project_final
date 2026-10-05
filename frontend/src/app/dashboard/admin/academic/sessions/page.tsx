@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, CalendarDays } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -13,7 +13,11 @@ import type { Session } from "@/lib/types";
 const EMPTY_FORM = { name: "", startDate: "", endDate: "", status: "Upcoming" as Session["status"] };
 
 export default function SessionsPage() {
-  const { sessions, addSession, updateSession, deleteSession } = useStore();
+  const { sessions, addSession, updateSession, deleteSession, fetchSessions } = useStore();
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Session | null>(null);

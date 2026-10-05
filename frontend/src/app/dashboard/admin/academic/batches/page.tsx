@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Users, BookOpen, Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -14,7 +14,19 @@ type Form = Omit<Batch, "id">;
 const EMPTY: Form = { code: "", name: "", programId: "", sessionId: "", section: "", status: "Upcoming", semesterCount: 8, batchCourses: [] };
 
 export default function BatchesPage() {
-  const { batches, sessions, programs, students, courses, addBatch, updateBatch, deleteBatch } = useStore();
+  const { 
+    batches, sessions, programs, students, courses, 
+    addBatch, updateBatch, deleteBatch,
+    fetchBatches, fetchSessions, fetchPrograms, fetchStudents, fetchCourses
+  } = useStore();
+
+  useEffect(() => {
+    fetchBatches();
+    fetchSessions();
+    fetchPrograms();
+    fetchStudents();
+    fetchCourses();
+  }, []);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Batch | null>(null);

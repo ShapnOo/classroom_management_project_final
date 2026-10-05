@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Clock, ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -14,8 +14,19 @@ type Form = Omit<ClassSchedule, "id">;
 const EMPTY: Form = { classroomId: "", day: "Monday", startTime: "", endTime: "", room: "" };
 
 export default function SchedulesPage() {
-  const { schedules, addSchedule, updateSchedule, deleteSchedule, getAllClassroomViews } = useStore();
+  const { 
+    schedules, addSchedule, updateSchedule, deleteSchedule, getAllClassroomViews,
+    fetchSchedules, fetchClassrooms, fetchCourses, fetchBatches, fetchTeachers
+  } = useStore();
   const allViews = getAllClassroomViews();
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchTeachers();
+  }, []);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<ClassSchedule | null>(null);

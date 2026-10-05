@@ -1,31 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Building2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable } from "@/components/ui/DataTable";
-
-type Department = {
-  id: string;
-  code: string;
-  name: string;
-  head: string;
-  status: "Active" | "Upcoming" | "Completed";
-};
-
-const initialDepartments: Department[] = [
-  { id: "1", code: "CSE", name: "Computer Science & Engineering", head: "Prof. Dr. Shamim Al Mamun", status: "Active" },
-  { id: "2", code: "EEE", name: "Electrical & Electronic Engineering", head: "Dr. Nikola Tesla", status: "Active" },
-  { id: "3", code: "BBA", name: "Business Administration", head: "Dr. Philip Kotler", status: "Active" },
-];
+import { useStore } from "@/lib/store";
 
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
+  const { departments, teachers, fetchDepartments, fetchTeachers } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchDepartments();
+    fetchTeachers();
+  }, []);
 
   const filteredDepartments = departments.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -55,43 +47,46 @@ export default function DepartmentsPage() {
       />
 
       <DataTable 
-        columns={["Dept Code", "Department Name", "Head of Dept", "Status", "Actions"]}
+        columns={["Dept Code", "Department Name", "Faculty Count", "Status", "Actions"]}
         isEmpty={filteredDepartments.length === 0}
         emptyStateIcon={Building2}
         emptyStateTitle="No departments found"
         emptyStateDescription="We couldn't find any departments matching your search."
       >
-        {filteredDepartments.map((dept) => (
-          <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors group">
-            <td className="px-5 py-4">
-              <span className="font-semibold text-brand-dark bg-brand-dark/5 px-2 py-0.5 rounded-md text-[11px] border border-brand-dark/10">
-                {dept.code}
-              </span>
-            </td>
-            <td className="px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
-                  <Building2 className="w-3.5 h-3.5" />
+        {filteredDepartments.map((dept) => {
+          const facultyCount = teachers.filter(t => t.departmentId === dept.id).length;
+          return (
+            <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors group">
+              <td className="px-5 py-4">
+                <span className="font-semibold text-brand-dark bg-brand-dark/5 px-2 py-0.5 rounded-md text-[11px] border border-brand-dark/10">
+                  {dept.code}
+                </span>
+              </td>
+              <td className="px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                    <Building2 className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="font-medium text-[11px] text-slate-900">{dept.name}</span>
                 </div>
-                <span className="font-medium text-[11px] text-slate-900">{dept.name}</span>
-              </div>
-            </td>
-            <td className="px-5 py-4 text-[11px] font-medium text-slate-600">{dept.head}</td>
-            <td className="px-5 py-4">
-              <StatusBadge status={dept.status} />
-            </td>
-            <td className="px-5 py-4 text-right">
-              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 text-slate-400 hover:text-brand-dark rounded-md hover:bg-slate-100 transition-colors">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
+              </td>
+              <td className="px-5 py-4 text-[11px] font-medium text-slate-600">{facultyCount} Faculty</td>
+              <td className="px-5 py-4">
+                <StatusBadge status="Active" />
+              </td>
+              <td className="px-5 py-4 text-right">
+                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="p-1.5 text-slate-400 hover:text-brand-dark rounded-md hover:bg-slate-100 transition-colors">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
       </DataTable>
 
       <Modal

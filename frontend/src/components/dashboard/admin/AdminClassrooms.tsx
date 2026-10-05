@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Edit2, X, ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { Classroom } from "@/lib/types";
 import { CLASSROOM_COLORS } from "@/lib/types";
@@ -25,9 +25,20 @@ export default function AdminClassrooms() {
     classrooms, courses, batches, sessions, teachers, students, programs,
     addClassroom, updateClassroom, deleteClassroom,
     addSchedule, updateSchedule, deleteSchedule,
-    schedules: allSchedules
+    schedules: allSchedules,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchTeachers, fetchPrograms, fetchSchedules
   } = useStore();
   const allViews = useStore().getAllClassroomViews();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSessions();
+    fetchTeachers();
+    fetchPrograms();
+    fetchSchedules();
+  }, []);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

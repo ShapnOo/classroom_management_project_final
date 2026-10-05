@@ -46,8 +46,29 @@ type AppState = {
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 type AppActions = {
-  // Sync
+  // On-demand Granular Fetchers (Page-by-page)
+  fetchDepartments: () => Promise<Department[]>;
+  fetchPrograms: () => Promise<Program[]>;
+  fetchSessions: () => Promise<Session[]>;
+  fetchBatches: () => Promise<Batch[]>;
+  fetchTeachers: () => Promise<Teacher[]>;
+  fetchAdmins: () => Promise<AdminUser[]>;
+  fetchStudents: (batchId?: string) => Promise<Student[]>;
+  fetchCourses: () => Promise<Course[]>;
+  fetchSyllabusTopics: () => Promise<SyllabusTopic[]>;
+  fetchClassrooms: () => Promise<Classroom[]>;
+  fetchSchedules: () => Promise<ClassSchedule[]>;
+  fetchAssignments: () => Promise<Assignment[]>;
+  fetchTests: () => Promise<Test[]>;
+  fetchClassSessions: () => Promise<ClassSession[]>;
+  fetchAttendanceRecords: () => Promise<AttendanceRecord[]>;
+  fetchGradeRecords: () => Promise<GradeRecord[]>;
+  fetchAnnouncements: () => Promise<Announcement[]>;
+  fetchSettings: () => Promise<AppSettings>;
+
+  // Sync / Refresh
   refreshFromBackend: () => Promise<void>;
+
   // Sessions
   addSession: (s: Omit<Session, "id">) => Promise<void>;
   updateSession: (id: string, s: Partial<Session>) => Promise<void>;
@@ -124,7 +145,6 @@ type AppStore = AppState & AppActions;
 
 const StoreContext = createContext<AppStore | null>(null);
 
-const STORAGE_KEY = "scholaris_app_state";
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 const initialState: AppState = {
@@ -146,7 +166,7 @@ const initialState: AppState = {
   announcements: seedAnnouncements,
   admins: seedAdmins,
   settings: seedSettings,
-  isLoading: true,
+  isLoading: false,
   isBackendConnected: false,
 };
 
@@ -155,67 +175,275 @@ const initialState: AppState = {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
 
-  // ── Sync from Backend on Mount ──
-  const refreshFromBackend = useCallback(async () => {
-    try {
-      const [
-        departments, programs, sessions, batches, teachers, admins,
-        students, courses, syllabusTopics, classrooms, schedules,
-        assignments, tests, classSessions, attendanceRecords, gradeRecords,
-        announcements, settings
-      ] = await Promise.all([
-        api.getDepartments().catch(() => seedDepartments),
-        api.getPrograms().catch(() => seedPrograms),
-        api.getSessions().catch(() => seedSessions),
-        api.getBatches().catch(() => seedBatches),
-        api.getTeachers().catch(() => seedTeachers),
-        api.getAdmins().catch(() => seedAdmins),
-        api.getStudents().catch(() => seedStudents),
-        api.getCourses().catch(() => seedCourses),
-        api.getSyllabusTopics().catch(() => seedSyllabusTopics),
-        api.getClassrooms().catch(() => seedClassrooms),
-        api.getSchedules().catch(() => seedSchedules),
-        api.getAssignments().catch(() => seedAssignments),
-        api.getTests().catch(() => seedTests),
-        api.getClassSessions().catch(() => seedClassSessions),
-        api.getAttendanceRecords().catch(() => seedAttendanceRecords),
-        api.getGradeRecords().catch(() => seedGradeRecords),
-        api.getAnnouncements().catch(() => seedAnnouncements),
-        api.getSettings().catch(() => seedSettings),
-      ]);
+  // ── Granular On-Demand Fetchers (Stable callbacks with zero looping dependencies) ──
 
-      setState(prev => ({
-        ...prev,
-        departments: departments.length > 0 ? departments : seedDepartments,
-        programs: programs.length > 0 ? programs : seedPrograms,
-        sessions: sessions.length > 0 ? sessions : seedSessions,
-        batches: batches.length > 0 ? batches : seedBatches,
-        teachers: teachers.length > 0 ? teachers : seedTeachers,
-        admins: admins.length > 0 ? admins : seedAdmins,
-        students: students.length > 0 ? students : seedStudents,
-        courses: courses.length > 0 ? courses : seedCourses,
-        syllabusTopics: syllabusTopics.length > 0 ? syllabusTopics : seedSyllabusTopics,
-        classrooms: classrooms.length > 0 ? classrooms : seedClassrooms,
-        schedules: schedules.length > 0 ? schedules : seedSchedules,
-        assignments: assignments.length > 0 ? assignments : seedAssignments,
-        tests: tests.length > 0 ? tests : seedTests,
-        classSessions: classSessions.length > 0 ? classSessions : seedClassSessions,
-        attendanceRecords: attendanceRecords.length > 0 ? attendanceRecords : seedAttendanceRecords,
-        gradeRecords: gradeRecords.length > 0 ? gradeRecords : seedGradeRecords,
-        announcements: announcements.length > 0 ? announcements : seedAnnouncements,
-        settings,
-        isLoading: false,
-        isBackendConnected: true,
-      }));
-    } catch (error) {
-      console.warn("Backend sync fallback to cached state:", error);
-      setState(prev => ({ ...prev, isLoading: false, isBackendConnected: false }));
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const data = await api.getDepartments();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, departments: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchDepartments fallback:", e);
     }
+    return [];
   }, []);
 
+  const fetchPrograms = useCallback(async () => {
+    try {
+      const data = await api.getPrograms();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, programs: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchPrograms fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      const data = await api.getSessions();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, sessions: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchSessions fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchBatches = useCallback(async () => {
+    try {
+      const data = await api.getBatches();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, batches: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchBatches fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchTeachers = useCallback(async () => {
+    try {
+      const data = await api.getTeachers();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, teachers: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchTeachers fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const data = await api.getAdmins();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, admins: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchAdmins fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchStudents = useCallback(async (batchId?: string) => {
+    try {
+      const data = await api.getStudents(batchId);
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, students: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchStudents fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      const data = await api.getCourses();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, courses: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchCourses fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchSyllabusTopics = useCallback(async () => {
+    try {
+      const data = await api.getSyllabusTopics();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, syllabusTopics: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchSyllabusTopics fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchClassrooms = useCallback(async () => {
+    try {
+      const data = await api.getClassrooms();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, classrooms: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchClassrooms fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const data = await api.getSchedules();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, schedules: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchSchedules fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchAssignments = useCallback(async () => {
+    try {
+      const data = await api.getAssignments();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, assignments: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchAssignments fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchTests = useCallback(async () => {
+    try {
+      const data = await api.getTests();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, tests: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchTests fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchClassSessions = useCallback(async () => {
+    try {
+      const data = await api.getClassSessions();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, classSessions: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchClassSessions fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchAttendanceRecords = useCallback(async () => {
+    try {
+      const data = await api.getAttendanceRecords();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, attendanceRecords: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchAttendanceRecords fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchGradeRecords = useCallback(async () => {
+    try {
+      const data = await api.getGradeRecords();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, gradeRecords: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchGradeRecords fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      const data = await api.getAnnouncements();
+      if (data && data.length > 0) {
+        setState(prev => ({ ...prev, announcements: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchAnnouncements fallback:", e);
+    }
+    return [];
+  }, []);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const data = await api.getSettings();
+      if (data) {
+        setState(prev => ({ ...prev, settings: data, isBackendConnected: true }));
+        return data;
+      }
+    } catch (e) {
+      console.warn("fetchSettings fallback:", e);
+    }
+    return { schoolName: "Jahangirnagar University", logoBase64: "" };
+  }, []);
+
+  // Optional manual full refresh (used only when explicitly triggered)
+  const refreshFromBackend = useCallback(async () => {
+    await Promise.allSettled([
+      fetchDepartments(),
+      fetchPrograms(),
+      fetchSessions(),
+      fetchBatches(),
+      fetchTeachers(),
+      fetchAdmins(),
+      fetchStudents(),
+      fetchCourses(),
+      fetchSyllabusTopics(),
+      fetchClassrooms(),
+      fetchSchedules(),
+      fetchAssignments(),
+      fetchTests(),
+      fetchClassSessions(),
+      fetchAttendanceRecords(),
+      fetchGradeRecords(),
+      fetchAnnouncements(),
+      fetchSettings(),
+    ]);
+  }, [
+    fetchDepartments, fetchPrograms, fetchSessions, fetchBatches, fetchTeachers,
+    fetchAdmins, fetchStudents, fetchCourses, fetchSyllabusTopics, fetchClassrooms,
+    fetchSchedules, fetchAssignments, fetchTests, fetchClassSessions,
+    fetchAttendanceRecords, fetchGradeRecords, fetchAnnouncements, fetchSettings
+  ]);
+
+  // On mount, only fetch lightweight university branding settings once
   useEffect(() => {
-    refreshFromBackend();
-  }, [refreshFromBackend]);
+    fetchSettings();
+  }, []);
 
   // ── Generic updater helpers ──
   const update = useCallback(<K extends keyof AppState>(
@@ -615,6 +843,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const store: AppStore = {
     ...state,
+    fetchDepartments,
+    fetchPrograms,
+    fetchSessions,
+    fetchBatches,
+    fetchTeachers,
+    fetchAdmins,
+    fetchStudents,
+    fetchCourses,
+    fetchSyllabusTopics,
+    fetchClassrooms,
+    fetchSchedules,
+    fetchAssignments,
+    fetchTests,
+    fetchClassSessions,
+    fetchAttendanceRecords,
+    fetchGradeRecords,
+    fetchAnnouncements,
+    fetchSettings,
     refreshFromBackend,
     addSession, updateSession, deleteSession,
     addBatch, updateBatch, deleteBatch,

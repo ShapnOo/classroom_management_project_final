@@ -5,7 +5,7 @@ import {
   X, FileCheck, Paperclip, MoreVertical, CheckCircle2,
   Clock, Edit2, Trash2, BookOpen
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Assignment } from "@/lib/types";
@@ -14,11 +14,19 @@ interface AdminAssignmentsProps {
   courseId?: string; // classroomId
 }
 
-
-
 export default function AdminAssignments({ courseId }: AdminAssignmentsProps) {
-  const { getAllClassroomViews, assignments } = useStore();
+  const { 
+    getAllClassroomViews, assignments, 
+    fetchAssignments, fetchClassrooms, fetchCourses, fetchBatches 
+  } = useStore();
   const allClassrooms = getAllClassroomViews();
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+  }, []);
 
   const [search, setSearch] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);

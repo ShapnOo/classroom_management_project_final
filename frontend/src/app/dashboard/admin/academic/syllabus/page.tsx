@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, ListTodo } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -23,7 +23,16 @@ const statusColors = {
 };
 
 export default function SyllabusPage() {
-  const { syllabusTopics, courses, addSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic } = useStore();
+  const { 
+    syllabusTopics, courses, 
+    addSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic,
+    fetchSyllabusTopics, fetchCourses 
+  } = useStore();
+
+  useEffect(() => {
+    fetchSyllabusTopics();
+    fetchCourses();
+  }, []);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<SyllabusTopic | null>(null);

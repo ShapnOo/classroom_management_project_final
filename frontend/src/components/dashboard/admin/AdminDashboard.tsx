@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { 
   Users, 
   GraduationCap, 
@@ -32,8 +32,17 @@ const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'
 export default function AdminDashboard() {
   const { 
     students, teachers, classrooms, courses, departments, programs, 
-    classSessions, attendanceRecords, announcements, settings, isBackendConnected 
+    classSessions, attendanceRecords, announcements, settings, isBackendConnected,
+    fetchStudents, fetchTeachers, fetchClassrooms, fetchCourses, fetchAnnouncements
   } = useStore();
+
+  useEffect(() => {
+    fetchStudents();
+    fetchTeachers();
+    fetchClassrooms();
+    fetchCourses();
+    fetchAnnouncements();
+  }, []);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',

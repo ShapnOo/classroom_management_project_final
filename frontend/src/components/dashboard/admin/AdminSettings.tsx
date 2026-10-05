@@ -5,7 +5,7 @@ import { Settings2, Building2, BookOpen, Bell, Shield, Save, Upload, GraduationC
 import { useStore } from "@/lib/store";
 
 export default function AdminSettings() {
-  const { settings, updateSettings } = useStore();
+  const { settings, updateSettings, fetchSettings } = useStore();
   const [activeTab, setActiveTab] = useState("general");
 
   // Academic Policies State
@@ -18,6 +18,10 @@ export default function AdminSettings() {
   // General Settings State
   const [schoolName, setSchoolName] = useState(settings.schoolName);
   const [logoBase64, setLogoBase64] = useState(settings.logoBase64);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   // Sync state if settings change externally
   useEffect(() => {

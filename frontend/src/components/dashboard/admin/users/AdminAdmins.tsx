@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import type { AdminUser } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
@@ -8,9 +8,13 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Plus, Search, Edit2, Trash2, Mail, Shield } from "lucide-react";
 
 export default function AdminAdmins() {
-  const { admins, addAdmin, updateAdmin, deleteAdmin } = useStore();
+  const { admins, addAdmin, updateAdmin, deleteAdmin, fetchAdmins } = useStore();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
 
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -19,7 +19,18 @@ const CLASSROOM_STATUS_MAP: Record<string, "Active" | "Upcoming" | "Completed"> 
 };
 
 export default function CoursesPage() {
-  const { courses, programs, classrooms, teachers, addCourse, updateCourse, deleteCourse } = useStore();
+  const { 
+    courses, programs, classrooms, teachers, 
+    addCourse, updateCourse, deleteCourse,
+    fetchCourses, fetchPrograms, fetchClassrooms, fetchTeachers
+  } = useStore();
+
+  useEffect(() => {
+    fetchCourses();
+    fetchPrograms();
+    fetchClassrooms();
+    fetchTeachers();
+  }, []);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);

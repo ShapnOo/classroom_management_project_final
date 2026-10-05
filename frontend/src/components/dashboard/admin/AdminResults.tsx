@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Search
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 interface AdminResultsProps {
@@ -55,8 +55,19 @@ function seededRand(seed: string, min: number, max: number) {
 }
 
 export default function AdminResults({ courseId }: AdminResultsProps) {
-  const { getAllClassroomViews, classSessions, attendanceRecords, gradeRecords } = useStore();
+  const { 
+    getAllClassroomViews, classSessions, attendanceRecords, gradeRecords,
+    fetchGradeRecords, fetchClassrooms, fetchStudents, fetchBatches
+  } = useStore();
   const allClassrooms = getAllClassroomViews();
+
+  useEffect(() => {
+    fetchGradeRecords();
+    fetchClassrooms();
+    fetchStudents();
+    fetchBatches();
+  }, []);
+
   const [search, setSearch] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
