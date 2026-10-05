@@ -86,9 +86,9 @@ export default function Sidebar() {
           <div className="overflow-hidden flex flex-col justify-center">
             <h2
               className="font-bold text-[13px] text-slate-900 leading-snug line-clamp-1 tracking-tight"
-              title={settings.schoolName || "Scholaris Management"}
+              title={settings.schoolName || "Academic & Classroom Management System"}
             >
-              {settings.schoolName || "Scholaris LMS"}
+              {settings.schoolName || "Academic & Classroom Management System"}
             </h2>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
@@ -199,16 +199,8 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* ── Footer Area with Developer Credit & Logout ── */}
-      <div className="p-3 border-t border-slate-200 shrink-0 bg-white space-y-2">
-        <div className="px-2.5 py-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px]">
-          <p className="font-bold text-slate-800 tracking-tight">Academic & Classroom Management System</p>
-          <p className="text-[9px] text-slate-500 mt-0.5">Developed by <strong className="text-slate-700">Tahmid Afsar Shapno</strong></p>
-          <a href="mailto:shapno.official@gmail.com" className="text-[9px] text-blue-600 hover:underline block truncate font-medium">
-            shapno.official@gmail.com
-          </a>
-        </div>
-
+      {/* ── Footer Area with Logout ── */}
+      <div className="p-3 border-t border-slate-200 shrink-0 bg-white">
         <button
           type="button"
           onClick={async () => {

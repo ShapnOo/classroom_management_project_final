@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { useGradingData, initials, formatDisplayDate } from "@/components/dashboard/shared/useGradingData";
+import ModalDialog from "@/components/ui/ModalDialog";
 
 interface TeacherAssignmentEvaluateProps {
   courseId?: string; // classroomId
@@ -40,9 +41,21 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
 
   const backHref = `/dashboard/${role === "admin" ? "admin/academic" : "teacher"}/assignments/${courseId}`;
 
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "info" | "warning" | "danger" | "confirm" }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success"
+  });
+
   const handleSave = async () => {
     const count = await save();
-    alert(`Marks saved for ${count} student${count === 1 ? "" : "s"}.`);
+    setModalConfig({
+      isOpen: true,
+      title: "Marks Saved Successfully",
+      message: `Marks & feedback have been successfully recorded for ${count} student${count === 1 ? "" : "s"}.`,
+      type: "success"
+    });
   };
 
   if (!assignment || !view) {
@@ -222,6 +235,14 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
           </table>
         </div>
       </div>
+
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

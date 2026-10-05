@@ -45,14 +45,16 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [currentPdfUrl, setCurrentPdfUrl] = useState("");
+  const [fileErrorNotice, setFileErrorNotice] = useState("");
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert("File is too large for this demo. Please upload a file smaller than 2MB.");
+      setFileErrorNotice("File size exceeds limit. Please select a file smaller than 2MB.");
       return;
     }
+    setFileErrorNotice("");
     const reader = new FileReader();
     reader.onload = (event) => {
       setForm(f => ({

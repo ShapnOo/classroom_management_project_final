@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Settings2, Building2, BookOpen, Bell, Shield, Save, Upload, GraduationCap, X } from "lucide-react";
 import { useStore } from "@/lib/store";
+import ModalDialog from "@/components/ui/ModalDialog";
 
 export default function AdminSettings() {
   const { settings, updateSettings, fetchSettings } = useStore();
@@ -36,11 +37,23 @@ export default function AdminSettings() {
     { id: "security", label: "Security & Roles", icon: Shield },
   ];
 
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "warning" }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
+
   const handleSave = () => {
     if (activeTab === "general") {
       updateSettings({ schoolName, logoBase64 });
     }
-    alert("Settings saved successfully!");
+    setModalConfig({
+      isOpen: true,
+      title: "Settings Saved",
+      message: "System settings have been successfully updated.",
+      type: "success",
+    });
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +61,12 @@ export default function AdminSettings() {
     if (!file) return;
 
     if (file.size > 1024 * 1024) { // 1MB limit for logo
-      alert("Logo size must be less than 1MB");
+      setModalConfig({
+        isOpen: true,
+        title: "Logo File Too Large",
+        message: "Logo image size must be less than 1MB. Please select a smaller file.",
+        type: "warning",
+      });
       return;
     }
 
@@ -273,6 +291,14 @@ export default function AdminSettings() {
           )}
         </div>
       </div>
+
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

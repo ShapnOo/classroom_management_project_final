@@ -294,7 +294,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               </button>
               <button 
                 onClick={async () => {
-                  if (!newTitle) return alert("Please enter a title for the material.");
+                  if (!newTitle.trim()) return;
                   await addMaterial({
                     classroomId: courseId || view?.classroom.id,
                     courseId: view?.course.id,

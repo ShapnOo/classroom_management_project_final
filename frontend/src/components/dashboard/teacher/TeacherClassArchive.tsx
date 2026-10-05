@@ -104,7 +104,12 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
         
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => alert("Generating full classroom historical dossier report (PDF)...")}
+            onClick={() => setModalConfig({
+              isOpen: true,
+              title: "Generating Historical Report",
+              message: "Preparing classroom dossier report (PDF) with full attendance, grade logs, and syllabus history.",
+              type: "info"
+            })}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors shadow-sm shrink-0"
           >
             <Download className="w-4 h-4" />
@@ -220,7 +225,12 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
           <h3 className="text-sm font-medium text-slate-700">Final Grades Ledger</h3>
           <p className="text-[11px] mt-1 text-slate-500">The detailed grades sheet for {studentCount} students is available for download.</p>
           <button 
-            onClick={() => alert("Exporting grades CSV...")}
+            onClick={() => setModalConfig({
+              isOpen: true,
+              title: "Exporting Grades Ledger",
+              message: "Preparing archived final grades CSV spreadsheet for download.",
+              type: "info"
+            })}
             className="mt-4 px-4 py-2 bg-brand-dark text-white text-xs font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
           >
             Export Grades (CSV)

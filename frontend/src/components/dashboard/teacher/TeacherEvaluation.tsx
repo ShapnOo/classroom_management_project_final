@@ -13,6 +13,9 @@ export type EvaluationPolicyComponent = {
   enabled: boolean;
   weight: number;
   label: string;
+  totalConducted?: number;
+  bestCount?: number;
+  rule?: "best_n" | "avg_all" | "best_1";
 };
 
 export type CourseEvaluationPolicy = {
@@ -25,9 +28,9 @@ export type CourseEvaluationPolicy = {
 };
 
 const DEFAULT_POLICY: CourseEvaluationPolicy = {
-  ct: { enabled: true, weight: 15, label: "Class Tests (CT)" },
-  assignment: { enabled: true, weight: 10, label: "Assignments" },
-  project: { enabled: true, weight: 15, label: "Term Project" },
+  ct: { enabled: true, weight: 15, label: "Class Tests (CT)", totalConducted: 5, bestCount: 3, rule: "best_n" },
+  assignment: { enabled: true, weight: 10, label: "Assignments", totalConducted: 3, bestCount: 2, rule: "best_n" },
+  project: { enabled: true, weight: 15, label: "Term Project", totalConducted: 1, bestCount: 1, rule: "avg_all" },
   attendance: { enabled: true, weight: 10, label: "Attendance" },
   midterm: { enabled: true, weight: 20, label: "Mid-Term Exam" },
   finalExam: { enabled: true, weight: 30, label: "Final Exam" },
@@ -152,14 +155,52 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
       const attPct = studentAtt.length > 0 ? Math.round((present / studentAtt.length) * 100) : 85 + (idx % 12);
       const attMark = policy.attendance.enabled ? Math.round((attPct / 100) * policy.attendance.weight) : 0;
 
-      // 2. Class Tests (CT) Average %
+      // 2. Class Tests (CT) Best N Calculation
+      let ctScores: number[] = [];
       const ctRecs = studentGrades.filter(g => g.testId);
-      const ctAvgPct = ctRecs.length > 0 ? Math.round(ctRecs.reduce((sum, r) => sum + (r.obtainedMarks / r.totalMarks) * 100, 0) / ctRecs.length) : 78 + (idx % 15);
+      if (ctRecs.length > 0) {
+        ctScores = ctRecs.map(r => Math.round((r.obtainedMarks / r.totalMarks) * 100));
+      } else {
+        const count = policy.ct.totalConducted || 5;
+        const base = 70 + (idx * 3) % 25;
+        ctScores = Array.from({ length: count }, (_, i) => Math.min(100, Math.max(40, base + ((i * 7 + idx * 5) % 20) - 5)));
+      }
+      ctScores.sort((a, b) => b - a);
+
+      let ctAvgPct = 0;
+      if (policy.ct.rule === "best_1") {
+        ctAvgPct = ctScores[0] || 0;
+      } else if (policy.ct.rule === "best_n") {
+        const take = Math.min(policy.ct.bestCount || 2, ctScores.length);
+        const bestScores = ctScores.slice(0, take);
+        ctAvgPct = bestScores.length > 0 ? Math.round(bestScores.reduce((a, b) => a + b, 0) / bestScores.length) : 0;
+      } else {
+        ctAvgPct = ctScores.length > 0 ? Math.round(ctScores.reduce((a, b) => a + b, 0) / ctScores.length) : 0;
+      }
       const ctMark = policy.ct.enabled ? Math.round((ctAvgPct / 100) * policy.ct.weight) : 0;
 
-      // 3. Assignments Average %
+      // 3. Assignments Best N Calculation
+      let assnScores: number[] = [];
       const assnRecs = studentGrades.filter(g => g.assignmentId);
-      const assnAvgPct = assnRecs.length > 0 ? Math.round(assnRecs.reduce((sum, r) => sum + (r.obtainedMarks / r.totalMarks) * 100, 0) / assnRecs.length) : 82 + (idx % 12);
+      if (assnRecs.length > 0) {
+        assnScores = assnRecs.map(r => Math.round((r.obtainedMarks / r.totalMarks) * 100));
+      } else {
+        const count = policy.assignment.totalConducted || 3;
+        const base = 75 + (idx * 4) % 20;
+        assnScores = Array.from({ length: count }, (_, i) => Math.min(100, Math.max(45, base + ((i * 5 + idx * 3) % 18) - 4)));
+      }
+      assnScores.sort((a, b) => b - a);
+
+      let assnAvgPct = 0;
+      if (policy.assignment.rule === "best_1") {
+        assnAvgPct = assnScores[0] || 0;
+      } else if (policy.assignment.rule === "best_n") {
+        const take = Math.min(policy.assignment.bestCount || 2, assnScores.length);
+        const bestScores = assnScores.slice(0, take);
+        assnAvgPct = bestScores.length > 0 ? Math.round(bestScores.reduce((a, b) => a + b, 0) / bestScores.length) : 0;
+      } else {
+        assnAvgPct = assnScores.length > 0 ? Math.round(assnScores.reduce((a, b) => a + b, 0) / assnScores.length) : 0;
+      }
       const assnMark = policy.assignment.enabled ? Math.round((assnAvgPct / 100) * policy.assignment.weight) : 0;
 
       // 4. Custom/Editable Marks: Project, Midterm, Final Exam
@@ -244,36 +285,36 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
 
   if (!selectedClassId) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300 pb-16 max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Course Evaluation & Grading</h1>
-            <p className="text-xs text-slate-500 mt-1">Select a course to customize its grading weights & calculate final grades.</p>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">Course Evaluation & Grading</h1>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a course to customize its grading weights & calculate final grades.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {classrooms.map(cls => (
             <button
               key={cls.id}
               onClick={() => setSelectedClassId(cls.id)}
-              className="bg-white border border-slate-200/80 rounded-2xl p-6 text-left hover:border-slate-400 hover:shadow-md transition-all group space-y-3"
+              className="bg-white border border-slate-200/80 rounded-xl p-4 text-left hover:border-slate-400 hover:shadow-xs transition-all group space-y-2.5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">
                   {cls.code}
                 </span>
-                <span className="text-xs font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                   {cls.batch}
                 </span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
+                <h3 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
                   {cls.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{cls.students.length} Enrolled Students</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 font-medium">{cls.students.length} Enrolled</p>
               </div>
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-700 font-bold">
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-emerald-700 font-bold">
                 <span>View & Configure Grades</span>
                 <span>→</span>
               </div>
@@ -282,40 +323,40 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
         </div>
 
         {classrooms.length === 0 && (
-          <div className="py-16 text-center text-slate-400 text-xs">No classrooms assigned yet. Contact system administrator.</div>
+          <div className="py-12 text-center text-slate-400 text-xs">No classrooms assigned yet. Contact system administrator.</div>
         )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-16 max-w-7xl mx-auto">
+    <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto text-xs">
       
       {/* Policy Saved Toast */}
       {policySavedToast && (
-        <div className="bg-emerald-600 text-white px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs shadow-md animate-in slide-in-from-top-2">
-          <CheckCircle2 className="w-5 h-5 text-white" />
+        <div className="bg-emerald-600 text-white px-3.5 py-2 rounded-xl flex items-center gap-2 text-[11px] shadow-sm animate-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
           <span className="font-bold">Grading policy saved successfully for {selectedClass?.code}!</span>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSelectedClassId(null)}
-            className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-xs"
+            className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md uppercase">
+              <span className="text-[10px] font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">
                 {selectedClass?.code}
               </span>
-              <span className="text-xs text-slate-500 font-medium">{selectedClass?.batch}</span>
+              <span className="text-[11px] text-slate-500 font-medium">{selectedClass?.batch}</span>
             </div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{selectedClass?.name}</h1>
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight mt-0.5">{selectedClass?.name}</h1>
           </div>
         </div>
 
@@ -323,39 +364,39 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowPolicyModal(true)}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 border border-slate-200/80 shadow-xs"
+            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1.5 border border-slate-200 shadow-2xs"
           >
-            <Sliders className="w-4 h-4 text-slate-600" /> Customize Policy Weights
+            <Sliders className="w-3.5 h-3.5 text-slate-500" /> Customize Policy Weights
           </button>
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2 shadow-sm"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
           >
-            <Download className="w-4 h-4" /> Export CSV
+            <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
         </div>
       </div>
 
       {/* Current Policy Overview Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-slate-700" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <Settings2 className="w-3.5 h-3.5 text-slate-600" />
+            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Active Evaluation Policy & Weight Distribution
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-md border ${
+            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
               totalWeightSum === 100
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-amber-50 text-amber-700 border-amber-200"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                : "bg-amber-50 text-amber-700 border-amber-200/60"
             }`}>
               Total Weight: {totalWeightSum}% {totalWeightSum === 100 ? "✓ Validated" : "⚠️ Warning: Not 100%"}
             </span>
             <button
               onClick={() => setShowPolicyModal(true)}
-              className="text-xs font-bold text-blue-600 hover:text-blue-800 underline"
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
             >
               Edit Breakdown
             </button>
@@ -363,14 +404,16 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
         </div>
 
         {/* Enabled Component Weight Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {Object.entries(policy).map(([key, item]) => {
             if (!item.enabled) return null;
+            const ruleText = item.rule === "best_n" ? `(Best ${item.bestCount} of ${item.totalConducted})` : item.rule === "best_1" ? "(Best 1)" : item.totalConducted ? `(Avg of ${item.totalConducted})` : "";
             return (
-              <div key={key} className="bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 font-semibold text-slate-800">
-                <span className="w-2 h-2 rounded-full bg-slate-900" />
+              <div key={key} className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5 font-medium text-slate-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-900 shrink-0" />
                 <span>{item.label}:</span>
                 <span className="font-extrabold text-slate-900">{item.weight}%</span>
+                {ruleText && <span className="text-[9px] text-blue-700 bg-blue-50 px-1 py-0.5 rounded font-bold">{ruleText}</span>}
               </div>
             );
           })}
@@ -378,12 +421,12 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-1">
+      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1">
         <button
           onClick={() => setActiveTab("grades")}
-          className={`py-2 px-4 text-xs font-bold rounded-xl transition-all ${
+          className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "grades"
-              ? "bg-slate-900 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-2xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -391,9 +434,9 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
         </button>
         <button
           onClick={() => setActiveTab("policy")}
-          className={`py-2 px-4 text-xs font-bold rounded-xl transition-all ${
+          className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "policy"
-              ? "bg-slate-900 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-2xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -401,9 +444,9 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
         </button>
         <button
           onClick={() => setActiveTab("overview")}
-          className={`py-2 px-4 text-xs font-bold rounded-xl transition-all ${
+          className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "overview"
-              ? "bg-slate-900 text-white shadow-xs"
+              ? "bg-slate-900 text-white shadow-2xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
@@ -435,8 +478,22 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-extrabold">
                     <th className="px-5 py-3.5">Roll & Name</th>
-                    {policy.ct.enabled && <th className="px-4 py-3.5">CT ({policy.ct.weight}%)</th>}
-                    {policy.assignment.enabled && <th className="px-4 py-3.5">Assn ({policy.assignment.weight}%)</th>}
+                    {policy.ct.enabled && (
+                      <th className="px-4 py-3.5">
+                        CT ({policy.ct.weight}%)
+                        <span className="block text-[9px] text-blue-600 font-normal lowercase">
+                          {policy.ct.rule === "best_n" ? `best ${policy.ct.bestCount}/${policy.ct.totalConducted}` : policy.ct.rule === "best_1" ? "best 1" : "avg all"}
+                        </span>
+                      </th>
+                    )}
+                    {policy.assignment.enabled && (
+                      <th className="px-4 py-3.5">
+                        Assn ({policy.assignment.weight}%)
+                        <span className="block text-[9px] text-blue-600 font-normal lowercase">
+                          {policy.assignment.rule === "best_n" ? `best ${policy.assignment.bestCount}/${policy.assignment.totalConducted}` : policy.assignment.rule === "best_1" ? "best 1" : "avg all"}
+                        </span>
+                      </th>
+                    )}
                     {policy.project.enabled && <th className="px-4 py-3.5">Proj ({policy.project.weight}%)</th>}
                     {policy.attendance.enabled && <th className="px-4 py-3.5">Att ({policy.attendance.weight}%)</th>}
                     {policy.midterm.enabled && <th className="px-4 py-3.5">Mid ({policy.midterm.weight}%)</th>}
@@ -553,43 +610,120 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
           <div className="space-y-4 divide-y divide-slate-100">
             {Object.entries(policy).map(([key, comp]) => {
               const compKey = key as keyof CourseEvaluationPolicy;
+              const hasSubRules = key === "ct" || key === "assignment";
               return (
-                <div key={key} className="pt-4 first:pt-0 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={comp.enabled}
-                      onChange={(e) => {
-                        setPolicy(prev => ({
-                          ...prev,
-                          [compKey]: { ...prev[compKey], enabled: e.target.checked }
-                        }));
-                      }}
-                      className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
-                    />
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{comp.label}</p>
-                      <p className="text-[11px] text-slate-500">Enable/disable {comp.label.toLowerCase()} in final calculation</p>
+                <div key={key} className="pt-4 first:pt-0 space-y-2.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={comp.enabled}
+                        onChange={(e) => {
+                          setPolicy(prev => ({
+                            ...prev,
+                            [compKey]: { ...prev[compKey], enabled: e.target.checked }
+                          }));
+                        }}
+                        className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{comp.label}</p>
+                        <p className="text-[11px] text-slate-500">Enable/disable {comp.label.toLowerCase()} in final calculation</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        disabled={!comp.enabled}
+                        value={comp.weight}
+                        onChange={(e) => {
+                          setPolicy(prev => ({
+                            ...prev,
+                            [compKey]: { ...prev[compKey], weight: Number(e.target.value) }
+                          }));
+                        }}
+                        className="w-16 px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl text-center focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+                      />
+                      <span className="text-xs font-bold text-slate-500">%</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      disabled={!comp.enabled}
-                      value={comp.weight}
-                      onChange={(e) => {
-                        setPolicy(prev => ({
-                          ...prev,
-                          [compKey]: { ...prev[compKey], weight: Number(e.target.value) }
-                        }));
-                      }}
-                      className="w-16 px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl text-center focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                    />
-                    <span className="text-xs font-bold text-slate-500">%</span>
-                  </div>
+                  {/* Sub-rules for CTs & Assignments */}
+                  {comp.enabled && hasSubRules && (
+                    <div className="ml-7 p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        <span className="font-bold text-slate-700">Selection Policy:</span>
+                        <select
+                          value={comp.rule || "best_n"}
+                          onChange={(e) => {
+                            setPolicy(prev => ({
+                              ...prev,
+                              [compKey]: { ...prev[compKey], rule: e.target.value as any }
+                            }));
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold bg-white focus:outline-none focus:border-slate-900"
+                        >
+                          <option value="best_n">Best N (e.g. Best 2 of 3)</option>
+                          <option value="avg_all">Average of All Conducted</option>
+                          <option value="best_1">Best 1 (Highest Score)</option>
+                        </select>
+
+                        {(comp.rule === "best_n" || comp.rule === "avg_all" || !comp.rule) && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-500 font-medium">Total Conducted:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={comp.totalConducted || 3}
+                              onChange={(e) => {
+                                const val = Math.max(1, Number(e.target.value));
+                                setPolicy(prev => ({
+                                  ...prev,
+                                  [compKey]: {
+                                    ...prev[compKey],
+                                    totalConducted: val,
+                                    bestCount: Math.min(prev[compKey].bestCount || 2, val),
+                                  }
+                                }));
+                              }}
+                              className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-white"
+                            />
+                          </div>
+                        )}
+
+                        {(comp.rule === "best_n" || !comp.rule) && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-500 font-medium">Consider Best:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max={comp.totalConducted || 10}
+                              value={comp.bestCount || 2}
+                              onChange={(e) => {
+                                const val = Math.min(comp.totalConducted || 10, Math.max(1, Number(e.target.value)));
+                                setPolicy(prev => ({
+                                  ...prev,
+                                  [compKey]: { ...prev[compKey], bestCount: val }
+                                }));
+                              }}
+                              className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 italic">
+                        {comp.rule === "best_n" || !comp.rule
+                          ? `Will calculate grade from student's Top ${comp.bestCount || 2} highest scores out of ${comp.totalConducted || 3} total ${comp.label.toLowerCase()}.`
+                          : comp.rule === "best_1"
+                          ? `Will take only the single highest score among all conducted ${comp.label.toLowerCase()}.`
+                          : `Will calculate average across all ${comp.totalConducted || 3} conducted ${comp.label.toLowerCase()}.`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -667,43 +801,112 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
             </div>
 
             <div className="p-6 space-y-5 text-xs">
-              <div className="space-y-3 divide-y divide-slate-100">
+              <div className="space-y-3 divide-y divide-slate-100 max-h-[420px] overflow-y-auto pr-1">
                 {Object.entries(policy).map(([key, comp]) => {
                   const compKey = key as keyof CourseEvaluationPolicy;
+                  const hasSubRules = key === "ct" || key === "assignment";
                   return (
-                    <div key={key} className="pt-3 first:pt-0 flex items-center justify-between gap-4">
-                      <label className="flex items-center gap-2.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={comp.enabled}
-                          onChange={(e) => {
-                            setPolicy(prev => ({
-                              ...prev,
-                              [compKey]: { ...prev[compKey], enabled: e.target.checked }
-                            }));
-                          }}
-                          className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
-                        />
-                        <span className="font-bold text-slate-900 text-xs">{comp.label}</span>
-                      </label>
+                    <div key={key} className="pt-3 first:pt-0 space-y-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={comp.enabled}
+                            onChange={(e) => {
+                              setPolicy(prev => ({
+                                ...prev,
+                                [compKey]: { ...prev[compKey], enabled: e.target.checked }
+                              }));
+                            }}
+                            className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
+                          />
+                          <span className="font-bold text-slate-900 text-xs">{comp.label}</span>
+                        </label>
 
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          disabled={!comp.enabled}
-                          value={comp.weight}
-                          onChange={(e) => {
-                            setPolicy(prev => ({
-                              ...prev,
-                              [compKey]: { ...prev[compKey], weight: Number(e.target.value) }
-                            }));
-                          }}
-                          className="w-16 px-2.5 py-1 text-xs font-bold border border-slate-200 rounded-lg text-center focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                        />
-                        <span className="font-bold text-slate-400">%</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            disabled={!comp.enabled}
+                            value={comp.weight}
+                            onChange={(e) => {
+                              setPolicy(prev => ({
+                                ...prev,
+                                [compKey]: { ...prev[compKey], weight: Number(e.target.value) }
+                              }));
+                            }}
+                            className="w-16 px-2.5 py-1 text-xs font-bold border border-slate-200 rounded-lg text-center focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+                          />
+                          <span className="font-bold text-slate-400">%</span>
+                        </div>
                       </div>
+
+                      {comp.enabled && hasSubRules && (
+                        <div className="ml-6 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className="font-bold text-slate-700">Rule:</span>
+                            <select
+                              value={comp.rule || "best_n"}
+                              onChange={(e) => {
+                                setPolicy(prev => ({
+                                  ...prev,
+                                  [compKey]: { ...prev[compKey], rule: e.target.value as any }
+                                }));
+                              }}
+                              className="px-2 py-0.5 rounded-md border border-slate-200 text-[11px] font-semibold bg-white"
+                            >
+                              <option value="best_n">Best N of Total</option>
+                              <option value="avg_all">Average of All</option>
+                              <option value="best_1">Best 1 (Highest)</option>
+                            </select>
+
+                            {(comp.rule === "best_n" || comp.rule === "avg_all" || !comp.rule) && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-slate-500">Total:</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={comp.totalConducted || 3}
+                                  onChange={(e) => {
+                                    const val = Math.max(1, Number(e.target.value));
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [compKey]: {
+                                        ...prev[compKey],
+                                        totalConducted: val,
+                                        bestCount: Math.min(prev[compKey].bestCount || 2, val),
+                                      }
+                                    }));
+                                  }}
+                                  className="w-10 px-1.5 py-0.5 text-[11px] font-bold border border-slate-200 rounded text-center bg-white"
+                                />
+                              </div>
+                            )}
+
+                            {(comp.rule === "best_n" || !comp.rule) && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-slate-500">Best:</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={comp.totalConducted || 10}
+                                  value={comp.bestCount || 2}
+                                  onChange={(e) => {
+                                    const val = Math.min(comp.totalConducted || 10, Math.max(1, Number(e.target.value)));
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [compKey]: { ...prev[compKey], bestCount: val }
+                                    }));
+                                  }}
+                                  className="w-10 px-1.5 py-0.5 text-[11px] font-bold border border-slate-200 rounded text-center bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

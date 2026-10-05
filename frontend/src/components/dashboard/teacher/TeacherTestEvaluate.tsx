@@ -14,6 +14,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { useGradingData, initials, formatDisplayDate } from "@/components/dashboard/shared/useGradingData";
 
+import ModalDialog from "@/components/ui/ModalDialog";
+
 import { useState, useEffect } from "react";
 
 interface TeacherTestEvaluateProps {
@@ -24,6 +26,13 @@ interface TeacherTestEvaluateProps {
 
 export default function TeacherTestEvaluate({ courseId = "", testId = "", role = "teacher" }: TeacherTestEvaluateProps) {
   const { tests, fetchTests, fetchGradeRecords, fetchStudents, fetchClassrooms, fetchCourses, fetchBatches } = useStore();
+
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "info" | "warning" | "danger" | "confirm" }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success"
+  });
 
   useEffect(() => {
     fetchTests();
@@ -42,7 +51,12 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
 
   const handleSave = async () => {
     const count = await save();
-    alert(`Marks saved for ${count} student${count === 1 ? "" : "s"}.`);
+    setModalConfig({
+      isOpen: true,
+      title: "Class Test Marks Saved",
+      message: `Test marks have been successfully recorded into the database for ${count} student${count === 1 ? "" : "s"}.`,
+      type: "success"
+    });
   };
 
   const handleExport = () => {
@@ -219,6 +233,14 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
         </div>
 
       </div>
+
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

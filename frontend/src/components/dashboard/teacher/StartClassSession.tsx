@@ -47,6 +47,13 @@ export default function StartClassSession() {
   const [searchQuery, setSearchQuery] = useState("");
   const [saved, setSaved]             = useState(false);
   const [newSessionId, setNewSessionId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const selectedView = myClassrooms.find(v => v.classroom.id === selectedId);
   const myTopics     = selectedView ? syllabusTopics.filter(t => t.courseId === selectedView.course.id) : [];
@@ -165,53 +172,53 @@ export default function StartClassSession() {
   // Step 1: PICK CLASSROOM
   if (step === "pick") {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300 pb-16 max-w-7xl mx-auto">
-        <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto">
+        <div className="pb-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Start Class Lecture & Attendance</h1>
-            <p className="text-xs text-slate-500 mt-1">Select an ongoing classroom to log today&apos;s lecture topic and record student attendance.</p>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">Start Class Lecture & Attendance</h1>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select an ongoing classroom to log today&apos;s lecture topic and record student attendance.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
           {myClassrooms.filter(v => v.classroom.status === "ongoing").map(({ classroom: cls, course, batch, students, colors, progress }) => {
             const todayPastCount = classSessions.filter(s => s.classroomId === cls.id && s.date === new Date().toISOString().split("T")[0]).length;
             return (
               <button
                 key={cls.id}
                 onClick={() => { setSelectedId(cls.id); setStep("session"); }}
-                className="bg-white border border-slate-200/80 rounded-2xl p-6 text-left hover:border-slate-400 hover:shadow-md transition-all group space-y-4 relative overflow-hidden"
+                className="bg-white border border-slate-200/80 rounded-xl p-4 text-left hover:border-slate-400 hover:shadow-xs transition-all group space-y-3 relative overflow-hidden"
               >
-                <div className={`h-2.5 w-full absolute top-0 left-0 ${colors.color}`} />
-                <div className="flex justify-between items-start pt-1">
-                  <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${colors.light} ${colors.text}`}>
+                <div className={`h-1.5 w-full absolute top-0 left-0 ${colors.color}`} />
+                <div className="flex justify-between items-start pt-0.5">
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${colors.light} ${colors.text}`}>
                     {course.code}
                   </span>
                   {todayPastCount > 0 && (
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                    <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
                       ✓ {todayPastCount} done today
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
+                  <h3 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
                     {course.title}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 font-medium">{batch.name} • {students.length} Enrolled Students</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">{batch.name} • {students.length} Enrolled</p>
                 </div>
 
-                <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-xs">
+                <div className="space-y-1 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[10px]">
                     <span className="text-slate-500 font-medium">{cls.classesCompleted}/{cls.totalClasses} Lectures</span>
-                    <span className={`font-extrabold ${colors.text}`}>{progress}%</span>
+                    <span className={`font-bold ${colors.text}`}>{progress}%</span>
                   </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div className={`h-full ${colors.color}`} style={{ width: `${progress}%` }} />
                   </div>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between text-xs font-bold text-slate-900">
+                <div className="pt-1 flex items-center justify-between text-[11px] font-bold text-slate-900">
                   <span>Start Live Session</span>
                   <span>→</span>
                 </div>
@@ -266,52 +273,72 @@ export default function StartClassSession() {
   const cls = selectedView!;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-16 max-w-7xl mx-auto">
+    <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto text-xs">
       
       {/* Top Banner & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div className="flex items-center gap-3.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setStep("pick")}
-            className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-xs"
+            className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${cls.colors.light} ${cls.colors.text}`}>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${cls.colors.light} ${cls.colors.text}`}>
                 {cls.course.code}
               </span>
-              <span className="text-xs text-slate-500 font-semibold">{cls.batch.name}</span>
+              <span className="text-[11px] text-slate-500 font-medium">{cls.batch.name}</span>
             </div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">{cls.course.title}</h1>
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight mt-0.5">{cls.course.title}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
+          {currentTime && (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 bg-slate-100/90 px-3 py-1 rounded-lg border border-slate-200/80 shadow-2xs">
+              <CalendarDays className="w-3.5 h-3.5 text-slate-500" />
+              <span>
+                {currentTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              <span className="text-slate-300">•</span>
+              <Clock className="w-3.5 h-3.5 text-emerald-600 ml-0.5" />
+              <span className="text-emerald-700 font-mono">
+                {currentTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              </span>
+            </div>
+          )}
+          <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60">
             {cls.classroom.room || "Room TBA"}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Left Column: Session Information */}
-        <div className="lg:col-span-1 space-y-5">
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
-            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-              <BookOpen className="w-4 h-4 text-slate-500" /> Lecture Session Info
-            </h2>
+        <div className="lg:col-span-1 space-y-3.5">
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-4 space-y-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h2 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-slate-500" /> Lecture Session Info
+              </h2>
+              {currentTime && (
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">
+                  Today, {currentTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-700">
                 Topic Covered <span className="text-red-500">*</span>
               </label>
               <select
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-medium text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition-all"
               >
                 <option value="">Select topic from syllabus</option>
                 {myTopics.map(t => (
@@ -325,47 +352,47 @@ export default function StartClassSession() {
                   placeholder="Type custom lecture topic..."
                   value={customTopic}
                   onChange={e => setCustomTopic(e.target.value)}
-                  className="w-full mt-2 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  className="w-full mt-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 bg-white"
                 />
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Duration</label>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-700">Duration</label>
               <select
                 value={duration}
                 onChange={e => setDuration(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-medium text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition-all"
               >
                 {["30m","45m","1h","1h 15m","1h 30m","2h"].map(d => <option key={d}>{d}</option>)}
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Lecture Notes (Optional)</label>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-700">Lecture Notes (Optional)</label>
               <textarea
-                rows={3}
-                placeholder="Write any lesson notes, assignments given, or remarks..."
+                rows={2}
+                placeholder="Write lesson notes or remarks..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all resize-none bg-white"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition-all resize-none bg-white"
               />
             </div>
           </div>
 
           {/* Realtime Attendance Tally Cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-4 text-center">
-              <p className="text-2xl font-extrabold text-emerald-700">{presentCount}</p>
-              <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mt-0.5">Present</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-2.5 text-center">
+              <p className="text-lg font-extrabold text-emerald-700 leading-tight">{presentCount}</p>
+              <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider mt-0.5">Present</p>
             </div>
-            <div className="rounded-2xl border border-red-200/80 bg-red-50/70 p-4 text-center">
-              <p className="text-2xl font-extrabold text-red-700">{absentCount}</p>
-              <p className="text-[10px] font-bold text-red-800 uppercase tracking-wider mt-0.5">Absent</p>
+            <div className="rounded-xl border border-red-200/80 bg-red-50/70 p-2.5 text-center">
+              <p className="text-lg font-extrabold text-red-700 leading-tight">{absentCount}</p>
+              <p className="text-[9px] font-bold text-red-800 uppercase tracking-wider mt-0.5">Absent</p>
             </div>
-            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 text-center">
-              <p className="text-2xl font-extrabold text-amber-700">{lateCount}</p>
-              <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mt-0.5">Late</p>
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-2.5 text-center">
+              <p className="text-lg font-extrabold text-amber-700 leading-tight">{lateCount}</p>
+              <p className="text-[9px] font-bold text-amber-800 uppercase tracking-wider mt-0.5">Late</p>
             </div>
           </div>
 
@@ -373,38 +400,38 @@ export default function StartClassSession() {
           <button
             onClick={handleSave}
             disabled={!finalTopicName}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl transition-all shadow-md hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" /> Save Session & Attendance
+            <Save className="w-3.5 h-3.5" /> Save Session & Attendance
           </button>
         </div>
 
         {/* Right Column: Student Roster Attendance Marking */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between">
           
           {/* Roster Header */}
-          <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Users2 className="w-4 h-4 text-slate-600" />
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Mark Student Attendance
+              <Users2 className="w-3.5 h-3.5 text-slate-600" />
+              <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                Mark Attendance
               </h3>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded">
                 {cls.students.length} Enrolled
               </span>
             </div>
 
             {/* Fast Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => markAll("present")}
-                className="text-xs font-bold px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl transition-colors"
+                className="text-[10px] font-bold px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg transition-colors"
               >
                 All Present
               </button>
               <button
                 onClick={() => markAll("absent")}
-                className="text-xs font-bold px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded-xl transition-colors"
+                className="text-[10px] font-bold px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
               >
                 All Absent
               </button>
@@ -412,23 +439,23 @@ export default function StartClassSession() {
           </div>
 
           {/* Student Search Bar */}
-          <div className="px-5 py-3 border-b border-slate-100 bg-white">
+          <div className="px-3.5 py-2 border-b border-slate-100 bg-white">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search student by name or roll number..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-slate-50/50"
+                className="w-full pl-9 pr-3 py-1.5 text-[11px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 bg-slate-50/40"
               />
             </div>
           </div>
 
           {/* Student Roster List */}
-          <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+          <div className="divide-y divide-slate-100 max-h-[440px] overflow-y-auto">
             {filteredStudents.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400">
+              <div className="py-8 text-center text-[11px] text-slate-400">
                 No students found matching your search.
               </div>
             ) : (
@@ -437,18 +464,18 @@ export default function StartClassSession() {
                 return (
                   <div
                     key={student.id}
-                    className={`px-5 py-3 flex items-center justify-between gap-4 transition-colors ${
+                    className={`px-3.5 py-1.5 flex items-center justify-between gap-3 transition-colors ${
                       status === "absent" ? "bg-red-50/30" : status === "late" ? "bg-amber-50/30" : "hover:bg-slate-50/60"
                     }`}
                   >
-                    <div className="flex items-center gap-3.5">
-                      <span className="text-xs text-slate-400 font-bold w-6 text-right shrink-0">{idx + 1}</span>
-                      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-extrabold text-slate-800 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-[10px] text-slate-400 font-bold w-4 text-right shrink-0">{idx + 1}</span>
+                      <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-extrabold text-slate-700 shrink-0">
                         {student.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900">{student.name}</p>
-                        <p className="text-[11px] text-slate-400 font-semibold">{student.rollNo}</p>
+                        <p className="text-[11px] font-bold text-slate-900 leading-tight">{student.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{student.rollNo}</p>
                       </div>
                     </div>
 
@@ -457,9 +484,9 @@ export default function StartClassSession() {
                       <button
                         type="button"
                         onClick={() => setStudentStatus(student.id, "present")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
                           status === "present"
-                            ? "bg-emerald-600 text-white shadow-xs"
+                            ? "bg-emerald-600 text-white shadow-2xs"
                             : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                       >
@@ -468,9 +495,9 @@ export default function StartClassSession() {
                       <button
                         type="button"
                         onClick={() => setStudentStatus(student.id, "absent")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
                           status === "absent"
-                            ? "bg-red-600 text-white shadow-xs"
+                            ? "bg-red-600 text-white shadow-2xs"
                             : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                       >
@@ -479,9 +506,9 @@ export default function StartClassSession() {
                       <button
                         type="button"
                         onClick={() => setStudentStatus(student.id, "late")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
                           status === "late"
-                            ? "bg-amber-500 text-white shadow-xs"
+                            ? "bg-amber-500 text-white shadow-2xs"
                             : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                       >

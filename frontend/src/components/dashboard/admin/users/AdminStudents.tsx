@@ -22,6 +22,7 @@ export default function AdminStudents() {
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   
+  const [fileError, setFileError] = useState("");
   const [form, setForm] = useState<{
     name: string;
     email: string;
@@ -91,9 +92,10 @@ export default function AdminStudents() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("File size must be less than 2MB");
+      setFileError("File size must be less than 2MB.");
       return;
     }
+    setFileError("");
 
     const reader = new FileReader();
     reader.onload = (event) => {
