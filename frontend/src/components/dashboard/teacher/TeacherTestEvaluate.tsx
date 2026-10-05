@@ -14,6 +14,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { useGradingData, initials, formatDisplayDate } from "@/components/dashboard/shared/useGradingData";
 
+import { useState, useEffect } from "react";
+
 interface TeacherTestEvaluateProps {
   courseId?: string; // classroomId
   testId?: string;
@@ -21,7 +23,17 @@ interface TeacherTestEvaluateProps {
 }
 
 export default function TeacherTestEvaluate({ courseId = "", testId = "", role = "teacher" }: TeacherTestEvaluateProps) {
-  const { tests } = useStore();
+  const { tests, fetchTests, fetchGradeRecords, fetchStudents, fetchClassrooms, fetchCourses, fetchBatches } = useStore();
+
+  useEffect(() => {
+    fetchTests();
+    fetchGradeRecords();
+    fetchStudents();
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+  }, []);
+
   const test = tests.find(t => t.id === testId);
   const maxMarks = test?.totalMarks ?? 0;
 

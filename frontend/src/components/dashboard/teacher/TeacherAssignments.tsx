@@ -5,7 +5,7 @@ import {
   X, FileCheck, Paperclip, MoreVertical, CheckCircle2,
   Clock, Edit2, Trash2, BookOpen
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Assignment } from "@/lib/types";
@@ -23,7 +23,19 @@ const EMPTY: Form = {
 };
 
 export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps) {
-  const { getMyClassroomViews, assignments, addAssignment, updateAssignment, deleteAssignment } = useStore();
+  const {
+    getMyClassroomViews, assignments, addAssignment, updateAssignment, deleteAssignment,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchAssignments
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchAssignments();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
 
   const [search, setSearch] = useState("");

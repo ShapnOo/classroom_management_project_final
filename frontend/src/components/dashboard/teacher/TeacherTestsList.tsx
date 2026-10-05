@@ -1,11 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { FileText, ArrowRight, ClipboardList, Clock } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 
 export default function TeacherTestsList() {
-  const { getMyClassroomViews } = useStore();
+  const { getMyClassroomViews, fetchClassrooms, fetchCourses, fetchBatches, fetchTests } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchTests();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
 
   return (

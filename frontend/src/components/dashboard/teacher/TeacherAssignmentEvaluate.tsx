@@ -8,7 +8,7 @@ import {
   Save,
   Users
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { useGradingData, initials, formatDisplayDate } from "@/components/dashboard/shared/useGradingData";
@@ -21,7 +21,17 @@ interface TeacherAssignmentEvaluateProps {
 
 export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId = "", role = "teacher" }: TeacherAssignmentEvaluateProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { assignments } = useStore();
+  const { assignments, fetchAssignments, fetchGradeRecords, fetchStudents, fetchClassrooms, fetchCourses, fetchBatches } = useStore();
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchGradeRecords();
+    fetchStudents();
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+  }, []);
+
   const assignment = assignments.find(a => a.id === assignmentId);
   const maxMarks = assignment?.totalMarks ?? 0;
 

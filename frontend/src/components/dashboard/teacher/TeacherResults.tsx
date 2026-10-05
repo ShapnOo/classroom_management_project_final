@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Search
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 interface TeacherResultsProps {
@@ -55,7 +55,21 @@ function seededRand(seed: string, min: number, max: number) {
 }
 
 export default function TeacherResults({ courseId }: TeacherResultsProps) {
-  const { getMyClassroomViews, classSessions, attendanceRecords, gradeRecords, upsertGradeRecord } = useStore();
+  const {
+    getMyClassroomViews, classSessions, attendanceRecords, gradeRecords, upsertGradeRecord,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchGradeRecords, fetchClassSessions, fetchAttendanceRecords
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchGradeRecords();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"sheet" | "entry">("sheet");

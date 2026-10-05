@@ -4,7 +4,7 @@ import {
   FileText, Search, Plus, ArrowLeft, Calendar,
   Users, Edit2, Trash2, Clock, CheckCircle2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Test } from "@/lib/types";
@@ -26,7 +26,19 @@ function pct(a: number, b: number) {
 }
 
 export default function TeacherTests({ courseId }: TeacherTestsProps) {
-  const { getMyClassroomViews, tests, addTest, updateTest, deleteTest } = useStore();
+  const {
+    getMyClassroomViews, tests, addTest, updateTest, deleteTest,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchTests
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchTests();
+  }, []);
+
   const myClassrooms = getMyClassroomViews();
 
   const [search, setSearch]   = useState("");

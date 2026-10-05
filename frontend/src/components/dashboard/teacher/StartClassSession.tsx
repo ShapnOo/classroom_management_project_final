@@ -20,8 +20,20 @@ export default function StartClassSession() {
   const {
     getMyClassroomViews, syllabusTopics,
     addClassSession, upsertAttendance, updateClassroom,
-    classSessions, attendanceRecords
+    classSessions, attendanceRecords,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchStudents,
+    fetchSyllabusTopics, fetchClassSessions, fetchAttendanceRecords,
   } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchSyllabusTopics();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+  }, []);
 
   const myClassrooms = getMyClassroomViews();
 

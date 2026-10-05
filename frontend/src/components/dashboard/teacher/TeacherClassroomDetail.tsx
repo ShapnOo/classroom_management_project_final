@@ -34,7 +34,34 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     addTest,
     addAnnouncement,
     updateClassroom,
+    fetchClassrooms,
+    fetchCourses,
+    fetchBatches,
+    fetchStudents,
+    fetchSyllabusTopics,
+    fetchClassSessions,
+    fetchAttendanceRecords,
+    fetchAssignments,
+    fetchTests,
+    fetchAnnouncements,
+    fetchMaterials,
+    materials: storeMaterials,
+    addMaterial,
   } = useStore();
+
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchStudents();
+    fetchSyllabusTopics();
+    fetchClassSessions();
+    fetchAttendanceRecords();
+    fetchAssignments();
+    fetchTests();
+    fetchAnnouncements();
+    fetchMaterials(classroomId);
+  }, [classroomId]);
 
   const view = getClassroomView(classroomId);
 
@@ -1302,8 +1329,22 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {materials.map((mat) => (
+          {(() => {
+            const displayMaterials = storeMaterials.length > 0
+              ? storeMaterials.map(m => ({
+                  id: m.id,
+                  title: m.title,
+                  category: m.type || "Slides",
+                  fileType: "PDF",
+                  size: "2.5 MB",
+                  date: m.created_at ? new Date(m.created_at).toLocaleDateString() : "Recent",
+                  downloads: 24,
+                }))
+              : materials;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayMaterials.map((mat) => (
               <div
                 key={mat.id}
                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-brand-dark/40 hover:shadow-md transition-all flex flex-col justify-between group"
@@ -1342,7 +1383,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 </div>
               </div>
             ))}
-          </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
