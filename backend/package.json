@@ -8,9 +8,15 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:init": "tsx src/db/init.ts"
+    "db:init": "tsx src/db/init.ts",
+    "db:seed": "tsx src/db/init.ts"
   },
-  "keywords": ["express", "postgresql", "classroom-management", "lms"],
+  "keywords": [
+    "express",
+    "postgresql",
+    "classroom-management",
+    "lms"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

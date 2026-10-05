@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./config/db.js";
+import { initDatabase } from "./db/init.js";
 import adminRoutes from "./routes/admin/index.js";
 
 dotenv.config();
@@ -14,8 +15,8 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:3000",
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Health Check API
 app.get("/api/health", async (req: Request, res: Response) => {
@@ -73,8 +74,15 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(` Scholaris Express Server running on http://localhost:${PORT}`);
+  
+  // Auto-initialize DB & seed demo data if reachable
+  try {
+    await initDatabase();
+  } catch (err: any) {
+    console.warn(` Notice: PostgreSQL database auto-init notice (${err.message}). Ensure PostgreSQL is running and .env is configured.`);
+  }
 });
 
 export default app;
