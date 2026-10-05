@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Assignment } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 interface TeacherAssignmentsProps {
   courseId?: string; // classroomId
@@ -250,9 +251,15 @@ export default function TeacherAssignments({ courseId }: TeacherAssignmentsProps
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Status</label>
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Assignment["status"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-              <option>Upcoming</option><option>Active</option><option>Completed</option>
-            </select>
+            <SearchableSelect
+              value={form.status}
+              onChange={val => setForm(f => ({ ...f, status: val as Assignment["status"] }))}
+              options={[
+                { value: "Upcoming", label: "Upcoming" },
+                { value: "Active", label: "Active" },
+                { value: "Completed", label: "Completed" }
+              ]}
+            />
           </div>
         </div>
       </Modal>

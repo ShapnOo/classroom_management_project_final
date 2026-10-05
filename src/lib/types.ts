@@ -39,6 +39,13 @@ export type Batch = {
   batchCourses?: BatchCourse[];
 };
 
+export type StudentDocument = {
+  id: string;
+  title: string;
+  fileName: string;
+  fileData: string; // Base64
+};
+
 export type Student = {
   id: string;
   rollNo: string;
@@ -46,6 +53,7 @@ export type Student = {
   email: string;
   batchId: string;
   phone?: string;
+  documents?: StudentDocument[];
 };
 
 export type Teacher = {
@@ -61,6 +69,11 @@ export type AdminUser = {
   name: string;
   email: string;
   role: "Super Admin" | "Staff";
+};
+
+export type AppSettings = {
+  schoolName: string;
+  logoBase64: string;
 };
 
 // ─── Academic Entities ─────────────────────────────────────────────────────

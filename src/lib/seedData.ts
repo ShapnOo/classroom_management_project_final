@@ -5,11 +5,17 @@
  */
 import type {
   Session, Department, Program, Batch, Student, Teacher,
-  Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
+  Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test, AppSettings
 } from "./types";
 
 // The currently "logged-in" teacher (for teacher portal simulation)
 export const CURRENT_TEACHER_ID = "teacher-1";
+
+// ─── App Settings ────────────────────────────────────────────────────────────
+export const seedSettings: AppSettings = {
+  schoolName: "Jahangirnagar University",
+  logoBase64: "", // Empty for default GraduationCap logo
+};
 
 // ─── Sessions ────────────────────────────────────────────────────────────────
 export const seedSessions: Session[] = [
@@ -58,13 +64,13 @@ export const seedBatches: Batch[] = [
 
 // ─── Students ────────────────────────────────────────────────────────────────
 const NAMES_A = [
-  "Alice Johnson","Bob Smith","Carol White","David Brown","Eva Martinez","Frank Lee","Grace Kim",
-  "Henry Davis","Iris Wilson","Jack Thomas","Kate Anderson","Liam Jackson","Mia Harris","Noah Martin",
-  "Olivia Thompson","Paul Garcia","Quinn Martinez","Rachel Robinson","Sam Clark","Tara Lewis",
-  "Ulysses Hall","Vera Young","Will Allen","Xena Hernandez","Yara King","Zoe Wright","Aaron Lopez",
-  "Bella Hill","Carlos Scott","Diana Green","Ethan Adams","Fiona Baker","George Gonzalez",
-  "Hannah Nelson","Ian Carter","Julia Mitchell","Kevin Perez","Laura Roberts","Mike Turner",
-  "Nora Phillips","Oscar Campbell","Pam Parker",
+  "Abdur Rahman", "Ayesha Siddiqa", "Mahmudul Hasan", "Nusrat Jahan", "Kamrul Islam", "Fatema Begum", "Rakibul Hasan",
+  "Jannatul Ferdous", "Mehedi Hasan", "Sanjida Akter", "Tariqul Islam", "Sumaiya Akter", "Ariful Islam", "Sadia Afrin",
+  "Nazmul Huda", "Farhana Akter", "Imran Hossain", "Tania Rahman", "Rubel Hossain", "Tahmina Akter",
+  "Sajedur Rahman", "Ruma Akter", "Samiul Islam", "Mim Akter", "Rashedul Islam", "Tisha Rahman", "Faisal Ahmed",
+  "Shirin Akter", "Habibur Rahman", "Salma Khatun", "Ashraful Islam", "Priyanka Roy", "Robiul Islam",
+  "Lima Akter", "Saddam Hossain", "Sraboni Das", "Zahid Hasan", "Mitu Akter", "Al Amin",
+  "Sharmin Sultana", "Jahangir Alam", "Shila Akter",
 ];
 
 export const seedStudents: Student[] = [
@@ -76,17 +82,17 @@ export const seedStudents: Student[] = [
   // Batch 2 — 38 students
   ...Array.from({ length: 38 }, (_, i) => ({
     id: `std-b2-${i+1}`, rollNo: `SP26B${String(i+1).padStart(3,"0")}`,
-    name: `Student SP26B-${i+1}`, email: `sp26b${i+1}@edu`, batchId: "batch-2",
+    name: NAMES_A[i % NAMES_A.length], email: `sp26b${i+1}@edu`, batchId: "batch-2",
   })),
   // Batch 3 — 50 students
   ...Array.from({ length: 50 }, (_, i) => ({
     id: `std-b3-${i+1}`, rollNo: `FA25A${String(i+1).padStart(3,"0")}`,
-    name: `Student FA25-${i+1}`, email: `fa25a${i+1}@edu`, batchId: "batch-3",
+    name: NAMES_A[(i + 5) % NAMES_A.length], email: `fa25a${i+1}@edu`, batchId: "batch-3",
   })),
   // Batch 4 — 45 students
   ...Array.from({ length: 45 }, (_, i) => ({
     id: `std-b4-${i+1}`, rollNo: `FA26C${String(i+1).padStart(3,"0")}`,
-    name: `Student FA26-${i+1}`, email: `fa26c${i+1}@edu`, batchId: "batch-4",
+    name: NAMES_A[(i + 10) % NAMES_A.length], email: `fa26c${i+1}@edu`, batchId: "batch-4",
   })),
 ];
 

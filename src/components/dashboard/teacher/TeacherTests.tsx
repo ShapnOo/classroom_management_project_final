@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import type { Test } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 interface TeacherTestsProps {
   courseId?: string; // classroomId
@@ -239,9 +240,11 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Duration</label>
-              <select value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                {DURATIONS.map(d => <option key={d}>{d}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.duration || ""}
+                onChange={val => setForm(f => ({ ...f, duration: val }))}
+                options={DURATIONS.map(d => ({ value: d, label: d }))}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -251,9 +254,15 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Status</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Test["status"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option>Upcoming</option><option>Active</option><option>Completed</option>
-              </select>
+              <SearchableSelect
+                value={form.status}
+                onChange={val => setForm(f => ({ ...f, status: val as Test["status"] }))}
+                options={[
+                  { value: "Upcoming", label: "Upcoming" },
+                  { value: "Active", label: "Active" },
+                  { value: "Completed", label: "Completed" }
+                ]}
+              />
             </div>
           </div>
         </div>

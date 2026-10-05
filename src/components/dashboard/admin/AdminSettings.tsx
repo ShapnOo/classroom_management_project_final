@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Settings2, Building2, BookOpen, Bell, Shield, Save } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Settings2, Building2, BookOpen, Bell, Shield, Save, Upload, GraduationCap, X } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 export default function AdminSettings() {
-  const [activeTab, setActiveTab] = useState("academic");
+  const { settings, updateSettings } = useStore();
+  const [activeTab, setActiveTab] = useState("general");
 
   // Academic Policies State
   const [missingSubmissionRule, setMissingSubmissionRule] = useState("zero");
@@ -12,6 +14,16 @@ export default function AdminSettings() {
   const [passThreshold, setPassThreshold] = useState("40");
   const [roundingRule, setRoundingRule] = useState("standard");
   const [gradingScale, setGradingScale] = useState("standard");
+
+  // General Settings State
+  const [schoolName, setSchoolName] = useState(settings.schoolName);
+  const [logoBase64, setLogoBase64] = useState(settings.logoBase64);
+
+  // Sync state if settings change externally
+  useEffect(() => {
+    setSchoolName(settings.schoolName);
+    setLogoBase64(settings.logoBase64);
+  }, [settings]);
 
   const tabs = [
     { id: "general", label: "General Setup", icon: Building2 },
@@ -21,7 +33,27 @@ export default function AdminSettings() {
   ];
 
   const handleSave = () => {
+    if (activeTab === "general") {
+      updateSettings({ schoolName, logoBase64 });
+    }
     alert("Settings saved successfully!");
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) { // 1MB limit for logo
+      alert("Logo size must be less than 1MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogoBase64(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   return (
@@ -164,10 +196,59 @@ export default function AdminSettings() {
           )}
 
           {activeTab === "general" && (
-            <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <Building2 className="w-8 h-8 text-slate-300 mb-3" />
-              <h3 className="text-sm font-medium text-slate-900">General Setup</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">Institution name, logo, term setups, and general system preferences.</p>
+            <div className="flex-1 max-w-3xl space-y-6">
+              
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                  <h2 className="text-sm font-semibold text-slate-800">Institution Identity</h2>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Customize how your institution appears across the system.</p>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Institution Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-medium text-slate-700">Institution Name</label>
+                    <input 
+                      type="text" 
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder="e.g. Jahangirnagar University"
+                      className="w-full max-w-md px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors"
+                    />
+                  </div>
+
+                  {/* Institution Logo */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-medium text-slate-700">Institution Logo</label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50">
+                        {logoBase64 ? (
+                          <img src={logoBase64} alt="Institution Logo" className="w-full h-full object-contain" />
+                        ) : (
+                          <GraduationCap className="w-6 h-6 text-slate-300" />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                          <Upload className="w-3.5 h-3.5" /> Upload Image
+                          <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                        </label>
+                        {logoBase64 && (
+                          <button 
+                            onClick={() => setLogoBase64("")}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 ml-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-medium hover:bg-red-100 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" /> Remove
+                          </button>
+                        )}
+                        <p className="text-[10px] text-slate-500">Recommended: Square format (PNG/JPG), max 1MB.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
           )}
           

@@ -7,14 +7,14 @@ import type {
   Session, Department, Program, Batch, Student, Teacher,
   Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
   ClassroomView, ClassSession, AttendanceRecord, GradeRecord,
-  Announcement, AnnouncementAudienceType, AdminUser
+  Announcement, AnnouncementAudienceType, AdminUser, AppSettings
 } from "./types";
 import { CLASSROOM_COLORS } from "./types";
 import {
   seedSessions, seedDepartments, seedPrograms, seedBatches, seedStudents,
   seedTeachers, seedCourses, seedSyllabusTopics, seedClassrooms, seedSchedules,
   seedAssignments, seedTests, seedAnnouncements, seedAdmins, CURRENT_TEACHER_ID,
-  seedClassSessions, seedAttendanceRecords, seedGradeRecords
+  seedClassSessions, seedAttendanceRecords, seedGradeRecords, seedSettings
 } from "./seedData";
 
 // ─── State Shape ─────────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@ type AppState = {
   gradeRecords: GradeRecord[];
   announcements: Announcement[];
   admins: AdminUser[];
+  settings: AppSettings;
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -102,6 +103,8 @@ type AppActions = {
   addAnnouncement: (a: Omit<Announcement, "id">) => void;
   updateAnnouncement: (id: string, a: Partial<Announcement>) => void;
   deleteAnnouncement: (id: string) => void;
+  // Settings
+  updateSettings: (newSettings: Partial<AppSettings>) => void;
   // Derived helpers
   getClassroomView: (classroomId: string) => ClassroomView | null;
   getMyClassroomViews: () => ClassroomView[];
@@ -137,6 +140,7 @@ const initialState: AppState = {
   gradeRecords: seedGradeRecords,
   announcements: seedAnnouncements,
   admins: seedAdmins,
+  settings: seedSettings,
 };
 
 function loadState(): AppState {
@@ -332,6 +336,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // ── Settings ──
+  const updateSettings = (newSettings: Partial<AppSettings>) =>
+    setState(s => ({ ...s, settings: { ...s.settings, ...newSettings } }));
+
   // ── Derived: build a fully enriched ClassroomView ──
   const buildView = useCallback((cls: Classroom): ClassroomView | null => {
     const course   = state.courses.find(c => c.id === cls.courseId);
@@ -425,6 +433,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addAttendanceRecord, updateAttendanceRecord, upsertAttendance,
     addGradeRecord, updateGradeRecord, upsertGradeRecord,
     addAnnouncement, updateAnnouncement, deleteAnnouncement,
+    updateSettings,
     // helpers
     getClassroomView,
     getMyClassroomViews, getAllClassroomViews,

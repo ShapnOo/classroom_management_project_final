@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import type { Announcement, AnnouncementAudienceType } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
 import { Bell, Plus, Search, Calendar, Megaphone, Edit2, Trash2, Globe, Users, BookOpen, AlertCircle, Paperclip, FileText } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 interface AnnouncementsManagerProps {
   role: "Admin" | "Teacher";
@@ -242,17 +243,25 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Priority</label>
-              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Form["priority"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="Normal">Normal</option>
-                <option value="High">High Priority</option>
-              </select>
+              <SearchableSelect
+                value={form.priority}
+                onChange={val => setForm(f => ({ ...f, priority: val as Form["priority"] }))}
+                options={[
+                  { value: "Normal", label: "Normal" },
+                  { value: "High", label: "High Priority" }
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Status</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Form["status"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="Published">Published</option>
-                <option value="Draft">Draft (Hidden)</option>
-              </select>
+              <SearchableSelect
+                value={form.status}
+                onChange={val => setForm(f => ({ ...f, status: val as Form["status"] }))}
+                options={[
+                  { value: "Published", label: "Published" },
+                  { value: "Draft", label: "Draft (Hidden)" }
+                ]}
+              />
             </div>
           </div>
           
@@ -280,48 +289,63 @@ export default function AnnouncementsManager({ role, authorId, authorName }: Ann
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-slate-700">Audience Scope <span className="text-red-500">*</span></label>
-                <select value={form.audienceType} onChange={e => setForm(f => ({ ...f, audienceType: e.target.value as Form["audienceType"], programId: undefined, batchId: undefined, courseId: undefined }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                  <option value="Global">Global (Everyone)</option>
-                  <option value="Program">Specific Program</option>
-                  <option value="Batch">Specific Batch</option>
-                  <option value="Course">Specific Course</option>
-                </select>
+                <SearchableSelect
+                  value={form.audienceType}
+                  onChange={val => setForm(f => ({ ...f, audienceType: val as Form["audienceType"], programId: undefined, batchId: undefined, courseId: undefined }))}
+                  options={[
+                    { value: "Global", label: "Global (Everyone)" },
+                    { value: "Program", label: "Specific Program" },
+                    { value: "Batch", label: "Specific Batch" },
+                    { value: "Course", label: "Specific Course" }
+                  ]}
+                />
               </div>
 
               {form.audienceType !== "Global" && (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-slate-700">Program <span className="text-red-500">*</span></label>
-                  <select value={form.programId || ""} onChange={e => setForm(f => ({ ...f, programId: e.target.value, batchId: undefined, courseId: undefined }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                    <option value="">Select a program</option>
-                    {programs.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={form.programId || ""}
+                    onChange={val => setForm(f => ({ ...f, programId: val, batchId: undefined, courseId: undefined }))}
+                    options={programs.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
+                    placeholder="Select a program"
+                    allowClear
+                  />
                 </div>
               )}
               
               {(form.audienceType === "Batch" || form.audienceType === "Course") && (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
-                  <select value={form.batchId || ""} onChange={e => setForm(f => ({ ...f, batchId: e.target.value, courseId: undefined }))} disabled={!form.programId} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400">
-                    <option value="">Select a batch</option>
-                    {batches.filter(b => b.programId === form.programId).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={form.batchId || ""}
+                    onChange={val => setForm(f => ({ ...f, batchId: val, courseId: undefined }))}
+                    disabled={!form.programId}
+                    options={batches.filter(b => b.programId === form.programId).map(b => ({ value: b.id, label: b.name }))}
+                    placeholder="Select a batch"
+                    allowClear
+                  />
                 </div>
               )}
               
               {form.audienceType === "Course" && (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-slate-700">Course <span className="text-red-500">*</span></label>
-                  <select value={form.courseId || ""} onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))} disabled={!form.batchId} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400">
-                    <option value="">Select a course</option>
-                    {(() => {
+                  <SearchableSelect
+                    value={form.courseId || ""}
+                    onChange={val => setForm(f => ({ ...f, courseId: val }))}
+                    disabled={!form.batchId}
+                    placeholder="Select a course"
+                    allowClear
+                    options={(() => {
                       const selectedBatch = batches.find(b => b.id === form.batchId);
                       const validCourseIds = selectedBatch?.batchCourses?.map(bc => bc.courseId) || [];
                       const batchCourses = (selectedBatch?.batchCourses && selectedBatch.batchCourses.length > 0)
                         ? courses.filter(c => validCourseIds.includes(c.id))
                         : courses.filter(c => c.programId === form.programId);
-                      return batchCourses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>);
+                      return batchCourses.map(c => ({ value: c.id, label: `${c.code} — ${c.title}` }));
                     })()}
-                  </select>
+                  />
                 </div>
               )}
             </div>

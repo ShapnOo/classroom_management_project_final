@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import type { Student } from "@/lib/types";
+import type { Student, StudentDocument } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Search, Edit2, Trash2, Mail, Users, Hash, Phone } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { Plus, Search, Edit2, Trash2, Mail, Users, Hash, Phone, Paperclip, FileText } from "lucide-react";
 
 export default function AdminStudents() {
   const { students, batches, programs, addStudent, updateStudent, deleteStudent } = useStore();
@@ -15,13 +16,22 @@ export default function AdminStudents() {
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    email: string;
+    rollNo: string;
+    programId: string;
+    batchId: string;
+    phone: string;
+    documents: StudentDocument[];
+  }>({
     name: "",
     email: "",
     rollNo: "",
     programId: "",
     batchId: "",
     phone: "",
+    documents: [],
   });
 
   const filtered = students.filter(s => {
@@ -36,7 +46,7 @@ export default function AdminStudents() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", email: "", rollNo: "", programId: "", batchId: "", phone: "" });
+    setForm({ name: "", email: "", rollNo: "", programId: "", batchId: "", phone: "", documents: [] });
     setIsOpen(true);
   };
 
@@ -49,7 +59,8 @@ export default function AdminStudents() {
       rollNo: s.rollNo, 
       programId: batch?.programId || "", 
       batchId: s.batchId, 
-      phone: s.phone || "" 
+      phone: s.phone || "",
+      documents: s.documents || []
     });
     setIsOpen(true);
   };
@@ -62,11 +73,40 @@ export default function AdminStudents() {
     if (!payload.phone) delete (payload as any).phone;
     
     if (editing) {
-      updateStudent(editing.id, payload);
+      updateStudent(editing.id, { ...payload, id: editing.id } as Student);
     } else {
-      addStudent(payload);
+      addStudent(payload as Omit<Student, "id">);
     }
     setIsOpen(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File size must be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setForm(f => ({
+        ...f,
+        documents: [
+          ...f.documents,
+          {
+            id: crypto.randomUUID(),
+            title: "",
+            fileName: file.name,
+            fileData: base64,
+          }
+        ]
+      }));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   return (
@@ -168,21 +208,24 @@ export default function AdminStudents() {
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Program <span className="text-red-500">*</span></label>
-              <select value={form.programId} onChange={e => setForm(f => ({ ...f, programId: e.target.value, batchId: "" }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors bg-white">
-                <option value="">Select Program</option>
-                {programs.map(p => (
-                  <option key={p.id} value={p.id}>{p.code}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={form.programId}
+                onChange={val => setForm(f => ({ ...f, programId: val, batchId: "" }))}
+                options={programs.map(p => ({ value: p.id, label: p.code }))}
+                placeholder="Select Program"
+                allowClear
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
-              <select value={form.batchId} onChange={e => setForm(f => ({ ...f, batchId: e.target.value }))} disabled={!form.programId} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors bg-white disabled:bg-slate-50 disabled:text-slate-400">
-                <option value="">Select Batch</option>
-                {batches.filter(b => b.programId === form.programId).map(b => (
-                  <option key={b.id} value={b.id}>{b.code}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={form.batchId}
+                onChange={val => setForm(f => ({ ...f, batchId: val }))}
+                disabled={!form.programId}
+                options={batches.filter(b => b.programId === form.programId).map(b => ({ value: b.id, label: b.code }))}
+                placeholder="Select Batch"
+                allowClear
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -192,6 +235,58 @@ export default function AdminStudents() {
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Phone (Optional)</label>
             <input type="text" placeholder="e.g. +1 555-0100" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors" />
+          </div>
+
+          <div className="pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-[11px] font-semibold text-slate-800">Documents</h3>
+                <p className="text-[10px] text-slate-500">e.g. Payment Slip, NID</p>
+              </div>
+              <label className="flex items-center gap-1.5 bg-brand-dark/5 text-brand-dark px-2.5 py-1.5 rounded-md hover:bg-brand-dark/10 transition-colors cursor-pointer text-[11px] font-medium">
+                <Plus className="w-3.5 h-3.5" /> Add Document
+                <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            </div>
+            
+            <div className="space-y-2">
+              {form.documents.length === 0 ? (
+                <div className="text-center py-4 bg-slate-50 border border-slate-200 border-dashed rounded-lg">
+                  <p className="text-[11px] text-slate-500">No documents added yet.</p>
+                </div>
+              ) : (
+                form.documents.map((doc, idx) => (
+                  <div key={doc.id} className="flex flex-col sm:flex-row gap-2 items-center bg-slate-50/50 p-2 rounded-lg border border-slate-200 shadow-sm group">
+                    <div className="flex-1 w-full flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                        <FileText className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
+                      <input 
+                        type="text" 
+                        placeholder="Document Title (e.g. Payment Slip)" 
+                        value={doc.title}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          documents: f.documents.map((d, i) => i === idx ? { ...d, title: e.target.value } : d)
+                        }))}
+                        className="flex-1 px-2 py-1 text-[11px] bg-transparent border-b border-transparent focus:border-brand-dark focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
+                      <span className="text-[10px] text-slate-500 truncate max-w-[100px]" title={doc.fileName}>{doc.fileName}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(f => ({ ...f, documents: f.documents.filter((_, i) => i !== idx) }))}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-[9px] text-slate-500 mt-2">Max size 2MB per file. Supports PDF and Images.</p>
           </div>
         </div>
       </Modal>

@@ -11,6 +11,7 @@ import { useStore } from "@/lib/store";
 import type { Classroom } from "@/lib/types";
 import { CLASSROOM_COLORS } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 type Form = Omit<Classroom, "id">;
 const EMPTY: Form = {
@@ -305,44 +306,45 @@ export default function AdminClassrooms() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Program <span className="text-red-500">*</span></label>
-              <select value={modalProgramId} onChange={e => {
-                setModalProgramId(e.target.value);
-                setForm(f => ({ ...f, batchId: "", courseId: "" })); // Reset downstream
-              }} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="">Select a program</option>
-                {programs.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-              </select>
+              <SearchableSelect
+                value={modalProgramId}
+                onChange={(val) => {
+                  setModalProgramId(val);
+                  setForm(f => ({ ...f, batchId: "", courseId: "" })); // Reset downstream
+                }}
+                options={programs.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
+                placeholder="Select a program"
+                allowClear
+              />
             </div>
             
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
-              <select 
-                value={form.batchId} 
-                onChange={e => setForm(f => ({ ...f, batchId: e.target.value, courseId: "" }))} 
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400"
+              <SearchableSelect
+                value={form.batchId}
+                onChange={val => setForm(f => ({ ...f, batchId: val, courseId: "" }))}
                 disabled={!modalProgramId}
-              >
-                <option value="">Select a batch</option>
-                {batches.filter(b => b.programId === modalProgramId).map(b => {
+                options={batches.filter(b => b.programId === modalProgramId).map(b => {
                   const session = sessions.find(s => s.id === b.sessionId);
-                  return <option key={b.id} value={b.id}>{b.name} ({session?.name ?? ""})</option>;
+                  return { value: b.id, label: `${b.name} (${session?.name ?? ""})` };
                 })}
-              </select>
+                placeholder="Select a batch"
+                allowClear
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Course <span className="text-red-500">*</span></label>
-              <select 
-                value={form.courseId} 
-                onChange={e => setForm(f => ({ ...f, courseId: e.target.value }))} 
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all disabled:bg-slate-50 disabled:text-slate-400"
+              <SearchableSelect
+                value={form.courseId}
+                onChange={val => setForm(f => ({ ...f, courseId: val }))}
                 disabled={!form.batchId}
-              >
-                <option value="">Select a course</option>
-                {(() => {
-                  if (!form.batchId || !modalProgramId) return null;
+                placeholder="Select a course"
+                allowClear
+                options={(() => {
+                  if (!form.batchId || !modalProgramId) return [];
                   const selectedBatch = batches.find(b => b.id === form.batchId);
                   const hasCurriculum = selectedBatch?.batchCourses && selectedBatch.batchCourses.length > 0;
                   
@@ -350,14 +352,10 @@ export default function AdminClassrooms() {
                   const batchCourses = hasCurriculum 
                     ? courses.filter(c => validCourseIds.includes(c.id))
                     : courses.filter(c => c.programId === modalProgramId);
-                    
-                  if (batchCourses.length === 0) {
-                     return <option value="" disabled>No courses available</option>;
-                  }
                   
-                  return batchCourses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>);
+                  return batchCourses.map(c => ({ value: c.id, label: `${c.code} — ${c.title}` }));
                 })()}
-              </select>
+              />
               {form.batchId && (
                 <p className="text-[9px] text-slate-500">
                   {batches.find(b => b.id === form.batchId)?.batchCourses?.length 
@@ -368,10 +366,13 @@ export default function AdminClassrooms() {
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Assign Teacher <span className="text-red-500">*</span></label>
-              <select value={form.teacherId} onChange={e => setForm(f => ({ ...f, teacherId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="">Select a teacher</option>
-                {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.designation})</option>)}
-              </select>
+              <SearchableSelect
+                value={form.teacherId}
+                onChange={val => setForm(f => ({ ...f, teacherId: val }))}
+                options={teachers.map(t => ({ value: t.id, label: `${t.name} (${t.designation})` }))}
+                placeholder="Select a teacher"
+                allowClear
+              />
             </div>
           </div>
 
@@ -394,11 +395,15 @@ export default function AdminClassrooms() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Status</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Classroom["status"] }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                <option value="upcoming">Upcoming</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="completed">Completed</option>
-              </select>
+              <SearchableSelect
+                value={form.status}
+                onChange={val => setForm(f => ({ ...f, status: val as Classroom["status"] }))}
+                options={[
+                  { value: "upcoming", label: "Upcoming" },
+                  { value: "ongoing", label: "Ongoing" },
+                  { value: "completed", label: "Completed" }
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-slate-700">Total Classes</label>
@@ -434,11 +439,11 @@ export default function AdminClassrooms() {
                 schedules.map((sch, idx) => (
                   <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center bg-slate-50/50 p-2 rounded-lg border border-slate-200 shadow-sm group hover:border-brand-dark/30 transition-colors">
                     <div className="flex-1 w-full">
-                      <select value={sch.day} onChange={e => setSchedules(s => s.map((x, i) => i === idx ? { ...x, day: e.target.value } : x))} className="w-full px-3 py-2 rounded-md border border-slate-200 text-[11px] font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all">
-                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
-                          <option key={day}>{day}</option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        value={sch.day}
+                        onChange={val => setSchedules(s => s.map((x, i) => i === idx ? { ...x, day: val } : x))}
+                        options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => ({ value: day, label: day }))}
+                      />
                     </div>
                     
                     <div className="flex items-center gap-2 w-full sm:w-auto bg-white border border-slate-200 rounded-md px-2 focus-within:ring-2 focus-within:ring-brand-dark/20 focus-within:border-brand-dark transition-all">

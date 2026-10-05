@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Teacher } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Plus, Search, Edit2, Trash2, Mail, Briefcase, GraduationCap } from "lucide-react";
 
 export default function AdminTeachers() {
@@ -140,22 +141,28 @@ export default function AdminTeachers() {
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Designation <span className="text-red-500">*</span></label>
-            <select value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors bg-white">
-              <option value="">Select Designation</option>
-              <option value="Professor">Professor</option>
-              <option value="Associate Professor">Associate Professor</option>
-              <option value="Assistant Professor">Assistant Professor</option>
-              <option value="Lecturer">Lecturer</option>
-            </select>
+            <SearchableSelect
+              value={form.designation}
+              onChange={val => setForm(f => ({ ...f, designation: val }))}
+              options={[
+                { value: "Professor", label: "Professor" },
+                { value: "Associate Professor", label: "Associate Professor" },
+                { value: "Assistant Professor", label: "Assistant Professor" },
+                { value: "Lecturer", label: "Lecturer" }
+              ]}
+              placeholder="Select Designation"
+              allowClear
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">Department <span className="text-red-500">*</span></label>
-            <select value={form.departmentId} onChange={e => setForm(f => ({ ...f, departmentId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors bg-white">
-              <option value="">Select Department</option>
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={form.departmentId}
+              onChange={val => setForm(f => ({ ...f, departmentId: val }))}
+              options={departments.map(d => ({ value: d.id, label: `${d.name} (${d.code})` }))}
+              placeholder="Select Department"
+              allowClear
+            />
           </div>
         </div>
       </Modal>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { AdminUser } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Plus, Search, Edit2, Trash2, Mail, Shield } from "lucide-react";
 
 export default function AdminAdmins() {
@@ -134,10 +135,14 @@ export default function AdminAdmins() {
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-slate-700">System Role <span className="text-red-500">*</span></label>
-            <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as "Super Admin" | "Staff" }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:border-brand-dark transition-colors bg-white">
-              <option value="Staff">Staff</option>
-              <option value="Super Admin">Super Admin</option>
-            </select>
+            <SearchableSelect
+              value={form.role}
+              onChange={val => setForm(f => ({ ...f, role: val as "Super Admin" | "Staff" }))}
+              options={[
+                { value: "Staff", label: "Staff" },
+                { value: "Super Admin", label: "Super Admin" }
+              ]}
+            />
           </div>
         </div>
       </Modal>

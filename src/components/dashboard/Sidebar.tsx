@@ -5,8 +5,10 @@ import { GraduationCap, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { adminMenu, teacherMenu, studentMenu, MenuItem } from "@/lib/menus";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useStore } from "@/lib/store";
 
 export default function Sidebar() {
+  const { settings } = useStore();
   const pathname = usePathname();
   // Extract role from /dashboard/[role]
   const pathParts = pathname.split("/");
@@ -31,14 +33,27 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col hidden md:flex">
-      {/* Logo Area */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-200 shrink-0">
-        <div className="bg-brand-dark p-1.5 rounded-lg mr-3">
-          <GraduationCap className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h2 className="font-medium text-[13px] text-brand-dark leading-tight">Classroom Management</h2>
-          <p className="text-[10px] text-slate-500 font-medium">{panelName}</p>
+      <div className="py-6 px-5 border-b border-slate-200 shrink-0 bg-slate-50/50">
+        <div className="flex items-center gap-3">
+          <div className="bg-white rounded-[14px] shadow-sm border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0 w-12 h-12">
+            {settings.logoBase64 ? (
+              <img src={settings.logoBase64} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <GraduationCap className="w-6 h-6 text-brand-dark" />
+            )}
+          </div>
+          <div className="overflow-hidden flex flex-col justify-center">
+            <h2 
+              className="font-bold text-[14px] text-slate-800 leading-snug line-clamp-2 tracking-tight" 
+              title={settings.schoolName || "Classroom Management"}
+            >
+              {settings.schoolName || "Classroom Management"}
+            </h2>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.4)]"></span>
+              <p className="text-[11px] font-medium text-slate-500 tracking-wide">{panelName}</p>
+            </div>
+          </div>
         </div>
       </div>
 
