@@ -143,8 +143,17 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           <h1 className="text-[13px] font-semibold text-slate-900 mt-0.5">{course.title}</h1>
           <p className="text-[10px] text-slate-500">{batch.name}</p>
         </div>
-        <div className="ml-auto">
-          <button className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors shadow-sm">
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            href={`/dashboard/teacher/sessions/start?classId=${cls.id}`}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-brand-dark px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
+          >
+            <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Take Attendance
+          </Link>
+          <button 
+            onClick={() => alert("Exporting attendance spreadsheet (CSV)...")}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+          >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
         </div>
