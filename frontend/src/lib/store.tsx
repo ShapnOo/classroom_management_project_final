@@ -1,7 +1,7 @@
 "use client";
 
 import React, {
-  createContext, useContext, useState, useEffect, useCallback, ReactNode
+  createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode
 } from "react";
 import type {
   Session, Department, Program, Batch, Student, Teacher,
@@ -47,29 +47,30 @@ type AppState = {
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 type AppActions = {
-  // On-demand Granular Fetchers (Page-by-page)
-  fetchDepartments: () => Promise<Department[]>;
-  fetchPrograms: () => Promise<Program[]>;
-  fetchSessions: () => Promise<Session[]>;
-  fetchBatches: () => Promise<Batch[]>;
-  fetchTeachers: () => Promise<Teacher[]>;
-  fetchAdmins: () => Promise<AdminUser[]>;
-  fetchStudents: (batchId?: string) => Promise<Student[]>;
-  fetchCourses: () => Promise<Course[]>;
-  fetchSyllabusTopics: () => Promise<SyllabusTopic[]>;
-  fetchClassrooms: () => Promise<Classroom[]>;
-  fetchSchedules: () => Promise<ClassSchedule[]>;
-  fetchAssignments: () => Promise<Assignment[]>;
-  fetchTests: () => Promise<Test[]>;
-  fetchClassSessions: () => Promise<ClassSession[]>;
-  fetchAttendanceRecords: () => Promise<AttendanceRecord[]>;
-  fetchGradeRecords: () => Promise<GradeRecord[]>;
-  fetchAnnouncements: () => Promise<Announcement[]>;
-  fetchMaterials: (classroomId?: string) => Promise<any[]>;
-  fetchSettings: () => Promise<AppSettings>;
+  // On-demand Granular Fetchers (Page-by-page with smart 15s TTL & request deduplication)
+  fetchDepartments: (force?: boolean) => Promise<Department[]>;
+  fetchPrograms: (force?: boolean) => Promise<Program[]>;
+  fetchSessions: (force?: boolean) => Promise<Session[]>;
+  fetchBatches: (force?: boolean) => Promise<Batch[]>;
+  fetchTeachers: (force?: boolean) => Promise<Teacher[]>;
+  fetchAdmins: (force?: boolean) => Promise<AdminUser[]>;
+  fetchStudents: (batchId?: string, force?: boolean) => Promise<Student[]>;
+  fetchCourses: (force?: boolean) => Promise<Course[]>;
+  fetchSyllabusTopics: (force?: boolean) => Promise<SyllabusTopic[]>;
+  fetchClassrooms: (force?: boolean) => Promise<Classroom[]>;
+  fetchSchedules: (force?: boolean) => Promise<ClassSchedule[]>;
+  fetchAssignments: (force?: boolean) => Promise<Assignment[]>;
+  fetchTests: (force?: boolean) => Promise<Test[]>;
+  fetchClassSessions: (force?: boolean) => Promise<ClassSession[]>;
+  fetchAttendanceRecords: (force?: boolean) => Promise<AttendanceRecord[]>;
+  fetchGradeRecords: (force?: boolean) => Promise<GradeRecord[]>;
+  fetchAnnouncements: (force?: boolean) => Promise<Announcement[]>;
+  fetchMaterials: (classroomId?: string, force?: boolean) => Promise<any[]>;
+  fetchSettings: (force?: boolean) => Promise<AppSettings>;
 
-  // Sync / Refresh
+  // Sync / Refresh & Cache Control
   refreshFromBackend: () => Promise<void>;
+  invalidateCache: (key?: string) => void;
 
   addMaterial: (m: any) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
@@ -182,246 +183,186 @@ const initialState: AppState = {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
 
-  // ── Granular On-Demand Fetchers (Stable callbacks with zero looping dependencies) ──
+  // ── Smart Cache & Request Deduplication Engine ──
+  const CACHE_TTL_MS = 15000; // 15s cache lifetime
+  const cacheTimestamps = useRef<Record<string, number>>({});
+  const inFlightRequests = useRef<Record<string, Promise<any>>>({});
+  const stateRef = useRef<AppState>(state);
 
-  const fetchDepartments = useCallback(async () => {
-    try {
-      const data = await api.getDepartments();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, departments: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchDepartments fallback:", e);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const invalidateCache = useCallback((key?: string) => {
+    if (key) {
+      delete cacheTimestamps.current[key];
+    } else {
+      cacheTimestamps.current = {};
     }
-    return [];
   }, []);
 
-  const fetchPrograms = useCallback(async () => {
-    try {
-      const data = await api.getPrograms();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, programs: data, isBackendConnected: true }));
-        return data;
+  const cachedFetch = useCallback(async <T,>(
+    key: string,
+    stateKey: keyof AppState,
+    fetcher: () => Promise<T[] | T>,
+    onSuccess: (data: any) => void,
+    fallbackData: any = [],
+    force: boolean = false
+  ): Promise<any> => {
+    const now = Date.now();
+    const lastFetched = cacheTimestamps.current[key] || 0;
+
+    // 1. Return cached state if fetch is within TTL duration and not forced
+    if (!force && now - lastFetched < CACHE_TTL_MS) {
+      const existing = stateRef.current[stateKey];
+      if (existing !== undefined) {
+        return existing;
       }
-    } catch (e) {
-      console.warn("fetchPrograms fallback:", e);
     }
-    return [];
+
+    // 2. Deduplicate concurrent requests
+    if (Object.prototype.hasOwnProperty.call(inFlightRequests.current, key)) {
+      return inFlightRequests.current[key];
+    }
+
+    // 3. Issue fresh network request
+    const promise = (async () => {
+      try {
+        const data = await fetcher();
+        if (data && (!Array.isArray(data) || data.length > 0 || force)) {
+          cacheTimestamps.current[key] = Date.now();
+          onSuccess(data);
+          return data;
+        }
+      } catch (e) {
+        console.warn(`fetch ${key} fallback:`, e);
+      } finally {
+        delete inFlightRequests.current[key];
+      }
+      return fallbackData;
+    })();
+
+    inFlightRequests.current[key] = promise;
+    return promise;
   }, []);
 
-  const fetchSessions = useCallback(async () => {
-    try {
-      const data = await api.getSessions();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, sessions: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchSessions fallback:", e);
-    }
-    return [];
-  }, []);
+  // ── Granular On-Demand Fetchers (Deduplicated & Cached) ──
 
-  const fetchBatches = useCallback(async () => {
-    try {
-      const data = await api.getBatches();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, batches: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchBatches fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchDepartments = useCallback(async (force = false) => {
+    return cachedFetch('departments', 'departments', () => api.getDepartments(), data => {
+      setState(prev => ({ ...prev, departments: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchTeachers = useCallback(async () => {
-    try {
-      const data = await api.getTeachers();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, teachers: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchTeachers fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchPrograms = useCallback(async (force = false) => {
+    return cachedFetch('programs', 'programs', () => api.getPrograms(), data => {
+      setState(prev => ({ ...prev, programs: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchAdmins = useCallback(async () => {
-    try {
-      const data = await api.getAdmins();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, admins: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchAdmins fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchSessions = useCallback(async (force = false) => {
+    return cachedFetch('sessions', 'sessions', () => api.getSessions(), data => {
+      setState(prev => ({ ...prev, sessions: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchStudents = useCallback(async (batchId?: string) => {
-    try {
-      const data = await api.getStudents(batchId);
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, students: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchStudents fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchBatches = useCallback(async (force = false) => {
+    return cachedFetch('batches', 'batches', () => api.getBatches(), data => {
+      setState(prev => ({ ...prev, batches: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchCourses = useCallback(async () => {
-    try {
-      const data = await api.getCourses();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, courses: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchCourses fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchTeachers = useCallback(async (force = false) => {
+    return cachedFetch('teachers', 'teachers', () => api.getTeachers(), data => {
+      setState(prev => ({ ...prev, teachers: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchSyllabusTopics = useCallback(async () => {
-    try {
-      const data = await api.getSyllabusTopics();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, syllabusTopics: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchSyllabusTopics fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchAdmins = useCallback(async (force = false) => {
+    return cachedFetch('admins', 'admins', () => api.getAdmins(), data => {
+      setState(prev => ({ ...prev, admins: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchClassrooms = useCallback(async () => {
-    try {
-      const data = await api.getClassrooms();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, classrooms: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchClassrooms fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchStudents = useCallback(async (batchId?: string, force = false) => {
+    const key = batchId ? `students_${batchId}` : 'students';
+    return cachedFetch(key, 'students', () => api.getStudents(batchId), data => {
+      setState(prev => ({ ...prev, students: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchSchedules = useCallback(async () => {
-    try {
-      const data = await api.getSchedules();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, schedules: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchSchedules fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchCourses = useCallback(async (force = false) => {
+    return cachedFetch('courses', 'courses', () => api.getCourses(), data => {
+      setState(prev => ({ ...prev, courses: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchAssignments = useCallback(async () => {
-    try {
-      const data = await api.getAssignments();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, assignments: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchAssignments fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchSyllabusTopics = useCallback(async (force = false) => {
+    return cachedFetch('syllabusTopics', 'syllabusTopics', () => api.getSyllabusTopics(), data => {
+      setState(prev => ({ ...prev, syllabusTopics: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchTests = useCallback(async () => {
-    try {
-      const data = await api.getTests();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, tests: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchTests fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchClassrooms = useCallback(async (force = false) => {
+    return cachedFetch('classrooms', 'classrooms', () => api.getClassrooms(), data => {
+      setState(prev => ({ ...prev, classrooms: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchClassSessions = useCallback(async () => {
-    try {
-      const data = await api.getClassSessions();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, classSessions: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchClassSessions fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchSchedules = useCallback(async (force = false) => {
+    return cachedFetch('schedules', 'schedules', () => api.getSchedules(), data => {
+      setState(prev => ({ ...prev, schedules: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchAttendanceRecords = useCallback(async () => {
-    try {
-      const data = await api.getAttendanceRecords();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, attendanceRecords: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchAttendanceRecords fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchAssignments = useCallback(async (force = false) => {
+    return cachedFetch('assignments', 'assignments', () => api.getAssignments(), data => {
+      setState(prev => ({ ...prev, assignments: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchGradeRecords = useCallback(async () => {
-    try {
-      const data = await api.getGradeRecords();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, gradeRecords: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchGradeRecords fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchTests = useCallback(async (force = false) => {
+    return cachedFetch('tests', 'tests', () => api.getTests(), data => {
+      setState(prev => ({ ...prev, tests: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchAnnouncements = useCallback(async () => {
-    try {
-      const data = await api.getAnnouncements();
-      if (data && data.length > 0) {
-        setState(prev => ({ ...prev, announcements: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchAnnouncements fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchClassSessions = useCallback(async (force = false) => {
+    return cachedFetch('classSessions', 'classSessions', () => api.getClassSessions(), data => {
+      setState(prev => ({ ...prev, classSessions: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
-  const fetchMaterials = useCallback(async (classroomId?: string) => {
-    try {
-      const data = await api.getMaterials(classroomId);
-      if (data) {
-        setState(prev => ({ ...prev, materials: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchMaterials fallback:", e);
-    }
-    return [];
-  }, []);
+  const fetchAttendanceRecords = useCallback(async (force = false) => {
+    return cachedFetch('attendanceRecords', 'attendanceRecords', () => api.getAttendanceRecords(), data => {
+      setState(prev => ({ ...prev, attendanceRecords: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
+
+  const fetchGradeRecords = useCallback(async (force = false) => {
+    return cachedFetch('gradeRecords', 'gradeRecords', () => api.getGradeRecords(), data => {
+      setState(prev => ({ ...prev, gradeRecords: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
+
+  const fetchAnnouncements = useCallback(async (force = false) => {
+    return cachedFetch('announcements', 'announcements', () => api.getAnnouncements(), data => {
+      setState(prev => ({ ...prev, announcements: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
+
+  const fetchMaterials = useCallback(async (classroomId?: string, force = false) => {
+    const key = classroomId ? `materials_${classroomId}` : 'materials';
+    return cachedFetch(key, 'materials', () => api.getMaterials(classroomId), data => {
+      setState(prev => ({ ...prev, materials: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
 
   const addMaterial = useCallback(async (m: any) => {
     try {
       const created = await api.createMaterial(m);
       if (created) {
+        invalidateCache('materials');
         setState(prev => ({ ...prev, materials: [created, ...prev.materials] }));
         return;
       }
@@ -429,55 +370,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.warn("addMaterial fallback:", e);
     }
     setState(prev => ({ ...prev, materials: [{ ...m, id: genId(), uploadedAt: new Date().toISOString() }, ...prev.materials] }));
-  }, []);
+  }, [invalidateCache]);
 
   const deleteMaterial = useCallback(async (id: string) => {
     try {
       await api.deleteMaterial(id);
+      invalidateCache('materials');
     } catch (e) {
       console.warn("deleteMaterial fallback:", e);
     }
     setState(prev => ({ ...prev, materials: prev.materials.filter(x => x.id !== id) }));
-  }, []);
+  }, [invalidateCache]);
 
-
-  const fetchSettings = useCallback(async () => {
-    try {
-      const data = await api.getSettings();
-      if (data) {
-        setState(prev => ({ ...prev, settings: data, isBackendConnected: true }));
-        return data;
-      }
-    } catch (e) {
-      console.warn("fetchSettings fallback:", e);
-    }
-    return { schoolName: "Jahangirnagar University", logoBase64: "" };
-  }, []);
+  const fetchSettings = useCallback(async (force = false) => {
+    return cachedFetch('settings', 'settings', () => api.getSettings(), data => {
+      setState(prev => ({ ...prev, settings: data, isBackendConnected: true }));
+    }, { schoolName: "Jahangirnagar University", logoBase64: "" }, force);
+  }, [cachedFetch]);
 
   // Optional manual full refresh (used only when explicitly triggered)
   const refreshFromBackend = useCallback(async () => {
+    invalidateCache();
     await Promise.allSettled([
-      fetchDepartments(),
-      fetchPrograms(),
-      fetchSessions(),
-      fetchBatches(),
-      fetchTeachers(),
-      fetchAdmins(),
-      fetchStudents(),
-      fetchCourses(),
-      fetchSyllabusTopics(),
-      fetchClassrooms(),
-      fetchSchedules(),
-      fetchAssignments(),
-      fetchTests(),
-      fetchClassSessions(),
-      fetchAttendanceRecords(),
-      fetchGradeRecords(),
-      fetchAnnouncements(),
-      fetchSettings(),
+      fetchDepartments(true),
+      fetchPrograms(true),
+      fetchSessions(true),
+      fetchBatches(true),
+      fetchTeachers(true),
+      fetchAdmins(true),
+      fetchStudents(undefined, true),
+      fetchCourses(true),
+      fetchSyllabusTopics(true),
+      fetchClassrooms(true),
+      fetchSchedules(true),
+      fetchAssignments(true),
+      fetchTests(true),
+      fetchClassSessions(true),
+      fetchAttendanceRecords(true),
+      fetchGradeRecords(true),
+      fetchAnnouncements(true),
+      fetchSettings(true),
     ]);
   }, [
-    fetchDepartments, fetchPrograms, fetchSessions, fetchBatches, fetchTeachers,
+    invalidateCache, fetchDepartments, fetchPrograms, fetchSessions, fetchBatches, fetchTeachers,
     fetchAdmins, fetchStudents, fetchCourses, fetchSyllabusTopics, fetchClassrooms,
     fetchSchedules, fetchAssignments, fetchTests, fetchClassSessions,
     fetchAttendanceRecords, fetchGradeRecords, fetchAnnouncements, fetchSettings
@@ -918,6 +853,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchMaterials,
     fetchSettings,
     refreshFromBackend,
+    invalidateCache,
     addSession, updateSession, deleteSession,
     addBatch, updateBatch, deleteBatch,
     addStudent, updateStudent, deleteStudent,

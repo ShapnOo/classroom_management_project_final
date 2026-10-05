@@ -7,7 +7,7 @@ import {
   Plus, FileText, ListTodo, Bell, Download, ChevronRight,
   Sparkles, Award, AlertCircle, X, ExternalLink, Filter,
   Check, Calendar, Megaphone, Share2, Layers, CheckSquare,
-  UserCheck, UserX, Clock3, RotateCcw
+  UserCheck, UserX, Clock3, RotateCcw, Sliders
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -169,19 +169,19 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
   if (!view) {
     return (
-      <div className="py-16 text-center space-y-4 max-w-md mx-auto">
-        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-          <BookOpen className="w-6 h-6" />
+      <div className="py-20 text-center space-y-4 max-w-md mx-auto">
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+          <BookOpen className="w-7 h-7" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Classroom Not Found</h2>
+          <h2 className="text-base font-bold text-slate-900">Classroom Not Found</h2>
           <p className="text-xs text-slate-500 mt-1">
             The requested classroom does not exist or is not assigned to your profile.
           </p>
         </div>
         <Link
           href="/dashboard/teacher/classrooms"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-dark text-white text-xs font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" /> Back to My Classrooms
         </Link>
@@ -391,34 +391,36 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   });
 
   return (
-    <div className="w-full mx-auto space-y-5 pb-16 animate-in fade-in duration-300">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300">
       
-      {/* ── Success Toast ── */}
+      {/* ── Success Toast Notification ── */}
       {attendanceSuccessMessage && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between text-xs shadow-md animate-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span className="font-semibold">Attendance recorded successfully!</span>
-            <span>Session logged with {presentCount} present students. Admin reports updated.</span>
+        <div className="bg-emerald-500 text-white px-4 py-3 rounded-2xl flex items-center justify-between text-xs shadow-lg animate-in slide-in-from-top-3 duration-300">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-white" />
+            <div>
+              <p className="font-bold">Attendance Logged Successfully!</p>
+              <p className="text-emerald-100 text-[11px]">{presentCount} present out of {students.length} enrolled students.</p>
+            </div>
           </div>
-          <button onClick={() => setAttendanceSuccessMessage(false)} className="text-emerald-600 hover:text-emerald-800">
+          <button onClick={() => setAttendanceSuccessMessage(false)} className="text-emerald-100 hover:text-white p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* ── Top Breadcrumbs & Quick Back ── */}
-      <div className="flex items-center justify-between gap-4">
+      {/* ── Header Breadcrumb Bar ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <Link
             href="/dashboard/teacher/classrooms"
-            className="hover:text-brand-dark transition-colors flex items-center gap-1 font-medium"
+            className="hover:text-slate-900 transition-colors flex items-center gap-1.5 font-medium"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> My Classrooms
+            <ArrowLeft className="w-4 h-4" /> Classrooms
           </Link>
-          <span>/</span>
+          <span className="text-slate-300">/</span>
           <span className="text-slate-600 font-medium">{batch.name}</span>
-          <span>/</span>
+          <span className="text-slate-300">/</span>
           <span className="font-bold text-slate-900">{course.code}</span>
         </div>
 
@@ -427,167 +429,169 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           {cls.status === "completed" ? (
             <Link
               href={`/dashboard/teacher/classrooms/${cls.id}/archive`}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2"
             >
-              <FolderOpen className="w-3.5 h-3.5" /> View Historical Archive
+              <FolderOpen className="w-4 h-4 text-slate-500" /> Historical Archive
             </Link>
           ) : (
             <button
               onClick={() => setShowAttendanceModal(true)}
-              className="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
             >
-              <ClipboardCheck className="w-4 h-4 text-emerald-400" /> Take Attendance
+              <ClipboardCheck className="w-4 h-4" /> Take Attendance
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Classroom Header Banner (Admin-Linked) ── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative">
+      {/* ── Main Classroom Hero Banner ── */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden relative">
         <div className={`h-2.5 w-full ${colors.color}`} />
-        <div className="p-5 md:p-6 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div className="space-y-1.5">
+        <div className="p-6 md:p-7 space-y-6">
+          
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Title & Metadata */}
+            <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${colors.light} ${colors.text}`}>
+                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider ${colors.light} ${colors.text}`}>
                   {course.code}
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800">
+                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700">
                   {batch.name}
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">
+                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
                   {session.name}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold capitalize ${
+                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold capitalize ${
                   cls.status === "ongoing"
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                     : cls.status === "upcoming"
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "bg-slate-100 text-slate-600 border border-slate-200"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200/60"
+                    : "bg-slate-100 text-slate-600"
                 }`}>
                   ● {cls.status}
                 </span>
-                <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded flex items-center gap-1">
-                  <Info className="w-3 h-3" /> Configured by Admin
-                </span>
               </div>
-              <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
+
+              <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
                 {course.title}
               </h1>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 pt-0.5">
-                <span className="flex items-center gap-1 font-medium text-slate-700">
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 pt-1">
+                <span className="flex items-center gap-1.5 font-medium text-slate-700">
                   <MapPin className="w-3.5 h-3.5 text-slate-400" /> {cls.room || "Room TBA"}
                 </span>
                 <span>•</span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
                   {schedules.length > 0
                     ? `${[...new Set(schedules.map((s) => s.day.slice(0, 3)))].join(", ")} • ${schedules[0].startTime} - ${schedules[0].endTime}`
-                    : "Schedule not assigned by admin"}
+                    : "Schedule TBA"}
                 </span>
                 <span>•</span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
                   {new Date(cls.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – {new Date(cls.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                 </span>
               </div>
             </div>
 
-            {/* Quick Actions Dropdown/Buttons */}
+            {/* Quick Actions Dropdown / Action Buttons */}
             <div className="flex items-center flex-wrap gap-2 shrink-0">
               <button
-                onClick={() => setShowAttendanceModal(true)}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <ClipboardCheck className="w-3.5 h-3.5" /> Quick Attendance
-              </button>
-              <button
-                onClick={() => setShowAnnouncementModal(true)}
-                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <Megaphone className="w-3.5 h-3.5 text-slate-500" /> Announcement
-              </button>
-              <button
                 onClick={() => setShowAssignmentModal(true)}
-                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-500" /> Assignment
               </button>
               <button
                 onClick={() => setShowTestModal(true)}
-                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-500" /> Class Test
               </button>
+              <button
+                onClick={() => setShowAnnouncementModal(true)}
+                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
+              >
+                <Megaphone className="w-3.5 h-3.5 text-slate-500" /> Notice
+              </button>
+              <Link
+                href="/dashboard/teacher/evaluation"
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+              >
+                <Sliders className="w-3.5 h-3.5 text-slate-600" /> Evaluation Policy
+              </Link>
             </div>
           </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
-            <div className="bg-slate-50/80 rounded-lg p-3 border border-slate-100">
-              <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+          {/* Key Metrics Strip (4 Sleek Cards) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4 border-t border-slate-100">
+            <div className="bg-slate-50/70 rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Class Progress
               </span>
-              <div className="flex items-baseline justify-between mt-1">
-                <span className="text-sm font-bold text-slate-900">
-                  {cls.classesCompleted} / {cls.totalClasses}
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-extrabold text-slate-900">
+                  {cls.classesCompleted} <span className="text-xs text-slate-400 font-normal">/ {cls.totalClasses}</span>
                 </span>
-                <span className={`text-xs font-semibold ${colors.text}`}>{progress}%</span>
+                <span className={`text-xs font-bold ${colors.text}`}>{progress}%</span>
               </div>
-              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-1.5">
+              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-2">
                 <div className={`h-full ${colors.color} rounded-full`} style={{ width: `${progress}%` }} />
               </div>
             </div>
 
-            <div className="bg-slate-50/80 rounded-lg p-3 border border-slate-100">
-              <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+            <div className="bg-slate-50/70 rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Enrolled Students
               </span>
-              <div className="flex items-baseline justify-between mt-1">
-                <span className="text-sm font-bold text-slate-900">{students.length}</span>
-                <span className="text-[10px] text-slate-500 font-medium">From {batch.code}</span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-extrabold text-slate-900">{students.length}</span>
+                <span className="text-[11px] text-slate-500 font-medium">{batch.code}</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 truncate">Assigned by Admin</p>
+              <p className="text-[10px] text-slate-400 mt-1">Official Batch Roster</p>
             </div>
 
-            <div className="bg-slate-50/80 rounded-lg p-3 border border-slate-100">
-              <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                Avg Attendance
+            <div className="bg-slate-50/70 rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                Avg Attendance Rate
               </span>
-              <div className="flex items-baseline justify-between mt-1">
-                <span className="text-sm font-bold text-emerald-700">{avgAttendanceRate}%</span>
-                <span className="text-[10px] text-emerald-600 font-medium">Rate</span>
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-extrabold text-emerald-600">{avgAttendanceRate}%</span>
+                <span className="text-[11px] text-emerald-700 font-semibold">{classroomSessions.length} Sessions</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 truncate">{classroomSessions.length} sessions logged</p>
+              <p className="text-[10px] text-slate-400 mt-1">Student Attendance Logged</p>
             </div>
 
-            <div className="bg-slate-50/80 rounded-lg p-3 border border-slate-100">
-              <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+            <div className="bg-slate-50/70 rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Syllabus Topics
               </span>
-              <div className="flex items-baseline justify-between mt-1">
-                <span className="text-sm font-bold text-slate-900">
-                  {completedTopicsCount} / {courseSyllabus.length}
+              <div className="flex items-baseline justify-between mt-2">
+                <span className="text-base font-extrabold text-slate-900">
+                  {completedTopicsCount} <span className="text-xs text-slate-400 font-normal">/ {courseSyllabus.length}</span>
                 </span>
-                <span className="text-xs font-semibold text-brand-dark">
+                <span className="text-xs font-bold text-slate-700">
                   {courseSyllabus.length > 0 ? Math.round((completedTopicsCount / courseSyllabus.length) * 100) : 0}%
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 truncate">Outline by Admin</p>
+              <p className="text-[10px] text-slate-400 mt-1">Course Curriculum Covered</p>
             </div>
           </div>
+
         </div>
 
         {/* ── Navigation Tabs ── */}
-        <div className="flex items-center gap-1 px-4 border-t border-slate-200 bg-slate-50/50 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 px-5 border-t border-slate-200 bg-slate-50/60 overflow-x-auto no-scrollbar">
           {[
-            { id: "overview", label: "Overview & Continuity", icon: Sparkles },
-            { id: "syllabus", label: "Course Outline (Syllabus)", icon: BookOpen, count: courseSyllabus.length },
-            { id: "sessions", label: "Class Sessions Log", icon: CalendarDays, count: classroomSessions.length },
-            { id: "students", label: "Enrolled Students & Register", icon: Users, count: students.length },
-            { id: "materials", label: "Course Materials", icon: FolderOpen, count: materials.length },
+            { id: "overview", label: "Overview & Live Class", icon: Sparkles },
+            { id: "syllabus", label: "Course Outline", icon: BookOpen, count: courseSyllabus.length },
+            { id: "sessions", label: "Class Sessions", icon: CalendarDays, count: classroomSessions.length },
+            { id: "students", label: "Enrolled Students", icon: Users, count: students.length },
             { id: "assessments", label: "Assignments & Tests", icon: ListTodo, count: assignments.length + tests.length },
-            { id: "announcements", label: "Notices", icon: Bell, count: classAnnouncements.length },
+            { id: "materials", label: "Materials", icon: FolderOpen, count: materials.length },
+            { id: "announcements", label: "Class Notices", icon: Bell, count: classAnnouncements.length },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -595,18 +599,18 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3 px-3.5 text-xs font-medium border-b-2 flex items-center gap-1.5 whitespace-nowrap transition-colors ${
+                className={`py-3.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                   isActive
-                    ? "border-brand-dark text-brand-dark font-bold bg-white rounded-t-md shadow-xs"
-                    : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+                    ? "border-slate-900 text-slate-900 bg-white rounded-t-lg shadow-xs"
+                    : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-brand-dark" : "text-slate-400"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
                 {tab.label}
                 {typeof tab.count === "number" && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                      isActive ? "bg-brand-dark/10 text-brand-dark font-bold" : "bg-slate-200 text-slate-600"
+                    className={`px-2 py-0.5 rounded-full text-[10px] ${
+                      isActive ? "bg-slate-900 text-white font-bold" : "bg-slate-200 text-slate-600 font-medium"
                     }`}
                   >
                     {tab.count}
@@ -622,66 +626,68 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* TAB 1: OVERVIEW & CONTINUITY */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left 2 Columns */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Quick 1-Click Action Card */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Live Class Take Attendance Action Card */}
+            <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-5 border border-slate-800">
               <div className="space-y-1 text-center sm:text-left">
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded uppercase">
-                  Classroom Live Session
+                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                  Live Class Session
                 </span>
-                <h3 className="text-sm font-bold text-white mt-1">Ready for today's lecture?</h3>
-                <p className="text-xs text-slate-300">
-                  Take attendance in 10 seconds and log the covered topic into the institutional record.
+                <h3 className="text-base font-extrabold text-white mt-1.5">Conducting today's lecture?</h3>
+                <p className="text-xs text-slate-300 max-w-md">
+                  Take attendance in seconds and log the topic into official academic records.
                 </p>
               </div>
               <button
                 onClick={() => setShowAttendanceModal(true)}
-                className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-lg text-xs shadow-lg transition-all flex items-center gap-2 shrink-0 hover:scale-105 active:scale-95"
+                className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 shrink-0 hover:scale-105 active:scale-95"
               >
                 <ClipboardCheck className="w-4 h-4 text-slate-950" /> Take Attendance Now
               </button>
             </div>
 
-            {/* Up Next / Current Syllabus Topic (Admin defined) */}
+            {/* Up Next / Current Syllabus Topic Card */}
             {currentTopic ? (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 relative">
+                    <span className="flex h-2.5 w-2.5 relative">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
                     </span>
-                    <h3 className="text-xs font-semibold text-blue-950 uppercase tracking-wide">
-                      Next Topic in Course Outline • Week {currentTopic.week}
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      Current Topic • Week {currentTopic.week}
                     </h3>
                   </div>
                   <button
                     onClick={() => setActiveTab("syllabus")}
-                    className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
                   >
-                    View All Syllabus <ChevronRight className="w-3 h-3" />
+                    View All Topics <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-4">
+                
+                <div className="p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">{currentTopic.topic}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Configured by administration for Week {currentTopic.week}
+                      <h4 className="text-base font-bold text-slate-900">{currentTopic.topic}</h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Course Syllabus Week {currentTopic.week}
                       </p>
                     </div>
-                    <div className="flex gap-1.5 shrink-0">
+                    <div className="flex gap-2 shrink-0">
                       {currentTopic.teacherStatus !== "done" ? (
                         <button
                           onClick={() => handleMarkTopicStatus(currentTopic.id, "done")}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-sm transition-colors"
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
                         >
-                          <Check className="w-3.5 h-3.5" /> Mark Topic as Completed
+                          <Check className="w-3.5 h-3.5" /> Mark Topic Done
                         </button>
                       ) : (
-                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-md flex items-center gap-1">
+                        <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Completed
                         </span>
                       )}
@@ -689,33 +695,33 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   </div>
 
                   {currentTopic.subTopics && currentTopic.subTopics.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-                        Key Concepts to Cover:
+                    <div className="space-y-2 pt-3 border-t border-slate-100">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Sub-topics & Key Concepts:
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {currentTopic.subTopics.map((sub, i) => (
                           <div
                             key={i}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-700"
+                            className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 font-medium"
                           >
-                            <Circle className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                            <span className="font-medium">{sub}</span>
+                            <Circle className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span>{sub}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="pt-2">
                     <button
                       onClick={() => {
                         setSessionTopic(currentTopic.topic);
                         setShowAttendanceModal(true);
                       }}
-                      className="text-xs font-bold text-brand-dark hover:underline flex items-center gap-1.5"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100/80 px-4 py-2 rounded-xl transition-colors"
                     >
-                      <Play className="w-3.5 h-3.5 fill-current" /> Conduct class on this topic & mark attendance
+                      <Play className="w-3.5 h-3.5 fill-current" /> Conduct session for this topic
                     </button>
                   </div>
                 </div>
@@ -723,28 +729,27 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             ) : null}
 
             {/* Recent Conducted Sessions */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-slate-500" />
-                  <h3 className="text-xs font-semibold text-slate-900">Recent Class Sessions ({classroomSessions.length})</h3>
-                </div>
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-slate-500" /> Recent Class Sessions ({classroomSessions.length})
+                </h3>
                 <button
                   onClick={() => setActiveTab("sessions")}
-                  className="text-[11px] font-semibold text-brand-dark hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1"
                 >
-                  View Full History <ChevronRight className="w-3 h-3" />
+                  Full Session Log <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {classroomSessions.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-500 space-y-2">
-                  <p>No class sessions conducted yet for this semester.</p>
+                <div className="py-10 text-center text-xs text-slate-500 space-y-3">
+                  <p>No class sessions recorded yet.</p>
                   <button
                     onClick={() => setShowAttendanceModal(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-dark text-white rounded-lg text-xs font-medium shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm"
                   >
-                    <ClipboardCheck className="w-3.5 h-3.5" /> Take First Attendance
+                    <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Record First Class
                   </button>
                 </div>
               ) : (
@@ -753,19 +758,18 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     const sessAttendance = attendanceRecords.filter((r) => r.sessionId === sess.id);
                     const present = sessAttendance.filter((r) => r.status === "present").length;
                     const absent = sessAttendance.filter((r) => r.status === "absent").length;
-                    const late = sessAttendance.filter((r) => r.status === "late").length;
                     return (
-                      <div key={sess.id} className="p-4 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex flex-col items-center justify-center shrink-0">
-                              <span className="text-[10px] font-bold text-slate-700">#{classroomSessions.length - idx}</span>
+                      <div key={sess.id} className="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center shrink-0">
+                              <span className="text-xs font-extrabold text-slate-800">#{classroomSessions.length - idx}</span>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-semibold text-slate-900">{sess.topicCovered}</h4>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                            <div className="space-y-1">
+                              <h4 className="text-xs font-bold text-slate-900">{sess.topicCovered}</h4>
+                              <div className="flex items-center gap-3 text-xs text-slate-500">
                                 <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3 text-slate-400" />
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                   {new Date(sess.date).toLocaleDateString("en-GB", {
                                     day: "numeric",
                                     month: "short",
@@ -774,22 +778,22 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                                 </span>
                                 <span>•</span>
                                 <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-slate-400" /> {sess.duration || "1h 30m"}
+                                  <Clock className="w-3.5 h-3.5 text-slate-400" /> {sess.duration || "1h 30m"}
                                 </span>
                               </div>
                               {sess.notes && (
-                                <p className="text-[11px] text-slate-600 mt-1 italic line-clamp-1 bg-slate-50 px-2 py-0.5 rounded">
+                                <p className="text-xs text-slate-600 italic bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
                                   "{sess.notes}"
                                 </p>
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                               {present > 0 ? `${present} Present` : "Attended"}
                             </span>
                             {absent > 0 && (
-                              <span className="text-[9px] text-red-600 font-medium">
+                              <span className="text-[11px] text-red-600 font-semibold">
                                 {absent} absent
                               </span>
                             )}
@@ -801,121 +805,73 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 </div>
               )}
             </div>
+
           </div>
 
           {/* Right Column (1 Col) */}
-          <div className="space-y-5">
-            {/* Admin Linkage Info Box */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2.5">
-              <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-blue-600" /> Institutional Class Setup
+          <div className="space-y-6">
+
+            {/* Weekly Routine & Schedule Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-slate-500" /> Class Routine & Schedule
               </h3>
-              <div className="text-[11px] text-slate-600 space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Assigned Batch:</span>
-                  <span className="font-semibold text-slate-800">{batch.name}</span>
+              {schedules.length === 0 ? (
+                <p className="text-xs text-slate-400 py-2">No weekly routine assigned by admin.</p>
+              ) : (
+                <div className="space-y-2">
+                  {schedules.map((sch) => (
+                    <div
+                      key={sch.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs"
+                    >
+                      <span className="font-bold text-slate-900">{sch.day}</span>
+                      <span className="text-slate-600 font-medium">
+                        {sch.startTime} - {sch.endTime}
+                      </span>
+                      <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-700 font-semibold text-[11px]">
+                        {sch.room || cls.room}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Program:</span>
-                  <span className="font-semibold text-slate-800">{program.code}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Session Term:</span>
-                  <span className="font-semibold text-slate-800">{session.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Room Location:</span>
-                  <span className="font-semibold text-slate-800">{cls.room}</span>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Quick Action Hub */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-brand-dark" /> Quick Actions
-              </h3>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => setShowAttendanceModal(true)}
-                  className="p-2.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 flex items-center justify-between text-xs font-semibold text-slate-800 transition-all group text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <ClipboardCheck className="w-4 h-4 text-emerald-600" />
-                    Take Class Attendance
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-700" />
-                </button>
-
-                <button
-                  onClick={() => setShowAssignmentModal(true)}
-                  className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-800 transition-all group text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <ListTodo className="w-4 h-4 text-blue-600" />
-                    Create Assignment
-                  </span>
-                  <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" />
-                </button>
-
-                <button
-                  onClick={() => setShowTestModal(true)}
-                  className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-800 transition-all group text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                    Schedule Class Test
-                  </span>
-                  <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" />
-                </button>
-
-                <button
-                  onClick={() => setShowMaterialModal(true)}
-                  className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-800 transition-all group text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-amber-600" />
-                    Upload Slide / Material
-                  </span>
-                  <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" />
-                </button>
-              </div>
-            </div>
-
-            {/* Latest Announcements */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5 text-slate-500" /> Class Notice Board
+            {/* Class Notices Board */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-slate-500" /> Class Notice Board
                 </h3>
                 <button
                   onClick={() => setShowAnnouncementModal(true)}
-                  className="text-[10px] font-semibold text-brand-dark hover:underline"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800"
                 >
-                  + Post
+                  + Post Notice
                 </button>
               </div>
-              <div className="p-3 space-y-2.5">
+              <div className="p-4 space-y-3">
                 {classAnnouncements.length === 0 ? (
                   <p className="text-xs text-slate-400 text-center py-4">No active notices for this class.</p>
                 ) : (
                   classAnnouncements.slice(0, 3).map((anc) => (
                     <div
                       key={anc.id}
-                      className="p-3 rounded-lg bg-slate-50 border border-slate-100 space-y-1"
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-slate-900 line-clamp-1">
+                        <span className="text-xs font-bold text-slate-900 line-clamp-1">
                           {anc.title}
                         </span>
                         {anc.priority === "High" && (
-                          <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded">
+                          <span className="text-[10px] font-extrabold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md uppercase">
                             Urgent
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-600 line-clamp-2">{anc.content}</p>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1">
+                      <p className="text-xs text-slate-600 line-clamp-2">{anc.content}</p>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
                         <span>By {anc.authorName}</span>
                         <span>{new Date(anc.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
                       </div>
@@ -925,61 +881,60 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               </div>
             </div>
 
-            {/* Room & Class Schedule Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-500" /> Routine & Schedule
+            {/* Administrative Context Box */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-600" /> Institutional Info
               </h3>
-              {schedules.length === 0 ? (
-                <p className="text-xs text-slate-400 py-2">No weekly routine assigned by admin.</p>
-              ) : (
-                <div className="space-y-1.5 pt-1">
-                  {schedules.map((sch) => (
-                    <div
-                      key={sch.id}
-                      className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs"
-                    >
-                      <span className="font-semibold text-slate-800">{sch.day}</span>
-                      <span className="text-slate-600 font-medium">
-                        {sch.startTime} - {sch.endTime}
-                      </span>
-                      <span className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">
-                        {sch.room || cls.room}
-                      </span>
-                    </div>
-                  ))}
+              <div className="text-xs text-slate-600 space-y-2 bg-white p-3.5 rounded-xl border border-slate-200/60">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Batch:</span>
+                  <span className="font-bold text-slate-800">{batch.name}</span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Program:</span>
+                  <span className="font-bold text-slate-800">{program.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Academic Term:</span>
+                  <span className="font-bold text-slate-800">{session.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Room Allocated:</span>
+                  <span className="font-bold text-slate-800">{cls.room}</span>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       )}
 
-      {/* TAB 2: SYLLABUS OUTLINE (ADMIN-LINKED) */}
+      {/* TAB 2: SYLLABUS OUTLINE */}
       {activeTab === "syllabus" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-900">Course Outline & Syllabus</h3>
-                <span className="text-[9px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-100">
-                  Published by Admin
+                <h3 className="text-sm font-bold text-slate-900">Course Outline & Syllabus</h3>
+                <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200/60">
+                  Official Curriculum
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Click status buttons to update your real-time teaching progress.
+              <p className="text-xs text-slate-500 mt-1">
+                Update status as you progress through topics during the semester.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center border border-slate-200 rounded-lg p-0.5 bg-slate-50 text-xs">
+              <div className="flex items-center border border-slate-200 rounded-xl p-1 bg-slate-50 text-xs">
                 {(["all", "current", "done", "pending"] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setSyllabusFilter(mode)}
-                    className={`px-2.5 py-1 rounded capitalize transition-all ${
+                    className={`px-3 py-1.5 rounded-lg capitalize font-semibold transition-all ${
                       syllabusFilter === mode
-                        ? "bg-white text-brand-dark font-bold shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "bg-white text-slate-900 shadow-xs"
+                        : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
                     {mode}
@@ -989,10 +944,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden divide-y divide-slate-100">
             {filteredSyllabus.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-500">
-                No syllabus topics match this filter.
+                No syllabus topics found for this filter.
               </div>
             ) : (
               filteredSyllabus.map((top) => {
@@ -1001,12 +956,12 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 return (
                   <div
                     key={top.id}
-                    className={`p-4 transition-colors ${
-                      isDone ? "bg-emerald-50/20" : isCurrent ? "bg-blue-50/30" : "hover:bg-slate-50/50"
+                    className={`p-5 transition-colors ${
+                      isDone ? "bg-emerald-50/20" : isCurrent ? "bg-blue-50/30" : "hover:bg-slate-50/60"
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
                         <div className="mt-0.5">
                           {isDone ? (
                             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -1020,11 +975,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                               Week {top.week}
                             </span>
                             <span
-                              className={`text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
                                 isDone
                                   ? "bg-emerald-100 text-emerald-800"
                                   : isCurrent
@@ -1036,8 +991,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                             </span>
                           </div>
                           <h4
-                            className={`text-xs font-semibold ${
-                              isDone ? "text-slate-600 line-through" : "text-slate-900"
+                            className={`text-sm font-bold ${
+                              isDone ? "text-slate-500 line-through" : "text-slate-900"
                             }`}
                           >
                             {top.topic}
@@ -1047,7 +1002,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                               {top.subTopics.map((sub, idx) => (
                                 <span
                                   key={idx}
-                                  className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
+                                  className="text-[11px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg font-medium"
                                 >
                                   {sub}
                                 </span>
@@ -1057,12 +1012,12 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         </div>
                       </div>
 
-                      {/* Status Toggle buttons */}
-                      <div className="flex items-center gap-1.5 sm:self-center shrink-0">
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 sm:self-center shrink-0">
                         {top.teacherStatus !== "done" && (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "done")}
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md text-[11px] font-medium transition-colors"
+                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors"
                           >
                             Mark Done
                           </button>
@@ -1070,7 +1025,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         {top.teacherStatus !== "current" && top.teacherStatus !== "done" && (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "current")}
-                            className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-[11px] font-medium transition-colors"
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors"
                           >
                             Set Current
                           </button>
@@ -1078,7 +1033,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         {top.teacherStatus === "done" && (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "pending")}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md text-[11px] font-medium transition-colors"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                           >
                             Reopen
                           </button>
@@ -1088,10 +1043,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                             setSessionTopic(top.topic);
                             setShowAttendanceModal(true);
                           }}
-                          className="px-2.5 py-1 bg-brand-dark hover:bg-slate-800 text-white rounded-md text-[11px] font-medium flex items-center gap-1 shadow-xs"
-                          title="Take attendance for this topic"
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
                         >
-                          <ClipboardCheck className="w-3 h-3" /> Class
+                          <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Conduct Class
                         </button>
                       </div>
                     </div>
@@ -1105,44 +1059,44 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* TAB 3: CLASS SESSIONS LOG */}
       {activeTab === "sessions" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
-              <h3 className="text-xs font-semibold text-slate-900">Conducted Class Sessions</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Complete timeline of lectures, attendance tallies, and lesson notes.
+              <h3 className="text-sm font-bold text-slate-900">Conducted Class Sessions</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Complete log of lecture sessions and attendance summaries.
               </p>
             </div>
             <button
               onClick={() => setShowAttendanceModal(true)}
-              className="px-3.5 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
             >
-              <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Conduct New Session
+              <ClipboardCheck className="w-4 h-4" /> Record New Session
             </button>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             {classroomSessions.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-500 space-y-3">
-                <CalendarDays className="w-8 h-8 mx-auto text-slate-300" />
-                <p>No class sessions have been conducted yet.</p>
+              <div className="py-16 text-center text-xs text-slate-500 space-y-3">
+                <CalendarDays className="w-10 h-10 mx-auto text-slate-300" />
+                <p className="font-semibold text-slate-700">No class sessions conducted yet.</p>
                 <button
                   onClick={() => setShowAttendanceModal(true)}
-                  className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-brand-dark text-white text-xs font-medium rounded-lg"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-sm hover:bg-emerald-700 transition-colors"
                 >
-                  <ClipboardCheck className="w-3.5 h-3.5" /> Start First Class & Mark Attendance
+                  <ClipboardCheck className="w-4 h-4" /> Start First Class & Mark Attendance
                 </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-                      <th className="px-5 py-3">Session #</th>
-                      <th className="px-5 py-3">Date & Time</th>
-                      <th className="px-5 py-3">Topic Covered</th>
-                      <th className="px-5 py-3">Attendance</th>
-                      <th className="px-5 py-3">Notes</th>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                      <th className="px-6 py-4">Session #</th>
+                      <th className="px-6 py-4">Date & Duration</th>
+                      <th className="px-6 py-4">Topic Covered</th>
+                      <th className="px-6 py-4">Attendance Summary</th>
+                      <th className="px-6 py-4">Notes</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1153,44 +1107,44 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                       const late = sessAttendance.filter((r) => r.status === "late").length;
                       return (
                         <tr key={sess.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5 font-bold text-slate-900">
+                          <td className="px-6 py-4 font-bold text-slate-900">
                             #{classroomSessions.length - index}
                           </td>
-                          <td className="px-5 py-3.5">
-                            <div className="font-semibold text-slate-800">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-800">
                               {new Date(sess.date).toLocaleDateString("en-GB", {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
                               })}
                             </div>
-                            <span className="text-[10px] text-slate-500">{sess.duration || "1h 30m"}</span>
+                            <span className="text-[11px] text-slate-500 font-medium">{sess.duration || "1h 30m"}</span>
                           </td>
-                          <td className="px-5 py-3.5 font-medium text-slate-900">
+                          <td className="px-6 py-4 font-semibold text-slate-900">
                             {sess.topicCovered}
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-1.5">
-                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold rounded text-[11px] border border-emerald-100">
+                              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-lg text-xs border border-emerald-200/60">
                                 {present} Present
                               </span>
                               {absent > 0 && (
-                                <span className="px-2 py-0.5 bg-red-50 text-red-700 font-semibold rounded text-[11px] border border-red-100">
+                                <span className="px-2.5 py-1 bg-red-50 text-red-700 font-bold rounded-lg text-xs border border-red-200/60">
                                   {absent} Absent
                                 </span>
                               )}
                               {late > 0 && (
-                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-semibold rounded text-[11px] border border-amber-100">
+                                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 font-bold rounded-lg text-xs border border-amber-200/60">
                                   {late} Late
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="px-5 py-3.5 text-slate-600 max-w-xs">
+                          <td className="px-6 py-4 text-slate-600 max-w-xs">
                             {sess.notes ? (
-                              <span className="truncate block italic">"{sess.notes}"</span>
+                              <span className="truncate block italic text-slate-600">"{sess.notes}"</span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-300">—</span>
                             )}
                           </td>
                         </tr>
@@ -1204,61 +1158,61 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* TAB 4: STUDENTS & ATTENDANCE REGISTER */}
+      {/* TAB 4: ENROLLED STUDENTS */}
       {activeTab === "students" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-900">
+                <h3 className="text-sm font-bold text-slate-900">
                   Enrolled Students ({students.length})
                 </h3>
-                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">
+                <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md font-semibold">
                   Batch: {batch.name}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Students automatically synced from Admin's batch assignment.
+              <p className="text-xs text-slate-500 mt-1">
+                Enrolled roster for this course and batch.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, roll no..."
+                  placeholder="Search student or roll no..."
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
               <button
                 onClick={() => setShowAttendanceModal(true)}
-                className="px-3.5 py-1.5 bg-brand-dark text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors shrink-0 flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0 flex items-center gap-2 shadow-sm"
               >
-                <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Take Attendance
+                <ClipboardCheck className="w-4 h-4" /> Take Attendance
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-                    <th className="px-5 py-3">#</th>
-                    <th className="px-5 py-3">Student Name</th>
-                    <th className="px-5 py-3">Roll No</th>
-                    <th className="px-5 py-3">Email Address</th>
-                    <th className="px-5 py-3">Attendance Rate</th>
-                    <th className="px-5 py-3 text-right">Roster Status</th>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                    <th className="px-6 py-4">#</th>
+                    <th className="px-6 py-4">Student Name</th>
+                    <th className="px-6 py-4">Roll No</th>
+                    <th className="px-6 py-4">Email</th>
+                    <th className="px-6 py-4">Attendance Rate</th>
+                    <th className="px-6 py-4 text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-slate-400 text-xs">
-                        No students found matching your search.
+                      <td colSpan={6} className="text-center py-10 text-slate-400 text-xs">
+                        No students found matching search.
                       </td>
                     </tr>
                   ) : (
@@ -1271,19 +1225,19 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
                       return (
                         <tr key={stud.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3 text-slate-400 font-medium">{idx + 1}</td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-slate-700">
+                          <td className="px-6 py-4 text-slate-400 font-semibold">{idx + 1}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-800">
                                 {stud.name.slice(0, 2).toUpperCase()}
                               </div>
-                              <span className="font-semibold text-slate-900">{stud.name}</span>
+                              <span className="font-bold text-slate-900">{stud.name}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-3 font-medium text-slate-700">{stud.rollNo}</td>
-                          <td className="px-5 py-3 text-slate-500">{stud.email}</td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-2 w-32">
+                          <td className="px-6 py-4 font-semibold text-slate-700">{stud.rollNo}</td>
+                          <td className="px-6 py-4 text-slate-500 font-medium">{stud.email}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3 w-36">
                               <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
                                 <div
                                   className={`h-full rounded-full ${
@@ -1292,11 +1246,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                                   style={{ width: `${rate}%` }}
                                 />
                               </div>
-                              <span className="font-semibold text-slate-700 text-[11px]">{rate}%</span>
+                              <span className="font-bold text-slate-800 text-xs">{rate}%</span>
                             </div>
                           </td>
-                          <td className="px-5 py-3 text-right">
-                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <td className="px-6 py-4 text-right">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               Active Enrolled
                             </span>
                           </td>
@@ -1311,21 +1265,135 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* TAB 5: COURSE MATERIALS */}
-      {activeTab === "materials" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      {/* TAB 5: ASSESSMENTS (ASSIGNMENTS & TESTS) */}
+      {activeTab === "assessments" && (
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
-              <h3 className="text-xs font-semibold text-slate-900">Lecture Notes & Course Materials</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Share slides, lab sheets, and readings with students in {batch.name}.
+              <h3 className="text-sm font-bold text-slate-900">Assignments & Class Tests</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Manage coursework deadlines, class quizzes, and evaluation records.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAssignmentModal(true)}
+                className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Create Assignment
+              </button>
+              <button
+                onClick={() => setShowTestModal(true)}
+                className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Schedule Test
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Assignments List */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ListTodo className="w-4 h-4 text-blue-600" /> Course Assignments ({assignments.length})
+                </h4>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {assignments.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-slate-400">No assignments created yet.</div>
+                ) : (
+                  assignments.map((asg) => (
+                    <div key={asg.id} className="p-5 hover:bg-slate-50/60 transition-colors space-y-2.5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-blue-50 text-blue-700 border border-blue-200/60">
+                            {asg.status}
+                          </span>
+                          <h5 className="text-sm font-bold text-slate-900 mt-1.5">{asg.title}</h5>
+                          {asg.description && (
+                            <p className="text-xs text-slate-500 line-clamp-1">{asg.description}</p>
+                          )}
+                        </div>
+                        <span className="text-xs font-extrabold text-slate-900 shrink-0">{asg.totalMarks} Marks</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                        <span className="flex items-center gap-1 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" /> Due: {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                        <Link
+                          href={`/dashboard/teacher/assignments`}
+                          className="font-bold text-slate-900 hover:underline flex items-center gap-1"
+                        >
+                          Evaluate <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Class Tests List */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-600" /> Class Tests & Quizzes ({tests.length})
+                </h4>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {tests.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-slate-400">No class tests scheduled yet.</div>
+                ) : (
+                  tests.map((t) => (
+                    <div key={t.id} className="p-5 hover:bg-slate-50/60 transition-colors space-y-2.5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-purple-50 text-purple-700 border border-purple-200/60">
+                            {t.status}
+                          </span>
+                          <h5 className="text-sm font-bold text-slate-900 mt-1.5">{t.title}</h5>
+                          {t.duration && (
+                            <span className="text-xs text-slate-500 font-medium">Duration: {t.duration}</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-extrabold text-slate-900 shrink-0">{t.totalMarks} Marks</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                        <span className="flex items-center gap-1 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" /> Test Date: {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                        <Link
+                          href={`/dashboard/teacher/tests`}
+                          className="font-bold text-slate-900 hover:underline flex items-center gap-1"
+                        >
+                          Manage Marks <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: MATERIALS */}
+      {activeTab === "materials" && (
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Lecture Slides & Learning Materials</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Share slides, lab worksheets, and reference readings with students.
               </p>
             </div>
             <button
               onClick={() => setShowMaterialModal(true)}
-              className="px-3.5 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
             >
-              <Plus className="w-3.5 h-3.5" /> Upload Material
+              <Plus className="w-4 h-4" /> Upload Material
             </button>
           </div>
 
@@ -1343,210 +1411,96 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               : materials;
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {displayMaterials.map((mat) => (
-              <div
-                key={mat.id}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-brand-dark/40 hover:shadow-md transition-all flex flex-col justify-between group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-dark/5 text-brand-dark uppercase tracking-wider">
-                      {mat.category}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">{mat.date}</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
-                      {mat.fileType}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2">
-                        {mat.title}
-                      </h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{mat.size} • {mat.downloads} student downloads</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Available to class
-                  </span>
-                  <button
-                    onClick={() => alert(`Downloading "${mat.title}"...`)}
-                    className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-brand-dark transition-colors"
-                    title="Download file"
+                  <div
+                    key={mat.id}
+                    className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-slate-400 hover:shadow-md transition-all flex flex-col justify-between group space-y-4"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 uppercase tracking-wider">
+                          {mat.category}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium">{mat.date}</span>
+                      </div>
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-extrabold text-xs shrink-0">
+                          {mat.fileType}
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors line-clamp-2">
+                            {mat.title}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-1 font-medium">{mat.size} • {mat.downloads} downloads</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Published to class
+                      </span>
+                      <button
+                        onClick={() => alert(`Downloading "${mat.title}"...`)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                        title="Download file"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             );
           })()}
         </div>
       )}
 
-      {/* TAB 6: ASSIGNMENTS & TESTS */}
-      {activeTab === "assessments" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <div>
-              <h3 className="text-xs font-semibold text-slate-900">Assignments & Class Tests</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Manage coursework submissions, evaluation deadlines, and quiz marks.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowAssignmentModal(true)}
-                className="px-3 py-1.5 bg-brand-dark text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" /> Create Assignment
-              </button>
-              <button
-                onClick={() => setShowTestModal(true)}
-                className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" /> Schedule Test
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Assignments List */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                  <ListTodo className="w-4 h-4 text-blue-600" /> Course Assignments ({assignments.length})
-                </h4>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {assignments.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400">No assignments created yet.</div>
-                ) : (
-                  assignments.map((asg) => (
-                    <div key={asg.id} className="p-4 hover:bg-slate-50 transition-colors space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase bg-blue-50 text-blue-700">
-                            {asg.status}
-                          </span>
-                          <h5 className="text-xs font-semibold text-slate-900 mt-1">{asg.title}</h5>
-                          {asg.description && (
-                            <p className="text-[11px] text-slate-500 line-clamp-1">{asg.description}</p>
-                          )}
-                        </div>
-                        <span className="text-xs font-bold text-slate-700">{asg.totalMarks} Marks</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" /> Due: {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                        <Link
-                          href={`/dashboard/teacher/assignments`}
-                          className="font-medium text-brand-dark hover:underline"
-                        >
-                          Evaluate ({asg.submissions || 0} submissions)
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Class Tests List */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-purple-600" /> Class Tests & Quizzes ({tests.length})
-                </h4>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {tests.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400">No class tests scheduled yet.</div>
-                ) : (
-                  tests.map((t) => (
-                    <div key={t.id} className="p-4 hover:bg-slate-50 transition-colors space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase bg-purple-50 text-purple-700">
-                            {t.status}
-                          </span>
-                          <h5 className="text-xs font-semibold text-slate-900 mt-1">{t.title}</h5>
-                          {t.duration && (
-                            <span className="text-[10px] text-slate-500">Duration: {t.duration}</span>
-                          )}
-                        </div>
-                        <span className="text-xs font-bold text-slate-700">{t.totalMarks} Marks</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" /> Test Date: {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                        <Link
-                          href={`/dashboard/teacher/tests`}
-                          className="font-medium text-brand-dark hover:underline"
-                        >
-                          Manage Marks
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* TAB 7: ANNOUNCEMENTS */}
       {activeTab === "announcements" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
-              <h3 className="text-xs font-semibold text-slate-900">Class Notices & Announcements</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Broadcast updates directly to all students in {course.title} ({batch.name}).
+              <h3 className="text-sm font-bold text-slate-900">Class Notices & Announcements</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Broadcast notices directly to students in {course.title} ({batch.name}).
               </p>
             </div>
             <button
               onClick={() => setShowAnnouncementModal(true)}
-              className="px-3.5 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
             >
-              <Megaphone className="w-3.5 h-3.5" /> Post New Announcement
+              <Megaphone className="w-4 h-4" /> Post Announcement
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {classAnnouncements.length === 0 ? (
-              <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-xs text-slate-400">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
                 No announcements published for this class yet.
               </div>
             ) : (
               classAnnouncements.map((anc) => (
                 <div
                   key={anc.id}
-                  className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3"
+                  className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         {anc.priority === "High" && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 uppercase">
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-red-100 text-red-700 uppercase">
                             Urgent Notice
                           </span>
                         )}
-                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
                           Audience: {anc.audienceType}
                         </span>
                       </div>
-                      <h4 className="text-sm font-semibold text-slate-900">{anc.title}</h4>
+                      <h4 className="text-base font-bold text-slate-900">{anc.title}</h4>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium shrink-0">
+                    <span className="text-xs text-slate-400 font-medium shrink-0">
                       {new Date(anc.date).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -1559,9 +1513,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     {anc.content}
                   </p>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-                    <span>Published by {anc.authorName} ({anc.authorRole})</span>
-                    <span className="text-emerald-600 font-medium">Visible to Enrolled Students</span>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span>Published by <strong>{anc.authorName}</strong> ({anc.authorRole})</span>
+                    <span className="text-emerald-600 font-semibold">Enrolled Class Visibility</span>
                   </div>
                 </div>
               ))
@@ -1572,201 +1526,198 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* ── MODAL: 1-CLICK QUICK ATTENDANCE & CONDUCT CLASS ── */}
       {showAttendanceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                  <ClipboardCheck className="w-4 h-4" />
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <ClipboardCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Take Class Attendance & Record Session</h3>
-                  <p className="text-[11px] text-slate-500">{course.code} • {batch.name}</p>
+                  <h3 className="text-base font-bold text-slate-900">Take Attendance & Conduct Class</h3>
+                  <p className="text-xs text-slate-500">{course.code} • {batch.name}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAttendanceModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSaveAttendance} className="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
+            <form onSubmit={handleSaveAttendance} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+              
               {/* Session Meta Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="font-bold text-slate-700 flex items-center justify-between">
-                    <span>Topic Covered (from Admin Course Outline) *</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Topic Covered Today *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     required
                     value={sessionTopic}
                     onChange={(e) => setSessionTopic(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-brand-dark"
-                  >
-                    <option value="">Select topic taught today...</option>
-                    {courseSyllabus.map((t) => (
-                      <option key={t.id} value={t.topic}>
-                        Week {t.week}: {t.topic} {t.teacherStatus === "done" ? "(Completed)" : ""}
-                      </option>
-                    ))}
-                    <option value="Review & Problem Solving">Review & Problem Solving Session</option>
-                    <option value="Lab Practical / Code Demo">Lab Practical / Code Demo</option>
-                    <option value="Mid-Term Review & Q/A">Mid-Term Review & Q/A</option>
-                  </select>
+                    placeholder="e.g. Normalization & 3NF Forms"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Lecture Duration</label>
-                  <select
-                    value={sessionDuration}
-                    onChange={(e) => setSessionDuration(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-xs"
-                  >
-                    <option>45m</option>
-                    <option>1h</option>
-                    <option>1h 15m</option>
-                    <option>1h 30m</option>
-                    <option>2h</option>
-                  </select>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Lecture Date
+                  </label>
+                  <input
+                    type="date"
+                    value={sessionDate}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-3">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Teacher Lesson Notes (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={sessionNotes}
+                    onChange={(e) => setSessionNotes(e.target.value)}
+                    placeholder="e.g. Completed ER modeling exercises, assigned lab code..."
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  />
                 </div>
               </div>
 
-              {/* Attendance Bulk Toggles */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-slate-800">Student Register ({students.length})</span>
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200">
+              {/* Roster Controls */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      Student Register ({students.length})
+                    </h4>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                       {presentCount} Present
                     </span>
-                    <span className="px-2 py-0.5 bg-red-50 text-red-700 font-bold rounded-full border border-red-200">
-                      {absentCount} Absent
-                    </span>
-                    {lateCount > 0 && (
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-bold rounded-full border border-amber-200">
-                        {lateCount} Late
+                    {absentCount > 0 && (
+                      <span className="text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md">
+                        {absentCount} Absent
                       </span>
                     )}
                   </div>
-                </div>
-
-                {/* Quick 1-Click Buttons */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setAllAttendance("present")}
-                    className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[11px] font-bold rounded-md transition-colors"
-                  >
-                    All Present
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAllAttendance("absent")}
-                    className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-[11px] font-bold rounded-md transition-colors"
-                  >
-                    All Absent
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAllAttendance("present")}
-                    className="p-1 text-slate-400 hover:text-slate-600"
-                    title="Reset to Present"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Student Attendance List */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                {students.map((stud, idx) => {
-                  const status = attendanceMap[stud.id] ?? "present";
-                  return (
-                    <div
-                      key={stud.id}
-                      className={`px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
-                        status === "absent"
-                          ? "bg-red-50/40"
-                          : status === "late"
-                          ? "bg-amber-50/40"
-                          : "hover:bg-slate-50"
-                      }`}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setAllAttendance("present")}
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-colors"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] text-slate-400 font-mono w-5 text-right">{idx + 1}</span>
-                        <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-slate-700">
-                          {stud.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{stud.name}</p>
-                          <p className="text-[10px] text-slate-500 font-mono">Roll: {stud.rollNo}</p>
-                        </div>
-                      </div>
+                      All Present
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllAttendance("absent")}
+                      className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-800 rounded-lg text-[11px] font-bold transition-colors"
+                    >
+                      All Absent
+                    </button>
+                  </div>
+                </div>
 
-                      {/* Clickable Status Button */}
-                      <button
-                        type="button"
+                {/* Students Toggle List */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                  {students.map((stud) => {
+                    const status = attendanceMap[stud.id] || "present";
+                    return (
+                      <div
+                        key={stud.id}
                         onClick={() => toggleStudentAttendance(stud.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 shadow-xs ${
+                        className={`p-3 flex items-center justify-between cursor-pointer select-none transition-colors ${
                           status === "present"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
+                            ? "hover:bg-emerald-50/30"
                             : status === "absent"
-                            ? "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                            : "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+                            ? "bg-red-50/30 hover:bg-red-50/50"
+                            : "bg-amber-50/30 hover:bg-amber-50/50"
                         }`}
                       >
-                        {status === "present" ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : status === "absent" ? (
-                          <X className="w-3.5 h-3.5" />
-                        ) : (
-                          <Clock3 className="w-3.5 h-3.5" />
-                        )}
-                        <span className="capitalize">{status}</span>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-slate-800">
+                            {stud.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-xs">{stud.name}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{stud.rollNo}</p>
+                          </div>
+                        </div>
 
-              {/* Private Notes (Optional) */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Teacher's Private Notes / Student Participation</label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Students completed lab task 3; reviewed normalization exercises; need revision next class..."
-                  value={sessionNotes}
-                  onChange={(e) => setSessionNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs resize-none focus:outline-none focus:ring-1 focus:ring-brand-dark"
-                />
-              </div>
-
-              {/* Submit / Cancel Footer */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500">
-                  Will update classroom progress to <strong>{(cls.classesCompleted || 0) + 1}</strong> classes.
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAttendanceModal(false)}
-                    className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!sessionTopic}
-                    className="px-5 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg font-bold shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Save & Record Attendance
-                  </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAttendanceMap((p) => ({ ...p, [stud.id]: "present" }));
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                              status === "present"
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAttendanceMap((p) => ({ ...p, [stud.id]: "absent" }));
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                              status === "absent"
+                                ? "bg-red-600 text-white shadow-xs"
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            Absent
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAttendanceMap((p) => ({ ...p, [stud.id]: "late" }));
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                              status === "late"
+                                ? "bg-amber-500 text-white shadow-xs"
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            Late
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Submit Action */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAttendanceModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-colors flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-white" /> Complete & Save Attendance
+                </button>
+              </div>
+
             </form>
           </div>
         </div>
@@ -1774,78 +1725,73 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* ── MODAL: CREATE ASSIGNMENT ── */}
       {showAssignmentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Create New Assignment</h3>
-              <button
-                onClick={() => setShowAssignmentModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <ListTodo className="w-5 h-5 text-blue-600" /> Create Course Assignment
+              </h3>
+              <button onClick={() => setShowAssignmentModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleCreateAssignment} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Assignment Title *</label>
+            <form onSubmit={handleCreateAssignment} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Assignment Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Assignment 2: Relational Algebra & Queries"
                   value={newAssignment.title}
                   onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  placeholder="e.g. Assignment 1: Schema Normalization"
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Instructions / Description</label>
+                <textarea
+                  rows={3}
+                  value={newAssignment.description}
+                  onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
+                  placeholder="Details and submission guidelines..."
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Due Date *</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Due Date *</label>
                   <input
                     type="date"
                     required
                     value={newAssignment.dueDate}
                     onChange={(e) => setNewAssignment({ ...newAssignment, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Total Marks</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Total Marks *</label>
                   <input
                     type="number"
-                    min={5}
-                    max={100}
+                    required
                     value={newAssignment.totalMarks}
                     onChange={(e) => setNewAssignment({ ...newAssignment, totalMarks: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                   />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Instructions / Description</label>
-                <textarea
-                  rows={3}
-                  placeholder="Provide instructions, submission guidelines, or problem statement..."
-                  value={newAssignment.description}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark resize-none"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAssignmentModal(false)}
-                  className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg font-semibold shadow-sm"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
                 >
-                  Publish Assignment
+                  Create Assignment
                 </button>
               </div>
             </form>
@@ -1853,88 +1799,74 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* ── MODAL: CREATE TEST ── */}
+      {/* ── MODAL: SCHEDULE CLASS TEST ── */}
       {showTestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Schedule Class Test / Quiz</h3>
-              <button
-                onClick={() => setShowTestModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-600" /> Schedule Class Test / Exam
+              </h3>
+              <button onClick={() => setShowTestModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleCreateTest} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Test Title *</label>
+            <form onSubmit={handleCreateTest} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Test Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Class Test 1: ER Diagrams & SQL"
                   value={newTest.title}
                   onChange={(e) => setNewTest({ ...newTest, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  placeholder="e.g. Mid-Term Examination 1"
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Test Date *</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Test Date *</label>
                   <input
                     type="date"
                     required
                     value={newTest.testDate}
                     onChange={(e) => setNewTest({ ...newTest, testDate: e.target.value })}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-lg text-xs"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Duration</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Duration *</label>
                   <input
                     type="text"
-                    placeholder="e.g. 45m"
+                    required
                     value={newTest.duration}
                     onChange={(e) => setNewTest({ ...newTest, duration: e.target.value })}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-lg text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Total Marks</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={newTest.totalMarks}
-                    onChange={(e) => setNewTest({ ...newTest, totalMarks: Number(e.target.value) })}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-lg text-xs"
+                    placeholder="e.g. 1h 30m"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                   />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Topics / Syllabus Covered</label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Topics 1-4, normalization exercises..."
-                  value={newTest.description}
-                  onChange={(e) => setNewTest({ ...newTest, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg resize-none"
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Total Marks *</label>
+                <input
+                  type="number"
+                  required
+                  value={newTest.totalMarks}
+                  onChange={(e) => setNewTest({ ...newTest, totalMarks: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowTestModal(false)}
-                  className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg font-semibold shadow-sm"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
                 >
                   Schedule Test
                 </button>
@@ -1946,69 +1878,63 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* ── MODAL: POST ANNOUNCEMENT ── */}
       {showAnnouncementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Post Announcement to Classroom</h3>
-              <button
-                onClick={() => setShowAnnouncementModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-slate-700" /> Post Class Announcement
+              </h3>
+              <button onClick={() => setShowAnnouncementModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handlePostAnnouncement} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Announcement Title *</label>
+            <form onSubmit={handlePostAnnouncement} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Notice Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Next Class in Lab 2 instead of Room 402"
                   value={newAnnouncement.title}
                   onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark"
+                  placeholder="e.g. Lab Class Rescheduled for Wednesday"
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Priority Level</label>
-                <select
-                  value={newAnnouncement.priority}
-                  onChange={(e) =>
-                    setNewAnnouncement({ ...newAnnouncement, priority: e.target.value as any })
-                  }
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white"
-                >
-                  <option value="Normal">Normal Notice</option>
-                  <option value="High">Urgent / High Priority</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Notice Body *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Announcement Content *</label>
                 <textarea
                   rows={4}
                   required
-                  placeholder="Write message to students..."
                   value={newAnnouncement.content}
                   onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg resize-none"
+                  placeholder="Write message to enrolled students..."
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Priority Level</label>
+                <select
+                  value={newAnnouncement.priority}
+                  onChange={(e) => setNewAnnouncement({ ...newAnnouncement, priority: e.target.value as any })}
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                >
+                  <option value="Normal">Normal Notice</option>
+                  <option value="High">Urgent Notice</option>
+                </select>
+              </div>
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementModal(false)}
-                  className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg font-semibold shadow-sm"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
                 >
-                  Publish Notice
+                  Post Announcement
                 </button>
               </div>
             </form>
@@ -2016,89 +1942,75 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* ── MODAL: ADD MATERIAL ── */}
+      {/* ── MODAL: UPLOAD MATERIAL ── */}
       {showMaterialModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Upload Course Material</h3>
-              <button
-                onClick={() => setShowMaterialModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-amber-600" /> Upload Course Material
+              </h3>
+              <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleAddMaterial} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">Material / Slide Title *</label>
+            <form onSubmit={handleAddMaterial} className="p-6 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Material Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Chapter 5: Transactions & Concurrency Slides"
                   value={newMaterial.title}
                   onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg"
+                  placeholder="e.g. Chapter 3 Normalization Slides"
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">Category</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Category</label>
                   <select
                     value={newMaterial.category}
                     onChange={(e) => setNewMaterial({ ...newMaterial, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
                   >
-                    <option value="Slides">Lecture Slides</option>
-                    <option value="Lab & Code">Lab Sheet / Code</option>
-                    <option value="Reading">Reading / PDF Book</option>
-                    <option value="Notes">Teacher Notes</option>
+                    <option value="Slides">Slides</option>
+                    <option value="Lab & Code">Lab & Code</option>
+                    <option value="Reading">Reading</option>
+                    <option value="Syllabus">Syllabus</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">File Type</label>
-                  <select
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">File Type</label>
+                  <input
+                    type="text"
                     value={newMaterial.fileType}
                     onChange={(e) => setNewMaterial({ ...newMaterial, fileType: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white"
-                  >
-                    <option value="PDF">PDF Document</option>
-                    <option value="ZIP">ZIP Archive</option>
-                    <option value="PPTX">PowerPoint (PPTX)</option>
-                    <option value="DOCX">Word Document</option>
-                  </select>
+                    placeholder="PDF, ZIP, DOCX..."
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700">File Upload Simulation</label>
-                <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center space-y-1 bg-slate-50/50">
-                  <FolderOpen className="w-6 h-6 mx-auto text-slate-400" />
-                  <p className="text-[11px] font-medium text-slate-700">Click or drag file here to attach</p>
-                  <p className="text-[9px] text-slate-400">PDF, ZIP, PPTX up to 50MB</p>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowMaterialModal(false)}
-                  className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-lg font-semibold shadow-sm"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
                 >
-                  Upload & Share
+                  Upload File
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

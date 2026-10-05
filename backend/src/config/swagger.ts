@@ -6,12 +6,12 @@
 export const swaggerSpec = {
   openapi: "3.0.0",
   info: {
-    title: "Scholaris Academic & Classroom Management API",
+    title: "Academic & Classroom Management System API",
     version: "1.0.0",
-    description: "RESTful API documentation for Scholaris University Classroom and LMS Management System (PostgreSQL + Express.js).",
+    description: "RESTful API documentation for Academic & Classroom Management System (PostgreSQL + Express.js). Developed by Tahmid Afsar Shapno.",
     contact: {
-      name: "Scholaris Development Team",
-      email: "support@scholaris.edu",
+      name: "Tahmid Afsar Shapno",
+      email: "shapno.official@gmail.com",
     },
   },
   servers: [
@@ -38,6 +38,7 @@ export const swaggerSpec = {
   tags: [
     { name: "Authentication", description: "JWT Authentication, user login, profile retrieval, and logout" },
     { name: "System", description: "Health checks & system metadata" },
+    { name: "Teacher Portal & Analytics", description: "Faculty dashboard metrics, assigned classrooms, teacher schedules, and course continuity" },
     { name: "Academic Structure", description: "Departments, Programs, Academic Sessions, Batches, Courses & Syllabus" },
     { name: "Users & Roles", description: "Admins, Teachers, and Students administration" },
     { name: "Classrooms & Schedules", description: "Course-to-batch classroom allocation and weekly timetable" },
@@ -182,6 +183,265 @@ export const swaggerSpec = {
           }
         }
       }
+    },
+    "/api/admin/dashboard/teacher-stats": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Get consolidated Teacher Dashboard summary for authenticated faculty member",
+        description: "Returns teacher metrics (classrooms, total students, conducted sessions, assignments, tests, average attendance rate), assigned classrooms with progress, today's schedule, syllabus completion progress, and recent sessions.",
+        responses: {
+          200: {
+            description: "Teacher summary metrics and schedule retrieved successfully",
+            content: {
+              "application/json": {
+                example: {
+                  success: true,
+                  message: "Teacher dashboard summary loaded successfully",
+                  data: {
+                    teacher: { id: "teacher-1", name: "Prof. Dr. Shamim Al Mamun" },
+                    metrics: {
+                      totalClassrooms: 3,
+                      totalStudents: 122,
+                      totalSessionsConducted: 24,
+                      totalAssignments: 5,
+                      totalTests: 5,
+                      avgAttendanceRate: 94,
+                      todayClassesCount: 2
+                    },
+                    myClassrooms: [],
+                    todaySchedules: [],
+                    syllabusProgress: [],
+                    recentSessions: []
+                  }
+                }
+              }
+            }
+          },
+          401: { description: "Unauthorized: Invalid or missing token" },
+          403: { description: "Forbidden" }
+        }
+      }
+    },
+    "/api/teacher/dashboard": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Get consolidated Teacher Dashboard summary",
+        description: "Returns metrics, assigned classrooms, today's class schedule, syllabus progress, and recent sessions filtered by the authenticated teacher's JWT token.",
+        responses: {
+          200: { description: "Teacher dashboard summary loaded successfully" },
+          401: { description: "Unauthorized" },
+        },
+      },
+    },
+    "/api/teacher/classrooms": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List classrooms assigned to the authenticated teacher",
+        description: "Returns only classrooms assigned to the authenticated teacher's profile.",
+        responses: {
+          200: { description: "Array of assigned classrooms" },
+          401: { description: "Unauthorized" },
+        },
+      },
+    },
+    "/api/teacher/classrooms/{id}": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Get detailed view of an assigned classroom",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Classroom details with joined course and batch info" },
+          404: { description: "Classroom not found" },
+        },
+      },
+    },
+    "/api/teacher/schedules": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List weekly class schedules for teacher",
+        responses: { 200: { description: "Array of weekly class schedules" } },
+      },
+    },
+    "/api/teacher/courses": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List courses assigned to teacher",
+        responses: { 200: { description: "Array of assigned courses" } },
+      },
+    },
+    "/api/teacher/syllabus": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List syllabus topics for teacher's courses",
+        responses: { 200: { description: "Array of syllabus topics" } },
+      },
+    },
+    "/api/teacher/students": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List students enrolled in teacher's batches",
+        responses: { 200: { description: "Array of enrolled students" } },
+      },
+    },
+    "/api/teacher/sessions": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List conducted lecture sessions",
+        responses: { 200: { description: "Array of conducted sessions" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Log a completed lecture session",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", date: "2026-10-05T10:00:00Z", topicCovered: "DBMS Normalization", duration: "1h 30m" },
+            },
+          },
+        },
+        responses: { 201: { description: "Session logged" } },
+      },
+    },
+    "/api/teacher/attendance": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Get student attendance records",
+        responses: { 200: { description: "Array of attendance logs" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Save or batch update student attendance",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                records: [
+                  { sessionId: "cses-1", classroomId: "cls-1", studentId: "std-1", status: "present" },
+                ],
+              },
+            },
+          },
+        },
+        responses: { 200: { description: "Attendance saved" } },
+      },
+    },
+    "/api/teacher/assignments": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List course assignments",
+        responses: { 200: { description: "Array of assignments" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Create a new assignment",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", title: "Assignment 1: ER Diagram", dueDate: "2026-10-25", totalMarks: 20 },
+            },
+          },
+        },
+        responses: { 201: { description: "Assignment created" } },
+      },
+    },
+    "/api/teacher/assignments/{id}": {
+      put: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Update an assignment",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Assignment updated" } },
+      },
+      delete: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Delete an assignment",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Assignment deleted" } },
+      },
+    },
+    "/api/teacher/tests": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List tests and exams",
+        responses: { 200: { description: "Array of tests" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Schedule a class test or exam",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", title: "Mid-Term Exam", testDate: "2026-10-20", totalMarks: 50 },
+            },
+          },
+        },
+        responses: { 201: { description: "Test scheduled" } },
+      },
+    },
+    "/api/teacher/tests/{id}": {
+      put: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Update a test schedule",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Test updated" } },
+      },
+      delete: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Delete a test schedule",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Test deleted" } },
+      },
+    },
+    "/api/teacher/results": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Get student marks & grade records",
+        responses: { 200: { description: "Array of grade records" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Save or update student marks",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", studentId: "std-1", testId: "tst-1", obtainedMarks: 45, totalMarks: 50 },
+            },
+          },
+        },
+        responses: { 200: { description: "Grade recorded" } },
+      },
+    },
+    "/api/teacher/materials": {
+      get: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "List learning materials",
+        responses: { 200: { description: "Array of materials" } },
+      },
+      post: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Upload course learning material",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", title: "Lecture 1 Slides", type: "pdf", fileUrl: "https://..." },
+            },
+          },
+        },
+        responses: { 201: { description: "Material uploaded" } },
+      },
+    },
+    "/api/teacher/materials/{id}": {
+      delete: {
+        tags: ["Teacher Portal & Analytics"],
+        summary: "Delete course learning material",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Material deleted" } },
+      },
     },
     "/api/health": {
       get: {

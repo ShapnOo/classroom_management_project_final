@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Classroom Management",
-  description: "School Management System",
+  title: "Academic & Classroom Management System",
+  description: "Academic & Classroom Management System - Developed by Tahmid Afsar Shapno (shapno.official@gmail.com)",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

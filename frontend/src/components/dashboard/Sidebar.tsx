@@ -199,8 +199,16 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* ── Footer Area with Logout ── */}
-      <div className="p-3 border-t border-slate-200 shrink-0 bg-white">
+      {/* ── Footer Area with Developer Credit & Logout ── */}
+      <div className="p-3 border-t border-slate-200 shrink-0 bg-white space-y-2">
+        <div className="px-2.5 py-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px]">
+          <p className="font-bold text-slate-800 tracking-tight">Academic & Classroom Management System</p>
+          <p className="text-[9px] text-slate-500 mt-0.5">Developed by <strong className="text-slate-700">Tahmid Afsar Shapno</strong></p>
+          <a href="mailto:shapno.official@gmail.com" className="text-[9px] text-blue-600 hover:underline block truncate font-medium">
+            shapno.official@gmail.com
+          </a>
+        </div>
+
         <button
           type="button"
           onClick={async () => {

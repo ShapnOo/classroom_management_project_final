@@ -475,7 +475,7 @@ export const api = {
 
   // ── Consolidated Dashboard API ──
   getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
-  getTeacherDashboard: () => request<TeacherDashboardData>("/admin/dashboard/teacher-stats"),
+  getTeacherDashboard: () => request<TeacherDashboardData>("/teacher/dashboard"),
 };
 
 

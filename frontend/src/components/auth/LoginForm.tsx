@@ -29,13 +29,13 @@ export default function LoginForm() {
       const result = await api.login({ email: email.trim(), password });
       
       const userRole = result.user?.role?.toLowerCase() || role.toLowerCase();
-      if (userRole === "admin") {
-        router.push("/dashboard/admin");
-      } else if (userRole === "teacher") {
-        router.push("/dashboard/teacher");
-      } else {
-        router.push("/dashboard/student");
-      }
+      const targetPath = userRole === "admin" 
+        ? "/dashboard/admin" 
+        : userRole === "teacher" 
+          ? "/dashboard/teacher" 
+          : "/dashboard/student";
+
+      window.location.href = targetPath;
     } catch (err: any) {
       setError(err.message || "Failed to authenticate. Please check your credentials.");
     } finally {
@@ -56,9 +56,9 @@ export default function LoginForm() {
         <div className="bg-brand-dark p-3 rounded-xl mb-4 shadow-sm">
           <GraduationCap className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-base font-semibold text-foreground">Scholaris Portal</h1>
-        <p className="text-[13px] text-slate-500 mt-1">
-          Sign in to your Classroom Management workspace
+        <h1 className="text-base font-bold text-foreground text-center">Academic & Classroom Management System</h1>
+        <p className="text-[13px] text-slate-500 mt-1 text-center">
+          Sign in to your Academic Workspace
         </p>
       </div>
 
@@ -146,8 +146,8 @@ export default function LoginForm() {
         </form>
       </div>
       
-      <p className="text-[11px] text-slate-400 mt-8 text-center px-4">
-        Protected with JWT Bearer Token Authentication & RBAC.
+      <p className="text-[11px] text-slate-500 mt-8 text-center px-4">
+        Academic & Classroom Management System • Developed by <strong className="text-slate-800">Tahmid Afsar Shapno</strong> (<a href="mailto:shapno.official@gmail.com" className="text-blue-600 hover:underline font-medium">shapno.official@gmail.com</a>)
       </p>
     </div>
   );

@@ -13,7 +13,8 @@ import {
   FileText,
   AlertCircle,
   MoreVertical,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import {
   BarChart,
@@ -26,71 +27,53 @@ import {
   Legend
 } from "recharts";
 import { useState, useEffect } from "react";
-import { useStore } from "@/lib/store";
 import { api, TeacherDashboardData } from "@/lib/api";
 
 export default function TeacherDashboard() {
   const [dashboardData, setDashboardData] = useState<TeacherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const {
-    getMyClassroomViews, getTodaysSchedule, getUpNextTopic,
-    fetchClassrooms, fetchCourses, fetchBatches, fetchTeachers, fetchSessions, fetchPrograms,
-    fetchStudents, fetchSyllabusTopics, fetchSchedules, fetchAssignments, fetchTests,
-    fetchClassSessions, fetchAttendanceRecords, fetchGradeRecords, fetchAnnouncements,
-  } = useStore();
-
   useEffect(() => {
-    // 1. Fetch backend consolidated teacher dashboard API
+    // Single consolidated Teacher Dashboard API call
     api.getTeacherDashboard()
       .then(data => {
         setDashboardData(data);
       })
       .catch(err => {
-        console.warn("Could not load backend teacher dashboard API, relying on store state:", err);
+        console.warn("Could not load backend teacher dashboard API:", err);
       })
       .finally(() => setLoading(false));
-
-    // 2. Hydrate full store entities
-    fetchClassrooms();
-    fetchCourses();
-    fetchBatches();
-    fetchTeachers();
-    fetchSessions();
-    fetchPrograms();
-    fetchStudents();
-    fetchSyllabusTopics();
-    fetchSchedules();
-    fetchAssignments();
-    fetchTests();
-    fetchClassSessions();
-    fetchAttendanceRecords();
-    fetchGradeRecords();
-    fetchAnnouncements();
   }, []);
 
-  const myClassrooms = getMyClassroomViews();
-  const todaysSchedule = getTodaysSchedule();
-  const upNext = getUpNextTopic();
+  if (loading) {
+    return (
+      <div className="w-full h-64 flex flex-col items-center justify-center gap-3 text-slate-500">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-dark" />
+        <p className="text-xs font-medium">Loading Teacher Dashboard...</p>
+      </div>
+    );
+  }
 
-  const totalClassroomsCount = dashboardData?.metrics.totalClassrooms ?? myClassrooms.length;
-  const totalStudents = dashboardData?.metrics.totalStudents ?? myClassrooms.reduce((sum, v) => sum + v.studentCount, 0);
-  const ongoingClassrooms = dashboardData?.myClassrooms.filter(c => c.status === "ongoing").length ?? myClassrooms.filter(v => v.classroom.status === "ongoing").length;
-  const todayClassesCount = dashboardData?.metrics.todayClassesCount ?? todaysSchedule.length;
-  const totalAssignmentsCount = dashboardData?.metrics.totalAssignments ?? myClassrooms.reduce((sum, v) => sum + v.assignments.filter(a => a.status !== "Completed").length, 0);
+  const metrics = dashboardData?.metrics;
+  const myClassrooms = dashboardData?.myClassrooms || [];
+  const todaySchedules = dashboardData?.todaySchedules || [];
+  const syllabusProgress = dashboardData?.syllabusProgress || [];
+  const recentSessions = dashboardData?.recentSessions || [];
 
-  // Build performance data from real API data or classroom views
-  const performanceData = dashboardData?.syllabusProgress.length 
-    ? dashboardData.syllabusProgress.map(sp => ({
-        name: sp.courseCode,
-        attendance: dashboardData.metrics.avgAttendanceRate,
-        avgScore: sp.progress,
-      }))
-    : myClassrooms.slice(0, 5).map(v => ({
-        name: v.course.code,
-        attendance: 75 + Math.round(v.progress * 0.2),
-        avgScore: 65 + Math.round(v.progress * 0.25),
-      }));
+  const totalClassroomsCount = metrics?.totalClassrooms ?? myClassrooms.length;
+  const totalStudents = metrics?.totalStudents ?? 0;
+  const ongoingClassrooms = myClassrooms.filter(c => c.status === "ongoing").length;
+  const todayClassesCount = metrics?.todayClassesCount ?? todaySchedules.length;
+  const totalAssignmentsCount = metrics?.totalAssignments ?? 0;
+
+  // Build performance data from real API syllabus progress
+  const performanceData = syllabusProgress.map(sp => ({
+    name: sp.courseCode,
+    attendance: metrics?.avgAttendanceRate || 92,
+    avgScore: sp.progress,
+  }));
+
+  const upNext = syllabusProgress.find(sp => sp.progress < 100);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -106,8 +89,8 @@ export default function TeacherDashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <p className="text-[11px] font-medium text-slate-500 mb-0.5">{currentDate}</p>
-          
-          <p className="text-[13px] text-slate-500 mt-0.5">Here is what's happening in your classrooms today.</p>
+          <h1 className="text-sm font-semibold text-slate-900">Welcome, {dashboardData?.teacher?.name || "Faculty Member"}</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Here is your consolidated classroom overview.</p>
         </div>
         <div className="flex items-center gap-2.5">
           <button className="bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-lg text-[11px] font-medium hover:bg-slate-50 transition-colors shadow-sm">
@@ -157,9 +140,9 @@ export default function TeacherDashboard() {
             <div>
               <h2 className="text-[13px] font-medium text-slate-900 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-indigo-500" />
-                Class Performance Overview
+                Class Performance & Progress
               </h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">Average attendance and scores across your courses</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Average attendance rate and syllabus coverage per course</p>
             </div>
             <button className="text-slate-400 hover:text-slate-600">
               <MoreVertical className="w-4 h-4" />
@@ -177,7 +160,7 @@ export default function TeacherDashboard() {
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }} />
                 <Bar dataKey="attendance" name="Attendance %" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                <Bar dataKey="avgScore" name="Avg Score %" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                <Bar dataKey="avgScore" name="Coverage %" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -192,41 +175,37 @@ export default function TeacherDashboard() {
               <div className="bg-orange-500/20 p-1.5 rounded-md">
                 <Flame className="w-4 h-4 text-orange-400" />
               </div>
-              <h2 className="text-[11px] font-medium uppercase tracking-wider text-slate-200">Up Next</h2>
+              <h2 className="text-[11px] font-medium uppercase tracking-wider text-slate-200">Up Next Focus</h2>
             </div>
-            {upNext && <span className="text-[10px] font-medium bg-white/10 px-2 py-0.5 rounded-md text-white">Week {upNext.week}</span>}
+            {upNext && <span className="text-[10px] font-medium bg-white/10 px-2 py-0.5 rounded-md text-white">{upNext.courseCode}</span>}
           </div>
           
           <div className="p-5 relative z-10 flex flex-col h-full justify-between">
-            {upNext ? (() => {
-                const upNextCourse = myClassrooms.find(v => v.classroom.courseId === upNext.courseId)?.course;
-                return (
+            {upNext ? (
               <div>
-                <p className="text-[10px] font-medium mb-1.5 uppercase tracking-widest text-blue-300">{upNextCourse?.code ?? "Course"}</p>
-                <h3 className="text-xs font-medium mb-3">{upNext.topic}</h3>
+                <p className="text-[10px] font-medium mb-1.5 uppercase tracking-widest text-blue-300">{upNext.courseCode}</p>
+                <h3 className="text-xs font-medium mb-3">{upNext.courseTitle}</h3>
                 
                 <div className="bg-white/10 rounded-lg p-3 mb-4 backdrop-blur-sm border border-white/10">
-                  <p className="text-[10px] text-slate-300 mb-1.5 uppercase tracking-wide font-medium">Key Concepts</p>
-                  <ul className="space-y-1.5">
-                    {upNext.subTopics.map((sub, i) => (
-                      <li key={i} className="flex items-center gap-2 text-[11px] text-slate-100">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                        {sub}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-[10px] text-slate-300 mb-1.5 uppercase tracking-wide font-medium">Syllabus Completion</p>
+                  <div className="flex items-center justify-between text-[11px] text-slate-100 mb-1">
+                    <span>Progress</span>
+                    <span className="font-bold">{upNext.progress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-400 rounded-full" style={{ width: `${upNext.progress}%` }} />
+                  </div>
                 </div>
               </div>
-                );
-              })() : (
+            ) : (
               <div className="flex flex-col items-center justify-center flex-1 text-center py-4">
-                <p className="text-[11px] text-slate-300">All topics completed!</p>
+                <p className="text-[11px] text-slate-300">All course topics completed!</p>
               </div>
             )}
             
             <button className="w-full bg-white hover:bg-slate-100 text-brand-dark font-medium py-2.5 px-4 rounded-lg text-[11px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/20">
               <Play className="w-3.5 h-3.5 fill-brand-dark" />
-              Start Class Now
+              Start Class Session
             </button>
           </div>
         </div>
@@ -243,15 +222,15 @@ export default function TeacherDashboard() {
               <Clock className="w-4 h-4 text-slate-500" />
               Today's Schedule
             </h2>
-            <span className="text-[10px] font-medium text-slate-500">{todaysSchedule.length} classes</span>
+            <span className="text-[10px] font-medium text-slate-500">{todaySchedules.length} classes</span>
           </div>
           <div className="p-4 flex-1 space-y-4">
-            {todaysSchedule.length > 0 ? todaysSchedule.map((sched, i) => (
-              <div key={sched.id} className={`relative pl-4 border-l-2 ${i === 0 ? 'border-brand-dark pb-2' : 'border-slate-200'}`}>
+            {todaySchedules.length > 0 ? todaySchedules.map((sched, i) => (
+              <div key={sched.id || i} className={`relative pl-4 border-l-2 ${i === 0 ? 'border-brand-dark pb-2' : 'border-slate-200'}`}>
                 <div className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full ring-4 ring-white ${i === 0 ? 'bg-brand-dark' : 'bg-slate-300'}`} />
-                <div className={`text-[10px] font-medium mb-0.5 ${i === 0 ? 'text-brand-dark' : 'text-slate-500'}`}>{sched.startTime} - {sched.endTime}</div>
-                <h3 className="text-[13px] font-medium text-slate-900 mb-0.5">{sched.classroomView.course.title}</h3>
-                <p className="text-[11px] text-slate-500 font-medium mb-1.5">{sched.classroomView.batch.name} • {sched.classroomView.studentCount} Students</p>
+                <div className={`text-[10px] font-medium mb-0.5 ${i === 0 ? 'text-brand-dark' : 'text-slate-500'}`}>{sched.start_time} - {sched.end_time}</div>
+                <h3 className="text-[13px] font-medium text-slate-900 mb-0.5">{sched.course_title} ({sched.course_code})</h3>
+                <p className="text-[11px] text-slate-500 font-medium mb-1.5">{sched.batch_name}</p>
                 <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 w-fit px-2 py-0.5 rounded-md">
                   <MapPin className="w-3 h-3" /> {sched.room}
                 </div>
@@ -265,77 +244,53 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Pending Evaluations */}
+        {/* Assigned Classrooms List */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-4 py-3.5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <h2 className="text-[11px] font-medium text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-slate-500" />
-              Needs Evaluation
+              <MonitorPlay className="w-4 h-4 text-slate-500" />
+              Assigned Classrooms
             </h2>
-            <span className="bg-red-100 text-red-700 text-[10px] font-medium px-2 py-0.5 rounded-full">12</span>
+            <span className="bg-brand-dark/10 text-brand-dark text-[10px] font-medium px-2 py-0.5 rounded-full">{myClassrooms.length}</span>
           </div>
-          <div className="divide-y divide-slate-100">
-            {[
-              { title: "ER Diagram Assignment", course: "DBMS", students: 6, time: "Due yesterday" },
-              { title: "Project Proposal", course: "Software Eng", students: 4, time: "Due 2 days ago" },
-              { title: "Network Setup Lab", course: "Networking", students: 2, time: "Due today" },
-            ].map((task, i) => (
-              <div key={i} className="p-3 hover:bg-slate-50 transition-colors cursor-pointer group">
-                <h3 className="text-[13px] font-medium text-slate-800 group-hover:text-brand-dark transition-colors">{task.title}</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5 mb-1.5">{task.course}</p>
-                <div className="flex items-center justify-between text-[11px] font-medium">
-                  <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded-md flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {task.students} submissions
-                  </span>
-                  <span className="text-slate-400">{task.time}</span>
+          <div className="divide-y divide-slate-100 flex-1 overflow-y-auto max-h-[280px]">
+            {myClassrooms.map((cls) => (
+              <div key={cls.id} className="p-3 hover:bg-slate-50 transition-colors cursor-pointer group">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-[13px] font-medium text-slate-800 group-hover:text-brand-dark transition-colors">{cls.course_title}</h3>
+                  <span className="text-[10px] font-semibold text-brand-dark bg-brand-dark/5 px-2 py-0.5 rounded">{cls.course_code}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mb-2">{cls.batch_name} • {cls.room} • {cls.student_count} Students</p>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-brand-dark h-full rounded-full" style={{ width: `${cls.progress}%` }} />
                 </div>
               </div>
             ))}
           </div>
         </div>
         
-        {/* Recent Activity */}
+        {/* Recent Class Sessions */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-4 py-3.5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <h2 className="text-[11px] font-medium text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <MonitorPlay className="w-4 h-4 text-slate-500" />
-              Recent Activity
+              <CheckCircle2 className="w-4 h-4 text-slate-500" />
+              Recent Conducted Sessions
             </h2>
           </div>
-          <div className="p-4 space-y-4">
-            <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="p-4 space-y-4 flex-1">
+            {recentSessions.length > 0 ? recentSessions.map((sess) => (
+              <div key={sess.id} className="flex gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-slate-800">{sess.course_code}: <span className="font-semibold">{sess.topic_covered}</span></p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{sess.batch_name} • Attended: {sess.present_count}/{sess.total_attendance_count}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-medium text-slate-800">You graded <span className="font-medium">Normalization Test</span></p>
-                <p className="text-[10px] text-slate-500 mt-0.5">2 hours ago • DBMS</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                <FileText className="w-3.5 h-3.5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-[11px] font-medium text-slate-800">Published new material: <span className="font-medium">Ch 4 Slides</span></p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Yesterday • Software Engineering</p>
-              </div>
-            </div>
-
-            <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                <Users className="w-3.5 h-3.5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-[11px] font-medium text-slate-800">Added 5 new students to <span className="font-medium">PGDIT Spring</span></p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Yesterday</p>
-              </div>
-            </div>
-            
-            <button className="w-full mt-2 py-1.5 text-[11px] font-medium text-brand-dark border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              View All Activity
-            </button>
+            )) : (
+              <div className="text-center py-6 text-[11px] text-slate-500">No recent sessions recorded yet.</div>
+            )}
           </div>
         </div>
 

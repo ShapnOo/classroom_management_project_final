@@ -6,6 +6,7 @@ import { pool } from "./config/db.js";
 import { initDatabase } from "./db/init.js";
 import { swaggerSpec } from "./config/swagger.js";
 import adminRoutes from "./routes/admin/index.js";
+import teacherRoutes from "./routes/teacher/index.js";
 import authRoutes from "./routes/auth.routes.js";
 import { sendError, sendSuccess } from "./utils/response.js";
 
@@ -24,7 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ── Swagger UI Documentation ────────────────────────────────────────────────
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "Scholaris API Documentation",
+  customSiteTitle: "Academic & Classroom Management System API Documentation",
   customCss: ".swagger-ui .topbar { display: none }",
 }));
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -39,10 +40,11 @@ app.get("/api/health", async (req: Request, res: Response) => {
     sendSuccess(res, {
       status: "healthy",
       timestamp: result.rows[0].current_time,
-      service: "Scholaris Express Backend",
+      service: "Academic & Classroom Management System Express Backend",
+      developer: "Tahmid Afsar Shapno (shapno.official@gmail.com)",
       database: "PostgreSQL connected",
       docs: `http://localhost:${PORT}/api/docs`,
-    }, "Scholaris Backend API is running smoothly");
+    }, "Academic & Classroom Management System Backend API is running smoothly. Developed by Tahmid Afsar Shapno.");
   } catch (error: any) {
     sendError(res, "Database connection error", 500, error.message);
   }
@@ -54,9 +56,15 @@ app.use("/api/auth", authRoutes);
 // Admin Panel API Routes
 app.use("/api/admin", adminRoutes);
 
+// Dedicated Teacher Portal API Routes
+app.use("/api/teacher", teacherRoutes);
+
 // Root API Welcome & Endpoint Discovery
 app.get("/", (req: Request, res: Response) => {
   sendSuccess(res, {
+    project: "Academic & Classroom Management System",
+    developer: "Tahmid Afsar Shapno",
+    email: "shapno.official@gmail.com",
     version: "1.0.0",
     docs: `http://localhost:${PORT}/api/docs`,
     modules: {
@@ -64,6 +72,16 @@ app.get("/", (req: Request, res: Response) => {
         login: "POST /api/auth/login",
         me: "GET /api/auth/me (Bearer Auth)",
         logout: "POST /api/auth/logout (Bearer Auth)"
+      },
+      teacher: {
+        dashboard: "/api/teacher/dashboard",
+        classrooms: "/api/teacher/classrooms",
+        sessions: "/api/teacher/sessions",
+        attendance: "/api/teacher/attendance",
+        assignments: "/api/teacher/assignments",
+        tests: "/api/teacher/tests",
+        results: "/api/teacher/results",
+        materials: "/api/teacher/materials"
       },
       admin: {
         academic: "/api/admin/academic/(departments|programs|sessions|batches|courses|syllabus)",
@@ -77,7 +95,7 @@ app.get("/", (req: Request, res: Response) => {
       },
       health: "/api/health"
     }
-  }, "Welcome to Scholaris Management System Backend API");
+  }, "Welcome to Academic & Classroom Management System Backend API. Developed by Tahmid Afsar Shapno.");
 });
 
 // 404 Handler
