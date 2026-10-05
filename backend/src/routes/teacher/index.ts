@@ -2,7 +2,13 @@ import { Router } from "express";
 import { authenticateToken, authorizeRoles } from "../../middleware/auth.js";
 import { getTeacherDashboardSummary } from "../../controllers/admin/dashboard.controller.js";
 import { getClassrooms, getClassroomById, getSchedules } from "../../controllers/admin/classrooms.controller.js";
-import { getCourses, getSyllabusTopics } from "../../controllers/admin/academic.controller.js";
+import { 
+  getCourses, 
+  getSyllabusTopics, 
+  createSyllabusTopic, 
+  updateSyllabusTopic, 
+  deleteSyllabusTopic 
+} from "../../controllers/admin/academic.controller.js";
 import { getStudents } from "../../controllers/admin/users.controller.js";
 import {
   getClassSessions, createClassSession,
@@ -26,6 +32,9 @@ router.get("/schedules", getSchedules);
 
 router.get("/courses", getCourses);
 router.get("/syllabus", getSyllabusTopics);
+router.post("/syllabus", createSyllabusTopic);
+router.put("/syllabus/:id", updateSyllabusTopic);
+router.delete("/syllabus/:id", deleteSyllabusTopic);
 router.get("/students", getStudents);
 
 // Activities, Attendance & Grading

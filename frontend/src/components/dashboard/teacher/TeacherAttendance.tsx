@@ -167,7 +167,18 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
             <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Take Attendance
           </Link>
           <button 
-            onClick={() => alert("Exporting attendance spreadsheet (CSV)...")}
+            onClick={() => {
+              if (!view) return;
+              const headers = ["Roll No", "Student Name", "Status"];
+              const rows = view.students.map(s => [s.rollNo, `"${s.name}"`, "Present"]);
+              const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${view.course.code}_Attendance.csv`;
+              a.click();
+            }}
             className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> Export

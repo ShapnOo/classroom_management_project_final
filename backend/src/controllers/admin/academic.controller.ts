@@ -325,15 +325,15 @@ export const getSyllabusTopics = async (req: Request, res: Response) => {
 
 export const createSyllabusTopic = async (req: Request, res: Response) => {
   try {
-    const { courseId, topic, week, subTopics, adminStatus } = req.body;
+    const { courseId, topic, week, subTopics, adminStatus, totalSlides, completedSlides } = req.body;
     if (!courseId || !topic) {
       return sendError(res, "Course and topic title are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(`
-      INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
-    `, [id, courseId, topic, week || 1, subTopics || [], "pending", adminStatus || "Published"]);
+      INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status, total_slides, completed_slides)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+    `, [id, courseId, topic, week || 1, subTopics || [], "pending", adminStatus || "Published", Number(totalSlides) || 0, Number(completedSlides) || 0]);
     sendSuccess(res, rows[0], "Syllabus topic created successfully", 201);
   } catch (err: any) {
     sendError(res, err.message);
@@ -343,16 +343,38 @@ export const createSyllabusTopic = async (req: Request, res: Response) => {
 export const updateSyllabusTopic = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { topic, week, subTopics, adminStatus, teacherStatus } = req.body;
+    const { topic, week, subTopics, adminStatus, teacherStatus, totalSlides, completedSlides } = req.body;
+    
+    // Auto sync teacherStatus if completedSlides equals totalSlides and totalSlides > 0
+    let autoTeacherStatus = teacherStatus;
+    if (!autoTeacherStatus && completedSlides !== undefined && totalSlides !== undefined) {
+      if (Number(totalSlides) > 0 && Number(completedSlides) >= Number(totalSlides)) {
+        autoTeacherStatus = 'done';
+      } else if (Number(completedSlides) > 0 && Number(completedSlides) < Number(totalSlides)) {
+        autoTeacherStatus = 'current';
+      }
+    }
+
     const { rows } = await pool.query(`
       UPDATE syllabus_topics 
       SET topic = COALESCE($1, topic),
           week = COALESCE($2, week),
           sub_topics = COALESCE($3, sub_topics),
           admin_status = COALESCE($4, admin_status),
-          teacher_status = COALESCE($5, teacher_status)
-      WHERE id = $6 RETURNING *
-    `, [topic, week, subTopics, adminStatus, teacherStatus, id]);
+          teacher_status = COALESCE($5, teacher_status),
+          total_slides = COALESCE($6, total_slides),
+          completed_slides = COALESCE($7, completed_slides)
+      WHERE id = $8 RETURNING *
+    `, [
+      topic, 
+      week, 
+      subTopics, 
+      adminStatus, 
+      autoTeacherStatus, 
+      totalSlides !== undefined ? Number(totalSlides) : null, 
+      completedSlides !== undefined ? Number(completedSlides) : null, 
+      id
+    ]);
     if (rows.length === 0) return sendError(res, "Syllabus topic not found", 404);
     sendSuccess(res, rows[0], "Syllabus topic updated successfully");
   } catch (err: any) {

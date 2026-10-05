@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Settings, Bell, Lock, Shield, Save, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import ModalDialog from "@/components/ui/ModalDialog";
 
 export default function TeacherSettingsPage() {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [classAlerts, setClassAlerts] = useState(true);
   const [gradeAlerts, setGradeAlerts] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleSave = () => {
     setSaved(true);
@@ -85,7 +87,7 @@ export default function TeacherSettingsPage() {
                 <p className="text-[10px] text-slate-500">Last updated 30 days ago</p>
               </div>
               <button 
-                onClick={() => alert("Password reset link sent to your registered email.")} 
+                onClick={() => setModalOpen(true)} 
                 className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded text-[11px] font-medium shadow-xs transition-colors"
               >
                 Change Password
@@ -112,6 +114,14 @@ export default function TeacherSettingsPage() {
         </div>
 
       </div>
+
+      <ModalDialog
+        isOpen={modalOpen}
+        title="Password Reset Email Sent"
+        message="A secure password reset link has been dispatched to your registered university email address."
+        type="success"
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 }

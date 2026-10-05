@@ -4,10 +4,10 @@ import {
   Users, Clock, Play, FolderOpen, ClipboardCheck,
   Search, CalendarDays, BookOpen, LayoutGrid,
   Info, MapPin, ArrowLeft, CheckCircle2, Circle, TrendingUp,
-  Plus, FileText, ListTodo, Bell, Download, ChevronRight,
+  Plus, Edit2, Trash2, FileText, ListTodo, Bell, Download, ChevronRight,
   Sparkles, Award, AlertCircle, X, ExternalLink, Filter,
   Check, Calendar, Megaphone, Share2, Layers, CheckSquare,
-  UserCheck, UserX, Clock3, RotateCcw, Sliders
+  UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -27,7 +27,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     attendanceRecords,
     announcements,
     syllabusTopics,
+    addSyllabusTopic,
     updateSyllabusTopic,
+    deleteSyllabusTopic,
     addClassSession,
     upsertAttendance,
     addAssignment,
@@ -79,6 +81,16 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   const [showTestModal, setShowTestModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [showSyllabusModal, setShowSyllabusModal] = useState(false);
+  const [editingSyllabus, setEditingSyllabus] = useState<SyllabusTopic | null>(null);
+  const [syllabusForm, setSyllabusForm] = useState({
+    topic: "",
+    week: 1,
+    subTopics: ["", ""],
+    teacherStatus: "pending" as SyllabusTopic["teacherStatus"],
+    totalSlides: 0,
+    completedSlides: 0,
+  });
   const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState(false);
 
   // Quick Attendance Form State
@@ -284,6 +296,59 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   // Syllabus Status toggle
   const handleMarkTopicStatus = (topicId: string, status: "pending" | "current" | "done") => {
     updateSyllabusTopic(topicId, { teacherStatus: status });
+  };
+
+  const openAddSyllabus = () => {
+    setEditingSyllabus(null);
+    setSyllabusForm({
+      topic: "",
+      week: courseSyllabus.length ? Math.max(...courseSyllabus.map((s) => s.week)) + 1 : 1,
+      subTopics: ["", ""],
+      teacherStatus: "pending",
+      totalSlides: 0,
+      completedSlides: 0,
+    });
+    setShowSyllabusModal(true);
+  };
+
+  const openEditSyllabus = (top: SyllabusTopic) => {
+    setEditingSyllabus(top);
+    setSyllabusForm({
+      topic: top.topic,
+      week: top.week,
+      subTopics: top.subTopics ? [...top.subTopics] : ["", ""],
+      teacherStatus: top.teacherStatus,
+      totalSlides: top.totalSlides || 0,
+      completedSlides: top.completedSlides || 0,
+    });
+    setShowSyllabusModal(true);
+  };
+
+  const handleSaveSyllabus = async () => {
+    if (!syllabusForm.topic.trim()) return;
+    const cleanSubTopics = syllabusForm.subTopics.filter((t) => t.trim());
+    if (editingSyllabus) {
+      await updateSyllabusTopic(editingSyllabus.id, {
+        topic: syllabusForm.topic,
+        week: syllabusForm.week,
+        subTopics: cleanSubTopics,
+        teacherStatus: syllabusForm.teacherStatus,
+        totalSlides: Number(syllabusForm.totalSlides) || 0,
+        completedSlides: Number(syllabusForm.completedSlides) || 0,
+      });
+    } else {
+      await addSyllabusTopic({
+        courseId: course.id,
+        topic: syllabusForm.topic,
+        week: syllabusForm.week,
+        subTopics: cleanSubTopics,
+        teacherStatus: syllabusForm.teacherStatus,
+        adminStatus: "Published",
+        totalSlides: Number(syllabusForm.totalSlides) || 0,
+        completedSlides: Number(syllabusForm.completedSlides) || 0,
+      });
+    }
+    setShowSyllabusModal(false);
   };
 
   const handleCreateAssignment = (e: React.FormEvent) => {
@@ -941,6 +1006,13 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   </button>
                 ))}
               </div>
+
+              <button
+                onClick={openAddSyllabus}
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Topic
+              </button>
             </div>
           </div>
 
@@ -1009,11 +1081,89 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                               ))}
                             </div>
                           )}
+
+                          {/* Slide Progress Badge & Tracker */}
+                          {top.totalSlides && top.totalSlides > 0 ? (
+                            <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex flex-wrap items-center gap-3 text-xs">
+                              <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                                <Presentation className="w-4 h-4 text-indigo-600" />
+                                <span>
+                                  Slide <strong className="text-indigo-600 font-extrabold">{top.completedSlides || 0}</strong> / {top.totalSlides}
+                                </span>
+                                <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                  {Math.round(((top.completedSlides || 0) / top.totalSlides) * 100)}%
+                                </span>
+                              </div>
+
+                              {/* Mini Slide Progress Bar */}
+                              <div className="flex-1 min-w-[100px] max-w-[180px] h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                                <div
+                                  className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${Math.min(100, Math.round(((top.completedSlides || 0) / top.totalSlides) * 100))}%`,
+                                  }}
+                                />
+                              </div>
+
+                              {/* Quick Slide Update Controls */}
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  title="Decrease Slide"
+                                  disabled={(top.completedSlides || 0) <= 0}
+                                  onClick={() =>
+                                    updateSyllabusTopic(top.id, {
+                                      completedSlides: Math.max(0, (top.completedSlides || 0) - 1),
+                                    })
+                                  }
+                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={top.totalSlides}
+                                  value={top.completedSlides || 0}
+                                  onChange={(e) => {
+                                    const val = Math.min(top.totalSlides!, Math.max(0, parseInt(e.target.value) || 0));
+                                    updateSyllabusTopic(top.id, { completedSlides: val });
+                                  }}
+                                  className="w-12 px-1 py-0.5 text-center text-xs font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                />
+                                <button
+                                  type="button"
+                                  title="Increase Slide"
+                                  disabled={(top.completedSlides || 0) >= top.totalSlides}
+                                  onClick={() =>
+                                    updateSyllabusTopic(top.id, {
+                                      completedSlides: Math.min(top.totalSlides!, (top.completedSlides || 0) + 1),
+                                    })
+                                  }
+                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5">
+                              <Presentation className="w-3.5 h-3.5 text-slate-400" />
+                              <span>No slide count set for this topic.</span>
+                              <button
+                                type="button"
+                                onClick={() => openEditSyllabus(top)}
+                                className="text-indigo-600 font-bold hover:underline"
+                              >
+                                Set slides
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex items-center gap-2 sm:self-center shrink-0">
+                      <div className="flex items-center gap-1.5 sm:self-center shrink-0">
                         {top.teacherStatus !== "done" && (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "done")}
@@ -1035,7 +1185,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                             onClick={() => handleMarkTopicStatus(top.id, "pending")}
                             className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                           >
-                            Reopen
+                            Re-open
                           </button>
                         )}
                         <button
@@ -1046,6 +1196,20 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                           className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
                         >
                           <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Conduct Class
+                        </button>
+                        <button
+                          onClick={() => openEditSyllabus(top)}
+                          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+                          title="Edit Topic"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteSyllabusTopic(top.id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                          title="Delete Topic"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -1442,7 +1606,15 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         <CheckCircle2 className="w-3.5 h-3.5" /> Published to class
                       </span>
                       <button
-                        onClick={() => alert(`Downloading "${mat.title}"...`)}
+                        onClick={() => {
+                          const blob = new Blob([`Course Material: ${mat.title}\nCategory: ${mat.category}`], { type: "text/plain" });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${mat.title.replace(/\s+/g, '_')}.txt`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                         title="Download file"
                       >
@@ -2004,6 +2176,158 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
                 >
                   Upload File
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Syllabus Topic Modal (Add / Edit) */}
+      {showSyllabusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-slate-900">
+                <BookOpen className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-extrabold text-sm">{editingSyllabus ? "Edit Course Outline Topic" : "Add Course Outline Topic"}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSyllabusModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveSyllabus();
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1.5">
+                  <label className="font-bold text-slate-700">Topic Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={syllabusForm.topic}
+                    onChange={(e) => setSyllabusForm({ ...syllabusForm, topic: e.target.value })}
+                    placeholder="e.g. Relational Database Concepts"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Week # *</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    required
+                    value={syllabusForm.week}
+                    onChange={(e) => setSyllabusForm({ ...syllabusForm, week: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Teaching Status</label>
+                <select
+                  value={syllabusForm.teacherStatus}
+                  onChange={(e) => setSyllabusForm({ ...syllabusForm, teacherStatus: e.target.value as any })}
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="current">In Progress (Current)</option>
+                  <option value="done">Completed</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200/60">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700 flex items-center gap-1">
+                    <Presentation className="w-3.5 h-3.5 text-indigo-600" /> Total Slides
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={syllabusForm.totalSlides}
+                    onChange={(e) => setSyllabusForm({ ...syllabusForm, totalSlides: Math.max(0, parseInt(e.target.value) || 0) })}
+                    placeholder="e.g. 45"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Covered / Current Slide</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={syllabusForm.totalSlides || 999}
+                    value={syllabusForm.completedSlides}
+                    onChange={(e) => setSyllabusForm({ ...syllabusForm, completedSlides: Math.max(0, parseInt(e.target.value) || 0) })}
+                    placeholder="e.g. 18"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700">Sub-topics / Key Concepts</label>
+                  <button
+                    type="button"
+                    onClick={() => setSyllabusForm({ ...syllabusForm, subTopics: [...syllabusForm.subTopics, ""] })}
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+                  >
+                    + Add Subtopic
+                  </button>
+                </div>
+                {syllabusForm.subTopics.map((sub, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={sub}
+                      onChange={(e) => {
+                        const updated = [...syllabusForm.subTopics];
+                        updated[idx] = e.target.value;
+                        setSyllabusForm({ ...syllabusForm, subTopics: updated });
+                      }}
+                      placeholder={`Subtopic ${idx + 1}`}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                    />
+                    {syllabusForm.subTopics.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = syllabusForm.subTopics.filter((_, i) => i !== idx);
+                          setSyllabusForm({ ...syllabusForm, subTopics: updated });
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSyllabusModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
+                >
+                  {editingSyllabus ? "Save Changes" : "Create Topic"}
                 </button>
               </div>
             </form>

@@ -228,12 +228,38 @@ export const api = {
       subTopics: r.sub_topics || [],
       teacherStatus: r.teacher_status || "pending",
       adminStatus: r.admin_status || "Published",
+      totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
+      completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
     }));
   },
-  createSyllabusTopic: (data: Omit<SyllabusTopic, "id">) =>
-    request<SyllabusTopic>("/admin/academic/syllabus", { method: "POST", body: JSON.stringify(data) }),
-  updateSyllabusTopic: (id: string, data: Partial<SyllabusTopic>) =>
-    request<SyllabusTopic>(`/admin/academic/syllabus/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  createSyllabusTopic: async (data: Omit<SyllabusTopic, "id">): Promise<SyllabusTopic> => {
+    const r = await request<any>("/admin/academic/syllabus", { method: "POST", body: JSON.stringify(data) });
+    return {
+      id: r.id,
+      courseId: r.course_id || r.courseId,
+      topic: r.topic,
+      week: Number(r.week) || 1,
+      subTopics: r.sub_topics || r.subTopics || [],
+      teacherStatus: r.teacher_status || r.teacherStatus || "pending",
+      adminStatus: r.admin_status || r.adminStatus || "Published",
+      totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
+      completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
+    };
+  },
+  updateSyllabusTopic: async (id: string, data: Partial<SyllabusTopic>): Promise<SyllabusTopic> => {
+    const r = await request<any>(`/admin/academic/syllabus/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return {
+      id: r.id,
+      courseId: r.course_id || r.courseId,
+      topic: r.topic,
+      week: Number(r.week) || 1,
+      subTopics: r.sub_topics || r.subTopics || [],
+      teacherStatus: r.teacher_status || r.teacherStatus || "pending",
+      adminStatus: r.admin_status || r.adminStatus || "Published",
+      totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
+      completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
+    };
+  },
   deleteSyllabusTopic: (id: string) =>
     request<{ message: string }>(`/admin/academic/syllabus/${id}`, { method: "DELETE" }),
 

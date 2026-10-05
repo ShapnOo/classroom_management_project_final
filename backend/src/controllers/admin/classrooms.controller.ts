@@ -98,7 +98,18 @@ export const getClassroomById = async (req: Request, res: Response) => {
 
     const classroom = rows[0];
     const { rows: schedules } = await pool.query("SELECT * FROM class_schedules WHERE classroom_id = $1", [id]);
-    const { rows: syllabusTopics } = await pool.query("SELECT * FROM syllabus_topics WHERE course_id = $1 ORDER BY week ASC", [classroom.course_id]);
+    const { rows: rawSyllabusTopics } = await pool.query("SELECT * FROM syllabus_topics WHERE course_id = $1 ORDER BY week ASC", [classroom.course_id]);
+    const syllabusTopics = rawSyllabusTopics.map(r => ({
+      id: r.id,
+      courseId: r.course_id,
+      topic: r.topic,
+      week: Number(r.week) || 1,
+      subTopics: r.sub_topics || [],
+      teacherStatus: r.teacher_status || "pending",
+      adminStatus: r.admin_status || "Published",
+      totalSlides: Number(r.total_slides) || 0,
+      completedSlides: Number(r.completed_slides) || 0,
+    }));
     const { rows: students } = await pool.query("SELECT * FROM students WHERE batch_id = $1 ORDER BY roll_no ASC", [classroom.batch_id]);
     const { rows: sessions } = await pool.query("SELECT * FROM class_sessions WHERE classroom_id = $1 ORDER BY conducted_at DESC", [id]);
 

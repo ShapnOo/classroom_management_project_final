@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import ModalDialog from "@/components/ui/ModalDialog";
 
 interface TeacherClassArchiveProps {
   courseId?: string;
@@ -39,6 +40,13 @@ const mockArchivedClass = {
 };
 
 export default function TeacherClassArchive({ courseId }: TeacherClassArchiveProps) {
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; type: "success" | "info" | "warning" | "danger" | "confirm" }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info"
+  });
+
   const [activeTab, setActiveTab] = useState<"overview" | "sessions" | "grades">("overview");
   const { getClassroomView, classSessions, attendanceRecords } = useStore();
 
@@ -238,6 +246,13 @@ export default function TeacherClassArchive({ courseId }: TeacherClassArchivePro
         </div>
       )}
 
+      <ModalDialog
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

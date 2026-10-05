@@ -95,6 +95,8 @@ CREATE TABLE IF NOT EXISTS syllabus_topics (
   sub_topics TEXT[] DEFAULT '{}',
   teacher_status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'current', 'done'
   admin_status VARCHAR(20) DEFAULT 'Draft',     -- 'Draft', 'Published', 'Archived'
+  total_slides INT DEFAULT 0,
+  completed_slides INT DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

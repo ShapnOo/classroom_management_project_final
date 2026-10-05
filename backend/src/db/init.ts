@@ -12,6 +12,10 @@ export async function initDatabase() {
     const schemaSqlPath = path.join(__dirname, "schema.sql");
     const schemaSql = fs.readFileSync(schemaSqlPath, "utf-8");
     await pool.query(schemaSql);
+    await pool.query(`
+      ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
+      ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
+    `);
     console.log("Database schema initialized successfully.");
 
     // Check if initial settings exist

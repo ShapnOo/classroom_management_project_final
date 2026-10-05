@@ -94,6 +94,8 @@ export type SyllabusTopic = {
   subTopics: string[];
   teacherStatus: "pending" | "current" | "done"; // teacher marks progress
   adminStatus: "Published" | "Draft" | "Archived"; // admin controls visibility
+  totalSlides?: number;
+  completedSlides?: number;
 };
 
 /**
