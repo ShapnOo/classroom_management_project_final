@@ -1,0 +1,578 @@
+/**
+ * OpenAPI 3.0 Specification & Swagger UI Configuration
+ * Complete documentation for Scholaris Academic & Classroom Management System API.
+ */
+
+export const swaggerSpec = {
+  openapi: "3.0.0",
+  info: {
+    title: "Scholaris Academic & Classroom Management API",
+    version: "1.0.0",
+    description: "RESTful API documentation for Scholaris University Classroom and LMS Management System (PostgreSQL + Express.js).",
+    contact: {
+      name: "Scholaris Development Team",
+      email: "support@scholaris.edu",
+    },
+  },
+  servers: [
+    {
+      url: "http://localhost:5001",
+      description: "Local Development Server",
+    },
+  ],
+  tags: [
+    { name: "System", description: "Health checks & system metadata" },
+    { name: "Academic Structure", description: "Departments, Programs, Academic Sessions, Batches, Courses & Syllabus" },
+    { name: "Users & Roles", description: "Admins, Teachers, and Students administration" },
+    { name: "Classrooms & Schedules", description: "Course-to-batch classroom allocation and weekly timetable" },
+    { name: "Class Sessions & Attendance", description: "Lecture logging and student attendance tracking" },
+    { name: "Assignments & Tests", description: "Continuous assessment, assignments, exams and grading" },
+    { name: "Announcements", description: "Institution and course announcements" },
+    { name: "Reports & Analytics", description: "Statistical reports and attendance analytics" },
+    { name: "Settings", description: "Application configuration & university branding" },
+  ],
+  paths: {
+    "/api/health": {
+      get: {
+        tags: ["System"],
+        summary: "Check API and PostgreSQL connectivity health",
+        responses: {
+          200: {
+            description: "System is healthy and database is connected",
+            content: {
+              "application/json": {
+                example: {
+                  status: "healthy",
+                  timestamp: "2026-10-05T15:00:00Z",
+                  service: "Scholaris Express Backend",
+                  database: "PostgreSQL connected",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/admin/settings": {
+      get: {
+        tags: ["Settings"],
+        summary: "Get application branding and school settings",
+        responses: {
+          200: {
+            description: "Current application settings",
+            content: {
+              "application/json": {
+                example: { schoolName: "Jahangirnagar University", logoBase64: "" },
+              },
+            },
+          },
+        },
+      },
+      put: {
+        tags: ["Settings"],
+        summary: "Update application branding and school settings",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { schoolName: "Jahangirnagar University", logoBase64: "" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Settings updated successfully" },
+        },
+      },
+    },
+
+    // ── ACADEMIC DEPARTMENTS ──
+    "/api/admin/academic/departments": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "List all academic departments",
+        responses: { 200: { description: "Array of departments" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create a new academic department",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { name: "Computer Science & Engineering", code: "CSE" },
+            },
+          },
+        },
+        responses: { 201: { description: "Department created" } },
+      },
+    },
+    "/api/admin/academic/departments/{id}": {
+      put: {
+        tags: ["Academic Structure"],
+        summary: "Update an academic department",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { example: { name: "CSE Department", code: "CSE" } } },
+        },
+        responses: { 200: { description: "Updated" } },
+      },
+      delete: {
+        tags: ["Academic Structure"],
+        summary: "Delete an academic department",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Deleted" } },
+      },
+    },
+
+    // ── PROGRAMS ──
+    "/api/admin/academic/programs": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "List all degree programs",
+        responses: { 200: { description: "Array of degree programs" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create a new degree program",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { departmentId: "dept-1", name: "B.Sc. in Computer Science", code: "B.Sc. CS", duration: "4 Years" },
+            },
+          },
+        },
+        responses: { 201: { description: "Program created" } },
+      },
+    },
+    "/api/admin/academic/programs/{id}": {
+      put: {
+        tags: ["Academic Structure"],
+        summary: "Update a degree program",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { example: { name: "B.Sc. Computer Science", code: "CS", duration: "4 Years" } } },
+        },
+        responses: { 200: { description: "Updated" } },
+      },
+      delete: {
+        tags: ["Academic Structure"],
+        summary: "Delete a degree program",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Deleted" } },
+      },
+    },
+
+    // ── ACADEMIC SESSIONS ──
+    "/api/admin/academic/sessions": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "List academic sessions",
+        responses: { 200: { description: "Array of sessions" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create an academic session",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { name: "Spring 2026", startDate: "2026-01-15", endDate: "2026-05-31", status: "Active" },
+            },
+          },
+        },
+        responses: { 201: { description: "Session created" } },
+      },
+    },
+    "/api/admin/academic/sessions/{id}": {
+      put: {
+        tags: ["Academic Structure"],
+        summary: "Update an academic session",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { example: { name: "Spring 2026 (Extended)", status: "Active" } } },
+        },
+        responses: { 200: { description: "Updated" } },
+      },
+      delete: {
+        tags: ["Academic Structure"],
+        summary: "Delete an academic session",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Deleted" } },
+      },
+    },
+
+    // ── BATCHES ──
+    "/api/admin/academic/batches": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "List all student batches",
+        responses: { 200: { description: "Array of batches" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create a new student batch",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { code: "SP26-A", name: "Spring 2026 — Section A", programId: "prog-1", sessionId: "ses-1", section: "A", status: "Active", semesterCount: 8 },
+            },
+          },
+        },
+        responses: { 201: { description: "Batch created" } },
+      },
+    },
+    "/api/admin/academic/batches/{id}": {
+      put: {
+        tags: ["Academic Structure"],
+        summary: "Update a student batch",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { example: { name: "Spring 2026 Section A", status: "Active" } } },
+        },
+        responses: { 200: { description: "Updated" } },
+      },
+      delete: {
+        tags: ["Academic Structure"],
+        summary: "Delete a batch",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "Deleted" } },
+      },
+    },
+
+    // ── COURSES & SYLLABUS ──
+    "/api/admin/academic/courses": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "List all courses",
+        responses: { 200: { description: "Array of courses" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create a new course",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { code: "CSE-305", title: "Database Management Systems", programId: "prog-1", credits: 3 },
+            },
+          },
+        },
+        responses: { 201: { description: "Course created" } },
+      },
+    },
+    "/api/admin/academic/syllabus": {
+      get: {
+        tags: ["Academic Structure"],
+        summary: "Get syllabus curriculum topics (optionally filtered by courseId)",
+        parameters: [{ name: "courseId", in: "query", schema: { type: "string" } }],
+        responses: { 200: { description: "Array of syllabus topics" } },
+      },
+      post: {
+        tags: ["Academic Structure"],
+        summary: "Create a syllabus topic",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { courseId: "course-1", topic: "Relational Algebra & SQL", week: 2, subTopics: ["Joins", "Grouping"], adminStatus: "Published" },
+            },
+          },
+        },
+        responses: { 201: { description: "Topic created" } },
+      },
+    },
+
+    // ── USERS (ADMINS, TEACHERS, STUDENTS) ──
+    "/api/admin/users/teachers": {
+      get: {
+        tags: ["Users & Roles"],
+        summary: "List all faculty members / teachers",
+        responses: { 200: { description: "Array of teachers" } },
+      },
+      post: {
+        tags: ["Users & Roles"],
+        summary: "Create a new teacher account",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { name: "Prof. Dr. Shamim Al Mamun", email: "sam@juniv.edu", departmentId: "dept-1", designation: "Professor" },
+            },
+          },
+        },
+        responses: { 201: { description: "Teacher created" } },
+      },
+    },
+    "/api/admin/users/students": {
+      get: {
+        tags: ["Users & Roles"],
+        summary: "List students (optionally filtered by batchId)",
+        parameters: [{ name: "batchId", in: "query", schema: { type: "string" } }],
+        responses: { 200: { description: "Array of students" } },
+      },
+      post: {
+        tags: ["Users & Roles"],
+        summary: "Enroll a new student",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { rollNo: "SP26A001", name: "Abdur Rahman", email: "sp26a1@edu", batchId: "batch-1", phone: "+880 1711234567" },
+            },
+          },
+        },
+        responses: { 201: { description: "Student created" } },
+      },
+    },
+    "/api/admin/users/admins": {
+      get: {
+        tags: ["Users & Roles"],
+        summary: "List administrator users",
+        responses: { 200: { description: "Array of admin users" } },
+      },
+      post: {
+        tags: ["Users & Roles"],
+        summary: "Create an admin user",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { name: "Jane Staff", email: "j.staff@edu", role: "Staff" },
+            },
+          },
+        },
+        responses: { 201: { description: "Admin created" } },
+      },
+    },
+
+    // ── CLASSROOMS & SCHEDULES ──
+    "/api/admin/classrooms": {
+      get: {
+        tags: ["Classrooms & Schedules"],
+        summary: "List all assigned classrooms with joined details",
+        parameters: [
+          { name: "batchId", in: "query", schema: { type: "string" } },
+          { name: "teacherId", in: "query", schema: { type: "string" } },
+          { name: "status", in: "query", schema: { type: "string" } },
+        ],
+        responses: { 200: { description: "Array of classrooms" } },
+      },
+      post: {
+        tags: ["Classrooms & Schedules"],
+        summary: "Allocate a new classroom (Course + Batch + Teacher)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                courseId: "course-1",
+                batchId: "batch-1",
+                teacherId: "teacher-1",
+                room: "Room 402, Bldg C",
+                startDate: "2026-01-15",
+                endDate: "2026-05-20",
+                status: "ongoing",
+                totalClasses: 26,
+                colorIndex: 0,
+                schedules: [{ day: "Monday", startTime: "10:00 AM", endTime: "11:30 AM" }],
+              },
+            },
+          },
+        },
+        responses: { 201: { description: "Classroom allocated" } },
+      },
+    },
+    "/api/admin/classrooms/schedules": {
+      get: {
+        tags: ["Classrooms & Schedules"],
+        summary: "Get weekly timetable schedules",
+        responses: { 200: { description: "Array of class schedules" } },
+      },
+      post: {
+        tags: ["Classrooms & Schedules"],
+        summary: "Add a weekly timetable slot",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", day: "Wednesday", startTime: "10:00 AM", endTime: "11:30 AM", room: "Room 402" },
+            },
+          },
+        },
+        responses: { 201: { description: "Schedule added" } },
+      },
+    },
+
+    // ── ACTIVITIES, ATTENDANCE & GRADES ──
+    "/api/admin/activities/sessions": {
+      get: {
+        tags: ["Class Sessions & Attendance"],
+        summary: "List conducted class sessions with attendance counts",
+        parameters: [{ name: "classroomId", in: "query", schema: { type: "string" } }],
+        responses: { 200: { description: "Array of conducted sessions" } },
+      },
+      post: {
+        tags: ["Class Sessions & Attendance"],
+        summary: "Log a completed class lecture session",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                classroomId: "cls-1",
+                date: "2026-02-10T10:00:00Z",
+                topicCovered: "Topic 3: Normalization",
+                notes: "Solved practical examples",
+                duration: "1h 30m",
+              },
+            },
+          },
+        },
+        responses: { 201: { description: "Session recorded" } },
+      },
+    },
+    "/api/admin/activities/attendance": {
+      get: {
+        tags: ["Class Sessions & Attendance"],
+        summary: "Get attendance logs",
+        parameters: [
+          { name: "classroomId", in: "query", schema: { type: "string" } },
+          { name: "sessionId", in: "query", schema: { type: "string" } },
+        ],
+        responses: { 200: { description: "Array of attendance records" } },
+      },
+      post: {
+        tags: ["Class Sessions & Attendance"],
+        summary: "Save or batch update student attendance",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                records: [
+                  { sessionId: "cses-1", classroomId: "cls-1", studentId: "std-batch-1-1", status: "present" },
+                  { sessionId: "cses-1", classroomId: "cls-1", studentId: "std-batch-1-2", status: "absent" },
+                ],
+              },
+            },
+          },
+        },
+        responses: { 200: { description: "Attendance saved" } },
+      },
+    },
+    "/api/admin/activities/assignments": {
+      get: {
+        tags: ["Assignments & Tests"],
+        summary: "List assignments",
+        responses: { 200: { description: "Array of assignments" } },
+      },
+      post: {
+        tags: ["Assignments & Tests"],
+        summary: "Create a new assignment",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", title: "ER Diagram Design", dueDate: "2026-10-25", totalMarks: 20, status: "Active" },
+            },
+          },
+        },
+        responses: { 201: { description: "Assignment created" } },
+      },
+    },
+    "/api/admin/activities/tests": {
+      get: {
+        tags: ["Assignments & Tests"],
+        summary: "List tests and examinations",
+        responses: { 200: { description: "Array of tests" } },
+      },
+      post: {
+        tags: ["Assignments & Tests"],
+        summary: "Schedule a new test / examination",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", title: "Midterm Exam", testDate: "2026-10-25", duration: "1h 30m", totalMarks: 50, status: "Active" },
+            },
+          },
+        },
+        responses: { 201: { description: "Test scheduled" } },
+      },
+    },
+    "/api/admin/activities/results": {
+      get: {
+        tags: ["Assignments & Tests"],
+        summary: "Get student marks & grade records",
+        responses: { 200: { description: "Array of grade records" } },
+      },
+      post: {
+        tags: ["Assignments & Tests"],
+        summary: "Save student test or assignment grade",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: { classroomId: "cls-1", studentId: "std-batch-1-1", testId: "tst-1", obtainedMarks: 45, totalMarks: 50, remarks: "Excellent" },
+            },
+          },
+        },
+        responses: { 201: { description: "Grade recorded" } },
+      },
+    },
+
+    // ── ANNOUNCEMENTS ──
+    "/api/admin/announcements": {
+      get: {
+        tags: ["Announcements"],
+        summary: "List all announcements",
+        responses: { 200: { description: "Array of announcements" } },
+      },
+      post: {
+        tags: ["Announcements"],
+        summary: "Publish a new announcement",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              example: {
+                title: "Semester Schedule Notice",
+                content: "Final semester tests begin next month.",
+                date: "2026-08-10T09:00:00Z",
+                authorId: "admin-1",
+                authorName: "System Admin",
+                authorRole: "Admin",
+                audienceType: "Global",
+                status: "Published",
+                priority: "Normal",
+              },
+            },
+          },
+        },
+        responses: { 201: { description: "Announcement published" } },
+      },
+    },
+
+    // ── REPORTS & ANALYTICS ──
+    "/api/admin/reports/dashboard-stats": {
+      get: {
+        tags: ["Reports & Analytics"],
+        summary: "Get overall administrative dashboard summary counts",
+        responses: { 200: { description: "Counts of teachers, students, active classrooms, sessions" } },
+      },
+    },
+    "/api/admin/reports/attendance": {
+      get: {
+        tags: ["Reports & Analytics"],
+        summary: "Get attendance rate analytics and trends",
+        responses: { 200: { description: "Attendance statistics" } },
+      },
+    },
+  },
+};

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db.js";
+import { sendSuccess, sendError } from "../../utils/response.js";
 import crypto from "crypto";
 
 const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
@@ -56,9 +57,9 @@ export const getClassrooms = async (req: Request, res: Response) => {
     queryText += " GROUP BY c.id, cr.id, b.id, t.id, s.id, p.id ORDER BY c.created_at DESC";
 
     const { rows } = await pool.query(queryText, params);
-    res.json(rows);
+    sendSuccess(res, rows, "Classrooms retrieved successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -82,7 +83,7 @@ export const getClassroomById = async (req: Request, res: Response) => {
       WHERE c.id = $1
     `, [id]);
 
-    if (rows.length === 0) return res.status(404).json({ error: "Classroom not found" });
+    if (rows.length === 0) return sendError(res, "Classroom not found", 404);
 
     const classroom = rows[0];
     const { rows: schedules } = await pool.query("SELECT * FROM class_schedules WHERE classroom_id = $1", [id]);
@@ -90,26 +91,26 @@ export const getClassroomById = async (req: Request, res: Response) => {
     const { rows: students } = await pool.query("SELECT * FROM students WHERE batch_id = $1 ORDER BY roll_no ASC", [classroom.batch_id]);
     const { rows: sessions } = await pool.query("SELECT * FROM class_sessions WHERE classroom_id = $1 ORDER BY conducted_at DESC", [id]);
 
-    res.json({
+    sendSuccess(res, {
       ...classroom,
       schedules,
       syllabusTopics,
       students,
       sessions,
-    });
+    }, "Classroom detail retrieved successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
 export const createClassroom = async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { courseId, batchId, teacherId, room, startDate, endDate, status, totalClasses, colorIndex, schedules } = req.body;
+    const { id: reqId, courseId, batchId, teacherId, room, startDate, endDate, status, totalClasses, colorIndex, schedules } = req.body;
     if (!courseId || !batchId || !teacherId || !room) {
-      return res.status(400).json({ error: "Course, batch, teacher, and room are required" });
+      return sendError(res, "Course, batch, teacher, and room are required", 400);
     }
-    const id = genId();
+    const id = reqId || genId();
     await client.query("BEGIN");
     const { rows } = await client.query(`
       INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index)
@@ -138,10 +139,10 @@ export const createClassroom = async (req: Request, res: Response) => {
     }
 
     await client.query("COMMIT");
-    res.status(201).json(rows[0]);
+    sendSuccess(res, rows[0], "Classroom allocated successfully", 201);
   } catch (err: any) {
     await client.query("ROLLBACK");
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   } finally {
     client.release();
   }
@@ -165,10 +166,10 @@ export const updateClassroom = async (req: Request, res: Response) => {
           color_index = COALESCE($10, color_index)
       WHERE id = $11 RETURNING *
     `, [courseId, batchId, teacherId, room, startDate, endDate, status, classesCompleted, totalClasses, colorIndex, id]);
-    if (rows.length === 0) return res.status(404).json({ error: "Classroom not found" });
-    res.json(rows[0]);
+    if (rows.length === 0) return sendError(res, "Classroom not found", 404);
+    sendSuccess(res, rows[0], "Classroom updated successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -176,9 +177,9 @@ export const deleteClassroom = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await pool.query("DELETE FROM classrooms WHERE id = $1", [id]);
-    res.json({ message: "Classroom deleted successfully" });
+    sendSuccess(res, { id }, "Classroom deleted successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -193,9 +194,9 @@ export const getSchedules = async (req: Request, res: Response) => {
       params.push(classroomId);
     }
     const { rows } = await pool.query(queryText, params);
-    res.json(rows);
+    sendSuccess(res, rows, "Schedules retrieved successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -203,16 +204,16 @@ export const createSchedule = async (req: Request, res: Response) => {
   try {
     const { classroomId, day, startTime, endTime, room } = req.body;
     if (!classroomId || !day || !startTime || !endTime) {
-      return res.status(400).json({ error: "ClassroomId, day, start time, and end time are required" });
+      return sendError(res, "ClassroomId, day, start time, and end time are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(`
       INSERT INTO class_schedules (id, classroom_id, day, start_time, end_time, room)
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
     `, [id, classroomId, day, startTime, endTime, room || "Room 402"]);
-    res.status(201).json(rows[0]);
+    sendSuccess(res, rows[0], "Schedule created successfully", 201);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };
 
@@ -220,8 +221,8 @@ export const deleteSchedule = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await pool.query("DELETE FROM class_schedules WHERE id = $1", [id]);
-    res.json({ message: "Schedule removed" });
+    sendSuccess(res, { id }, "Schedule deleted successfully");
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err.message);
   }
 };

@@ -20,7 +20,7 @@ export async function initDatabase() {
       console.log("Seeding full administrative and academic demo data...");
       await seedInitialData();
     } else {
-      console.log("Existing data detected. Skipping automatic seeding.");
+      console.log("Existing data detected in scholaris_db.");
     }
   } catch (error) {
     console.error("Database initialization error:", error);
@@ -77,23 +77,27 @@ export async function seedInitialData() {
       ON CONFLICT (id) DO NOTHING;
     `);
 
-    // 5. Admins & Teachers
+    // 5. Admins & Teachers Users
     await client.query(`
-      INSERT INTO users (id, name, email, role) VALUES
-      ('admin-1', 'System Admin', 'admin@edu', 'admin'),
-      ('admin-2', 'Jane Staff', 'j.staff@edu', 'admin'),
-      ('teacher-1', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'teacher'),
-      ('teacher-2', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'teacher'),
-      ('teacher-3', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', 'teacher'),
-      ('teacher-4', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', 'teacher'),
-      ('teacher-5', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', 'teacher')
+      INSERT INTO users (id, name, email, password_hash, role) VALUES
+      ('admin-1', 'System Admin', 'admin@edu', 'admin123', 'admin'),
+      ('admin-2', 'Jane Staff', 'j.staff@edu', 'admin123', 'admin'),
+      ('teacher-1', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'teacher123', 'teacher'),
+      ('teacher-2', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'teacher123', 'teacher'),
+      ('teacher-3', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', 'teacher123', 'teacher'),
+      ('teacher-4', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', 'teacher123', 'teacher'),
+      ('teacher-5', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', 'teacher123', 'teacher')
       ON CONFLICT (id) DO NOTHING;
+    `);
 
+    await client.query(`
       INSERT INTO admins (id, name, email, role) VALUES
       ('admin-1', 'System Admin', 'admin@edu', 'Super Admin'),
       ('admin-2', 'Jane Staff', 'j.staff@edu', 'Staff')
       ON CONFLICT (id) DO NOTHING;
+    `);
 
+    await client.query(`
       INSERT INTO teachers (id, name, email, department_id, designation) VALUES
       ('teacher-1', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'dept-1', 'Professor & Coordinator PGDIT'),
       ('teacher-2', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'dept-1', 'Professor'),
@@ -129,15 +133,19 @@ export async function seedInitialData() {
         const email = `${b.prefix.toLowerCase()}${i}@edu`;
         const phone = `+880 171${String(1000000 + i * 137).slice(1)}`;
 
-        await client.query(`
-          INSERT INTO users (id, name, email, role)
-          VALUES ($1, $2, $3, 'student')
-          ON CONFLICT (id) DO NOTHING;
+        await client.query(
+          `INSERT INTO users (id, name, email, password_hash, role)
+           VALUES ($1, $2, $3, 'student123', 'student')
+           ON CONFLICT (id) DO NOTHING`,
+          [studentId, name, email]
+        );
 
-          INSERT INTO students (id, roll_no, name, email, batch_id, phone)
-          VALUES ($1, $4, $2, $3, $5, $6)
-          ON CONFLICT (id) DO NOTHING;
-        `, [studentId, name, email, rollNo, b.id, phone]);
+        await client.query(
+          `INSERT INTO students (id, roll_no, name, email, batch_id, phone)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (id) DO NOTHING`,
+          [studentId, rollNo, name, email, b.id, phone]
+        );
       }
     }
 
@@ -211,11 +219,12 @@ export async function seedInitialData() {
         const sessionId = `cses-${sessIdx++}`;
         const sessionDate = `2026-0${Math.floor((s + 1) / 2)}-${String(10 + s).padStart(2, "0")}T10:00:00Z`;
 
-        await client.query(`
-          INSERT INTO class_sessions (id, classroom_id, date, topic_covered, notes, duration)
-          VALUES ($1, $2, $3, $4, $5, '1h 30m')
-          ON CONFLICT (id) DO NOTHING;
-        `, [sessionId, ac.id, sessionDate, `Topic ${s}: Core Concept Lecture`, `Completed syllabus requirements and live examples for session ${s}`]);
+        await client.query(
+          `INSERT INTO class_sessions (id, classroom_id, date, topic_covered, notes, duration)
+           VALUES ($1, $2, $3, $4, $5, '1h 30m')
+           ON CONFLICT (id) DO NOTHING`,
+          [sessionId, ac.id, sessionDate, `Topic ${s}: Core Concept Lecture`, `Completed syllabus requirements and live examples for session ${s}`]
+        );
 
         for (let st = 1; st <= ac.count; st++) {
           const studentId = `std-${ac.batchId}-${st}`;
@@ -223,11 +232,12 @@ export async function seedInitialData() {
           const status = hash < 75 ? "present" : hash < 90 ? "late" : "absent";
           const attId = `att-${attIdx++}`;
 
-          await client.query(`
-            INSERT INTO attendance_records (id, session_id, classroom_id, student_id, status)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (session_id, student_id) DO NOTHING;
-          `, [attId, sessionId, ac.id, studentId, status]);
+          await client.query(
+            `INSERT INTO attendance_records (id, session_id, classroom_id, student_id, status)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (session_id, student_id) DO NOTHING`,
+            [attId, sessionId, ac.id, studentId, status]
+          );
         }
       }
     }
@@ -270,11 +280,12 @@ export async function seedInitialData() {
         const remarks = scorePercent >= 90 ? "Excellent" : scorePercent >= 80 ? "Good" : scorePercent >= 70 ? "Average" : "Needs Improvement";
         const gradeId = `grd-tst-${grdIdx++}`;
 
-        await client.query(`
-          INSERT INTO grade_records (id, classroom_id, student_id, test_id, obtained_marks, total_marks, remarks)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-          ON CONFLICT (id) DO NOTHING;
-        `, [gradeId, tg.clsId, studentId, tg.testId, obtainedMarks, tg.totalMarks, remarks]);
+        await client.query(
+          `INSERT INTO grade_records (id, classroom_id, student_id, test_id, obtained_marks, total_marks, remarks)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (id) DO NOTHING`,
+          [gradeId, tg.clsId, studentId, tg.testId, obtainedMarks, tg.totalMarks, remarks]
+        );
       }
     }
 

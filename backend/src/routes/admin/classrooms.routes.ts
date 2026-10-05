@@ -6,16 +6,17 @@ import {
 
 const router = Router();
 
-// Classrooms
-router.get("/classrooms", getClassrooms);
-router.get("/classrooms/:id", getClassroomById);
-router.post("/classrooms", createClassroom);
-router.put("/classrooms/:id", updateClassroom);
-router.delete("/classrooms/:id", deleteClassroom);
-
-// Schedules
+// Class Schedules
+router.get("/schedules/all", getSchedules);
 router.get("/schedules", getSchedules);
 router.post("/schedules", createSchedule);
 router.delete("/schedules/:id", deleteSchedule);
+
+// Classrooms CRUD
+router.get("/", getClassrooms);
+router.get("/:id", getClassroomById);
+router.post("/", createClassroom);
+router.put("/:id", updateClassroom);
+router.delete("/:id", deleteClassroom);
 
 export default router;
