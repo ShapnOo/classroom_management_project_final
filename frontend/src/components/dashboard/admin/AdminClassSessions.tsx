@@ -4,12 +4,27 @@ import {
   History, Search, Filter, Calendar, BookOpen, User, 
   CheckCircle2, Clock, MapPin, ArrowRight, Trash2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 
 export default function AdminClassSessions() {
-  const { classSessions, getAllClassroomViews, deleteClassSession } = useStore();
+  const { 
+    classSessions, getAllClassroomViews, deleteClassSession,
+    fetchClassSessions, fetchClassrooms, fetchCourses, fetchTeachers, fetchBatches,
+    fetchSessions, fetchPrograms
+  } = useStore();
+
+  useEffect(() => {
+    fetchClassSessions();
+    fetchClassrooms();
+    fetchCourses();
+    fetchTeachers();
+    fetchBatches();
+    fetchSessions();
+    fetchPrograms();
+  }, []);
+
   const allViews = getAllClassroomViews();
 
   const [search, setSearch] = useState("");

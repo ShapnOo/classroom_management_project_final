@@ -78,7 +78,7 @@ export const getAdminDashboardSummary = async (req: Request, res: Response) => {
           cs.topic_covered, 
           cs.duration, 
           cs.date, 
-          cs.created_at,
+          COALESCE(cs.conducted_at, cs.date) as timestamp,
           cr.title as course_title, 
           cr.code as course_code, 
           t.name as teacher_name
@@ -86,7 +86,7 @@ export const getAdminDashboardSummary = async (req: Request, res: Response) => {
         JOIN classrooms c ON cs.classroom_id = c.id
         JOIN courses cr ON c.course_id = cr.id
         JOIN teachers t ON c.teacher_id = t.id
-        ORDER BY cs.created_at DESC 
+        ORDER BY COALESCE(cs.conducted_at, cs.date) DESC 
         LIMIT 3
       `)
     ]);
@@ -97,9 +97,9 @@ export const getAdminDashboardSummary = async (req: Request, res: Response) => {
         user: a.author_name || "Administration",
         action: "published an announcement",
         target: `"${a.title}"`,
-        time: a.date || "Recent Notice",
+        time: a.date ? new Date(a.date).toLocaleDateString() : "Recent Notice",
         color: "bg-blue-50 text-blue-600",
-        timestamp: a.created_at
+        timestamp: a.created_at || new Date().toISOString()
       })),
       ...recentSessions.map(s => ({
         id: `cs-${s.id}`,
@@ -108,7 +108,7 @@ export const getAdminDashboardSummary = async (req: Request, res: Response) => {
         target: `${s.course_code} — ${s.topic_covered}`,
         time: s.duration || "1h 30m session",
         color: "bg-emerald-50 text-emerald-600",
-        timestamp: s.created_at
+        timestamp: s.timestamp || new Date().toISOString()
       }))
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5);
 

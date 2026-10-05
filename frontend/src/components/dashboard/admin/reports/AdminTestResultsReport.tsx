@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Search, Award, FileText, CheckCircle, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function AdminTestResultsReport() {
-  const { students, batches, programs, tests, gradeRecords } = useStore();
+  const { 
+    students, batches, programs, tests, gradeRecords,
+    fetchStudents, fetchBatches, fetchPrograms, fetchTests, fetchGradeRecords
+  } = useStore();
   
+  useEffect(() => {
+    fetchStudents();
+    fetchBatches();
+    fetchPrograms();
+    fetchTests();
+    fetchGradeRecords();
+  }, []);
+
   const [programFilter, setProgramFilter] = useState("all");
   const [batchFilter, setBatchFilter] = useState("all");
   const [search, setSearch] = useState("");

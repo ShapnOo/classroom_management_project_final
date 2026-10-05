@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { ChevronLeft, ChevronRight, Clock, BookOpen, AlertCircle, Calendar as CalendarIcon, X } from "lucide-react";
 import { CLASSROOM_COLORS } from "@/lib/types";
@@ -29,8 +29,20 @@ const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "F
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function CalendarView({ role, teacherId, studentBatchId }: CalendarViewProps) {
-  const { classrooms, courses, batches, schedules, assignments, tests } = useStore();
+  const { 
+    classrooms, courses, batches, schedules, assignments, tests,
+    fetchClassrooms, fetchCourses, fetchBatches, fetchSchedules, fetchAssignments, fetchTests
+  } = useStore();
   
+  useEffect(() => {
+    fetchClassrooms();
+    fetchCourses();
+    fetchBatches();
+    fetchSchedules();
+    fetchAssignments();
+    fetchTests();
+  }, []);
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 

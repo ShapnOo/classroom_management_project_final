@@ -299,11 +299,23 @@ export const saveGradeRecord = async (req: Request, res: Response) => {
     if (!classroomId || !studentId || obtainedMarks === undefined || totalMarks === undefined) {
       return sendError(res, "Classroom, student, obtained marks, and total marks are required", 400);
     }
-    const id = genId();
+    const { rows: updated } = await pool.query(`
+      UPDATE grade_records
+      SET obtained_marks = $1, total_marks = $2, remarks = $3
+      WHERE classroom_id = $4 AND student_id = $5
+        AND assignment_id IS NOT DISTINCT FROM $6
+        AND test_id IS NOT DISTINCT FROM $7
+      RETURNING *
+    `, [obtainedMarks, totalMarks, remarks || "", classroomId, studentId, assignmentId || null, testId || null]);
+
+    if (updated.length > 0) {
+      return sendSuccess(res, updated[0], "Grade updated successfully");
+    }
+
     const { rows } = await pool.query(`
       INSERT INTO grade_records (id, classroom_id, student_id, assignment_id, test_id, obtained_marks, total_marks, remarks)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
-    `, [id, classroomId, studentId, assignmentId || null, testId || null, obtainedMarks, totalMarks, remarks || ""]);
+    `, [genId(), classroomId, studentId, assignmentId || null, testId || null, obtainedMarks, totalMarks, remarks || ""]);
     sendSuccess(res, rows[0], "Grade recorded successfully", 201);
   } catch (err: any) {
     sendError(res, err.message);

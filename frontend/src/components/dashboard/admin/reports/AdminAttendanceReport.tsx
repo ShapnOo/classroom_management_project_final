@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Search, TrendingUp, Users, CheckCircle, XCircle, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
@@ -12,8 +12,20 @@ const PIE_COLORS = {
 };
 
 export default function AdminAttendanceReport() {
-  const { students, batches, programs, attendanceRecords, classSessions, classrooms } = useStore();
+  const { 
+    students, batches, programs, attendanceRecords, classSessions, classrooms,
+    fetchStudents, fetchBatches, fetchPrograms, fetchAttendanceRecords, fetchClassSessions, fetchClassrooms
+  } = useStore();
   
+  useEffect(() => {
+    fetchStudents();
+    fetchBatches();
+    fetchPrograms();
+    fetchAttendanceRecords();
+    fetchClassSessions();
+    fetchClassrooms();
+  }, []);
+
   const [programFilter, setProgramFilter] = useState("all");
   const [batchFilter, setBatchFilter] = useState("all");
   const [search, setSearch] = useState("");
