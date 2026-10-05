@@ -6,6 +6,7 @@ import { adminMenu, teacherMenu, studentMenu, MenuItem } from "@/lib/menus";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
 
 export default function Sidebar() {
   const { settings } = useStore();
@@ -200,13 +201,17 @@ export default function Sidebar() {
 
       {/* ── Footer Area with Logout ── */}
       <div className="p-3 border-t border-slate-200 shrink-0 bg-white">
-        <Link
-          href="/auth/login"
-          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+        <button
+          type="button"
+          onClick={async () => {
+            await api.logout();
+            window.location.href = "/auth/login";
+          }}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>Log Out</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

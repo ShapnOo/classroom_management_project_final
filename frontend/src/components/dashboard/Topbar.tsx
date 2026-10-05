@@ -1,11 +1,19 @@
 "use client";
 
-import { Search, Bell, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Bell, Menu, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { adminMenu, teacherMenu, studentMenu } from "@/lib/menus";
+import { authStorage } from "@/lib/api";
 
 export default function Topbar() {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const user = authStorage.getUser();
+    if (user) setCurrentUser(user);
+  }, []);
   
   let title = "Dashboard";
   
@@ -38,6 +46,10 @@ export default function Topbar() {
     }
   }
 
+  const initials = currentUser?.name
+    ? currentUser.name.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "AD";
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
       <div className="flex items-center gap-4">
@@ -64,8 +76,16 @@ export default function Topbar() {
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
         </button>
         
-        <div className="h-8 w-8 rounded-full bg-brand-dark text-white flex items-center justify-center text-[11px] font-medium shadow-sm cursor-pointer ml-2">
-          AD
+        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+          <div className="h-8 w-8 rounded-full bg-brand-dark text-white flex items-center justify-center text-[11px] font-medium shadow-sm">
+            {initials}
+          </div>
+          {currentUser && (
+            <div className="hidden lg:flex flex-col text-left">
+              <span className="text-[12px] font-medium text-slate-800 leading-tight">{currentUser.name}</span>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{currentUser.role}</span>
+            </div>
+          )}
         </div>
       </div>
     </header>

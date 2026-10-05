@@ -1,60 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { GraduationCap, Mail, Lock, AlertCircle } from "lucide-react";
+import { GraduationCap, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
-const mockCredentials = {
-  Admin: { email: "admin@classroom.edu", password: "admin123", path: "/dashboard/admin" },
-  Teacher: { email: "dr.rahman@classroom.edu", password: "teacher123", path: "/dashboard/teacher" },
-  Student: { email: "tahmid@classroom.edu", password: "student123", path: "/dashboard/student" }
+const demoCredentials = {
+  Admin: { email: "admin@edu", password: "admin123", path: "/dashboard/admin" },
+  Teacher: { email: "sam@juniv.edu", password: "teacher123", path: "/dashboard/teacher" },
+  Student: { email: "sp26a1@edu", password: "student123", path: "/dashboard/student" },
 };
 
 export default function LoginForm() {
   const [role, setRole] = useState<"Admin" | "Teacher" | "Student">("Admin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(demoCredentials.Admin.email);
+  const [password, setPassword] = useState(demoCredentials.Admin.password);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
-    // Check all roles to see if credentials match
-    const matchedRole = Object.entries(mockCredentials).find(
-      ([_, creds]) => creds.email === email && creds.password === password
-    );
+    setLoading(true);
 
-    if (matchedRole) {
-      router.push(matchedRole[1].path);
-    } else {
-      setError("Invalid email or password.");
+    try {
+      const result = await api.login({ email: email.trim(), password });
+      
+      const userRole = result.user?.role?.toLowerCase() || role.toLowerCase();
+      if (userRole === "admin") {
+        router.push("/dashboard/admin");
+      } else if (userRole === "teacher") {
+        router.push("/dashboard/teacher");
+      } else {
+        router.push("/dashboard/student");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to authenticate. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const autofill = (selectedRole: "Admin" | "Teacher" | "Student") => {
     setRole(selectedRole);
-    setEmail(mockCredentials[selectedRole].email);
-    setPassword(mockCredentials[selectedRole].password);
+    setEmail(demoCredentials[selectedRole].email);
+    setPassword(demoCredentials[selectedRole].password);
     setError("");
   };
 
   return (
     <div className="flex flex-col justify-center items-center w-full max-w-md mx-auto p-8">
       <div className="flex flex-col items-center mb-8">
-        <div className="bg-brand-dark p-3 rounded-xl mb-4">
+        <div className="bg-brand-dark p-3 rounded-xl mb-4 shadow-sm">
           <GraduationCap className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-sm font-medium text-foreground">Welcome back</h1>
+        <h1 className="text-base font-semibold text-foreground">Scholaris Portal</h1>
         <p className="text-[13px] text-slate-500 mt-1">
           Sign in to your Classroom Management workspace
         </p>
       </div>
 
       <div className="w-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        {/* Role Tabs */}
+        {/* Role Quick Selector Tabs */}
         <div className="flex p-1 bg-slate-100 rounded-lg mb-6">
           {(["Admin", "Teacher", "Student"] as const).map((r) => (
             <button
@@ -72,20 +81,20 @@ export default function LoginForm() {
           ))}
         </div>
 
-        <p className="text-[11px] text-center text-slate-400 mb-4 uppercase tracking-wider">
-          {role === "Admin" ? "Full Institution Control" : role === "Teacher" ? "Classroom Management" : "Student Portal"}
+        <p className="text-[11px] text-center text-slate-400 mb-4 uppercase tracking-wider font-semibold">
+          {role === "Admin" ? "Full Institutional Administration" : role === "Teacher" ? "Faculty & Classroom Management" : "Student Academic Portal"}
         </p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-[13px]">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <p>{error}</p>
+            <p className="leading-snug">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-slate-700">Email</label>
+            <label className="text-[11px] font-medium text-slate-700">Email Address</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-4 w-4 text-slate-400" />
@@ -94,7 +103,7 @@ export default function LoginForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@campus.edu"
+                placeholder="you@edu"
                 className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
               />
@@ -104,9 +113,6 @@ export default function LoginForm() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-medium text-slate-700">Password</label>
-              <a href="#" className="text-[11px] text-slate-400 hover:text-primary-600 transition-colors">
-                Forgot?
-              </a>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -125,15 +131,23 @@ export default function LoginForm() {
 
           <button
             type="submit"
-            className="w-full bg-brand-dark hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-[13px] transition-all flex items-center justify-center mt-6"
+            disabled={loading}
+            className="w-full bg-brand-dark hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-[13px] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-70 cursor-pointer"
           >
-            Sign in as {role}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Authenticating...
+              </>
+            ) : (
+              `Sign in as ${role}`
+            )}
           </button>
         </form>
       </div>
       
       <p className="text-[11px] text-slate-400 mt-8 text-center px-4">
-        Frontend demo mode. Click on the role tabs above to auto-fill the mock credentials.
+        Protected with JWT Bearer Token Authentication & RBAC.
       </p>
     </div>
   );

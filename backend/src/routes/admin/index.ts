@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticateToken, authorizeRoles } from "../../middleware/auth.js";
 import academicRoutes from "./academic.routes.js";
 import usersRoutes from "./users.routes.js";
 import classroomsRoutes from "./classrooms.routes.js";
@@ -8,6 +9,9 @@ import settingsRoutes from "./settings.routes.js";
 import reportsRoutes from "./reports.routes.js";
 
 const router = Router();
+
+// Apply JWT Authentication and Admin Role Requirement to all Admin API routes
+router.use(authenticateToken, authorizeRoles("admin"));
 
 // Mount all admin sub-modules
 router.use("/academic", academicRoutes);
