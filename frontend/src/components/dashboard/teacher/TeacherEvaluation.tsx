@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Link from "next/link";
 import {
@@ -62,7 +63,7 @@ type ClassroomOption = {
   assignments: any[];
 };
 
-export default function TeacherEvaluation() {
+export default function TeacherEvaluation({ classroomId }: { classroomId?: string }) {
   const {
     getMyClassroomViews, gradeRecords, attendanceRecords, tests, assignments,
     fetchClassrooms, fetchCourses, fetchBatches, fetchStudents,
@@ -94,13 +95,30 @@ export default function TeacherEvaluation() {
     assignments: v.assignments,
   }));
 
-  return <TeacherEvaluationBody classrooms={classroomsData} />;
+  return <TeacherEvaluationBody classrooms={classroomsData} initialClassroomId={classroomId} />;
 }
 
-function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }) {
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms: ClassroomOption[]; initialClassroomId?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as "grades" | "policy" | "overview" | null;
+
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(initialClassroomId || null);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"grades" | "policy" | "overview">("grades");
+  const [activeTab, setActiveTab] = useState<"grades" | "policy" | "overview">(tabParam || "grades");
+
+  useEffect(() => {
+    if (initialClassroomId) {
+      setSelectedClassId(initialClassroomId);
+    }
+  }, [initialClassroomId]);
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Dynamic Course Policy State
   const [policy, setPolicy] = useState<CourseEvaluationPolicy>(DEFAULT_POLICY);
@@ -318,7 +336,10 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
           {classrooms.map(cls => (
             <button
               key={cls.id}
-              onClick={() => setSelectedClassId(cls.id)}
+              onClick={() => {
+                setSelectedClassId(cls.id);
+                router.push(`/dashboard/teacher/evaluation/${cls.id}`);
+              }}
               className="bg-white border border-slate-200/80 rounded-xl p-4 text-left hover:border-slate-400 hover:shadow-xs transition-all group space-y-2.5"
             >
               <div className="flex items-center justify-between">
@@ -350,6 +371,11 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
     );
   }
 
+  const handleTabChange = (tab: "grades" | "policy" | "overview") => {
+    setActiveTab(tab);
+    router.replace(`${pathname}?tab=${tab}`);
+  };
+
   return (
     <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto text-xs">
       
@@ -365,7 +391,10 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setSelectedClassId(null)}
+            onClick={() => {
+              setSelectedClassId(null);
+              router.push("/dashboard/teacher/evaluation");
+            }}
             className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -444,7 +473,7 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
       {/* Navigation Tabs */}
       <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1">
         <button
-          onClick={() => setActiveTab("grades")}
+          onClick={() => handleTabChange("grades")}
           className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "grades"
               ? "bg-slate-900 text-white shadow-2xs"
@@ -454,7 +483,7 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
           Final Grade Sheet & Marks
         </button>
         <button
-          onClick={() => setActiveTab("policy")}
+          onClick={() => handleTabChange("policy")}
           className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "policy"
               ? "bg-slate-900 text-white shadow-2xs"
@@ -464,7 +493,7 @@ function TeacherEvaluationBody({ classrooms }: { classrooms: ClassroomOption[] }
           Policy Configuration
         </button>
         <button
-          onClick={() => setActiveTab("overview")}
+          onClick={() => handleTabChange("overview")}
           className={`py-1.5 px-3.5 text-[11px] font-bold rounded-lg transition-all ${
             activeTab === "overview"
               ? "bg-slate-900 text-white shadow-2xs"
