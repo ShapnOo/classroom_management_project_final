@@ -25,6 +25,7 @@ export async function initDatabase() {
       await seedInitialData();
     } else {
       console.log("Existing data detected in scholaris_db.");
+      await seedStudentTranscripts();
     }
   } catch (error) {
     console.error("Database initialization error:", error);
@@ -153,15 +154,30 @@ export async function seedInitialData() {
       }
     }
 
-    // 7. Courses
+    // 7. 20 Academic Courses across 8 Semesters
     await client.query(`
       INSERT INTO courses (id, code, title, program_id, credits) VALUES
-      ('course-1', 'CSE-305', 'Database Management Systems', 'prog-1', 3),
-      ('course-2', 'CSE-412', 'Software Engineering', 'prog-1', 3),
-      ('course-3', 'CSE-101', 'Intro to Computer Science', 'prog-1', 3),
-      ('course-4', 'CSE-425', 'Artificial Intelligence', 'prog-1', 3),
-      ('course-5', 'CSE-201', 'Data Structures', 'prog-1', 3)
-      ON CONFLICT (id) DO NOTHING;
+      ('course-1', 'CSE-101', 'Structured Programming Language', 'prog-1', 3),
+      ('course-2', 'CSE-102', 'Structured Programming Lab', 'prog-1', 1.5),
+      ('course-3', 'CSE-103', 'Discrete Mathematics', 'prog-1', 3),
+      ('course-4', 'CSE-104', 'Electrical Circuits & Electronics', 'prog-1', 3),
+      ('course-5', 'CSE-201', 'Data Structures & Algorithms', 'prog-1', 3),
+      ('course-6', 'CSE-202', 'Data Structures Lab', 'prog-1', 1.5),
+      ('course-7', 'CSE-203', 'Object Oriented Programming', 'prog-1', 3),
+      ('course-8', 'CSE-204', 'Digital Logic Design', 'prog-1', 3),
+      ('course-9', 'CSE-301', 'Algorithm Analysis & Design', 'prog-1', 3),
+      ('course-10', 'CSE-302', 'Computer Architecture', 'prog-1', 3),
+      ('course-11', 'CSE-303', 'Operating Systems', 'prog-1', 3),
+      ('course-12', 'CSE-304', 'Operating Systems Lab', 'prog-1', 1.5),
+      ('course-13', 'CSE-305', 'Database Management Systems', 'prog-1', 3),
+      ('course-14', 'CSE-306', 'Database Management Systems Lab', 'prog-1', 1.5),
+      ('course-15', 'CSE-401', 'Computer Networks', 'prog-1', 3),
+      ('course-16', 'CSE-402', 'Computer Networks Lab', 'prog-1', 1.5),
+      ('course-17', 'CSE-412', 'Software Engineering & System Design', 'prog-1', 3),
+      ('course-18', 'CSE-425', 'Artificial Intelligence & Machine Learning', 'prog-1', 3),
+      ('course-19', 'CSE-426', 'Artificial Intelligence Lab', 'prog-1', 1.5),
+      ('course-20', 'CSE-499', 'B.Sc. Thesis / Capstone Project', 'prog-1', 6)
+      ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, credits = EXCLUDED.credits;
     `);
 
     // 8. Syllabus Topics
@@ -312,6 +328,9 @@ export async function seedInitialData() {
       ON CONFLICT (id) DO NOTHING;
     `);
 
+    // 17. Seed Student Transcripts
+    await seedStudentTranscripts(client);
+
     await client.query("COMMIT");
     console.log("Full realistic demo data populated successfully in PostgreSQL!");
   } catch (err) {
@@ -320,6 +339,81 @@ export async function seedInitialData() {
     throw err;
   } finally {
     client.release();
+  }
+}
+
+export async function seedStudentTranscripts(clientOrPool: any = pool) {
+  const allCoursesList = [
+    { id: "course-1", semester: "Semester 1" },
+    { id: "course-2", semester: "Semester 1" },
+    { id: "course-3", semester: "Semester 1" },
+    { id: "course-4", semester: "Semester 1" },
+    { id: "course-5", semester: "Semester 2" },
+    { id: "course-6", semester: "Semester 2" },
+    { id: "course-7", semester: "Semester 2" },
+    { id: "course-8", semester: "Semester 2" },
+    { id: "course-9", semester: "Semester 3" },
+    { id: "course-10", semester: "Semester 3" },
+    { id: "course-11", semester: "Semester 3" },
+    { id: "course-12", semester: "Semester 3" },
+    { id: "course-13", semester: "Semester 4" },
+    { id: "course-14", semester: "Semester 4" },
+    { id: "course-15", semester: "Semester 4" },
+    { id: "course-16", semester: "Semester 4" },
+    { id: "course-17", semester: "Semester 5" },
+    { id: "course-18", semester: "Semester 5" },
+    { id: "course-19", semester: "Semester 5" },
+    { id: "course-20", semester: "Semester 5" },
+  ];
+
+  function calcGradeInfo(score: number) {
+    if (score >= 80) return { grade: "A+", gpa: 4.00 };
+    if (score >= 75) return { grade: "A", gpa: 3.75 };
+    if (score >= 70) return { grade: "A-", gpa: 3.50 };
+    if (score >= 65) return { grade: "B+", gpa: 3.25 };
+    if (score >= 60) return { grade: "B", gpa: 3.00 };
+    if (score >= 55) return { grade: "B-", gpa: 2.75 };
+    if (score >= 50) return { grade: "C+", gpa: 2.50 };
+    if (score >= 45) return { grade: "C", gpa: 2.25 };
+    if (score >= 40) return { grade: "D", gpa: 2.00 };
+    return { grade: "F", gpa: 0.00 };
+  }
+
+  const { rows: students } = await clientOrPool.query("SELECT id FROM students");
+  for (const student of students) {
+    const studentId = student.id;
+    const studentSeed = studentId.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+
+    for (let cIdx = 0; cIdx < allCoursesList.length; cIdx++) {
+      const courseInfo = allCoursesList[cIdx];
+      const trId = `tr-${studentId}-${courseInfo.id}`;
+      const baseSeed = (studentSeed * 13 + (cIdx + 1) * 29) % 100;
+
+      const ctMark = Math.min(15, Math.max(10, Math.round(11.5 + (baseSeed % 4.5))));
+      const assnMark = Math.min(10, Math.max(7, Math.round(7.5 + ((baseSeed * 3) % 3))));
+      const projMark = Math.min(15, Math.max(11, Math.round(11.5 + ((baseSeed * 5) % 4))));
+      const attMark = Math.min(10, Math.max(8, Math.round(8.5 + ((baseSeed * 7) % 2))));
+      const midtermMark = Math.min(20, Math.max(14, Math.round(15 + ((baseSeed * 11) % 5.5))));
+      const finalExamMark = Math.min(30, Math.max(20, Math.round(22 + ((baseSeed * 17) % 8.5))));
+
+      const totalScore = Math.min(100, ctMark + assnMark + projMark + attMark + midtermMark + finalExamMark);
+      const { grade, gpa } = calcGradeInfo(totalScore);
+
+      await clientOrPool.query(`
+        INSERT INTO student_transcripts (id, student_id, course_id, semester, ct_mark, assn_mark, proj_mark, att_mark, midterm_mark, final_exam_mark, total_score, letter_grade, grade_point)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (id) DO UPDATE SET
+          ct_mark = EXCLUDED.ct_mark,
+          assn_mark = EXCLUDED.assn_mark,
+          proj_mark = EXCLUDED.proj_mark,
+          att_mark = EXCLUDED.att_mark,
+          midterm_mark = EXCLUDED.midterm_mark,
+          final_exam_mark = EXCLUDED.final_exam_mark,
+          total_score = EXCLUDED.total_score,
+          letter_grade = EXCLUDED.letter_grade,
+          grade_point = EXCLUDED.grade_point
+      `, [trId, studentId, courseInfo.id, courseInfo.semester, ctMark, assnMark, projMark, attMark, midtermMark, finalExamMark, totalScore, grade, gpa]);
+    }
   }
 }
 
@@ -332,3 +426,4 @@ if (process.argv[1] && process.argv[1].endsWith("init.ts")) {
     process.exit(1);
   });
 }
+

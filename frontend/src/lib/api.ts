@@ -502,6 +502,9 @@ export const api = {
   // ── Consolidated Dashboard API ──
   getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
   getTeacherDashboard: () => request<TeacherDashboardData>("/teacher/dashboard"),
+
+  // ── Reports API ──
+  getStudentTranscript: (studentId: string) => request<any>(`/admin/reports/transcripts/${studentId}`),
 };
 
 

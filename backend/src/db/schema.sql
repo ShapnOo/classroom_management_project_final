@@ -211,16 +211,22 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. Course Materials & Documents
-CREATE TABLE IF NOT EXISTS course_materials (
+-- 10. Student Academic Transcripts & Evaluations
+CREATE TABLE IF NOT EXISTS student_transcripts (
   id VARCHAR(64) PRIMARY KEY,
-  classroom_id VARCHAR(64) REFERENCES classrooms(id) ON DELETE CASCADE,
+  student_id VARCHAR(64) REFERENCES students(id) ON DELETE CASCADE,
   course_id VARCHAR(64) REFERENCES courses(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  file_name VARCHAR(255) NOT NULL,
-  file_type VARCHAR(100) DEFAULT 'application/pdf',
-  file_data TEXT, -- Base64 file payload string
-  file_size VARCHAR(50),
-  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  semester VARCHAR(50) NOT NULL,
+  ct_mark NUMERIC(5,2) DEFAULT 0,
+  assn_mark NUMERIC(5,2) DEFAULT 0,
+  proj_mark NUMERIC(5,2) DEFAULT 0,
+  att_mark NUMERIC(5,2) DEFAULT 0,
+  midterm_mark NUMERIC(5,2) DEFAULT 0,
+  final_exam_mark NUMERIC(5,2) DEFAULT 0,
+  total_score NUMERIC(5,2) DEFAULT 0,
+  letter_grade VARCHAR(10) DEFAULT 'F',
+  grade_point NUMERIC(3,2) DEFAULT 0.00,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT unique_student_course UNIQUE(student_id, course_id)
 );
+
