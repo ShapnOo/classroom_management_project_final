@@ -6,7 +6,8 @@
 import type {
   Session, Department, Program, Batch, Student, Teacher,
   Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
-  ClassSession, AttendanceRecord, GradeRecord, Announcement, AdminUser, AppSettings
+  ClassSession, AttendanceRecord, GradeRecord, Announcement, AdminUser, AppSettings,
+  ClassReschedule
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";

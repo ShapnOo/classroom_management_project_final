@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useApp } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { CURRENT_TEACHER_ID } from "@/lib/seedData";
 import { ClassReschedule } from "@/lib/types";
 import {
@@ -12,41 +12,49 @@ import {
   Check,
   X,
   Plus,
-  AlertCircle,
   CheckCircle2,
   XCircle,
   HelpCircle,
-  User,
   MapPin,
   RefreshCw
 } from "lucide-react";
 import TeacherRescheduleModal from "./TeacherRescheduleModal";
 
 export default function TeacherReschedulesList() {
-  const { reschedules, fetchReschedules, respondRescheduleRequest } = useApp();
+  const { reschedules, fetchReschedules, respondRescheduleRequest } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "my_requests" | "incoming_swaps">("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  // Helper getters for dual camelCase & snake_case support
+  const getTeacherId = (r: ClassReschedule) => r.teacher_id || r.requestedByTeacherId;
+  const getTargetTeacherId = (r: ClassReschedule) => r.target_teacher_id || r.targetTeacherId;
+  const getStatus = (r: ClassReschedule) => (r.status || "pending").toLowerCase();
+  const getType = (r: ClassReschedule) => (r.type || (r.requestType === "Swap" ? "teacher_swap" : "reschedule"));
+
   // Filter reschedules
-  const filteredReschedules = reschedules.filter((r) => {
+  const filteredReschedules = reschedules.filter((r: ClassReschedule) => {
+    const teacherId = getTeacherId(r);
+    const targetTeacherId = getTargetTeacherId(r);
+
     if (activeTab === "my_requests") {
-      return r.teacher_id === CURRENT_TEACHER_ID;
+      return teacherId === CURRENT_TEACHER_ID;
     }
     if (activeTab === "incoming_swaps") {
-      return r.target_teacher_id === CURRENT_TEACHER_ID;
+      return targetTeacherId === CURRENT_TEACHER_ID;
     }
     return true;
   });
 
   const incomingSwapsCount = reschedules.filter(
-    (r) => r.target_teacher_id === CURRENT_TEACHER_ID && r.status === "pending"
+    (r: ClassReschedule) => getTargetTeacherId(r) === CURRENT_TEACHER_ID && getStatus(r) === "pending"
   ).length;
 
   const handleRespond = async (id: string, status: "approved" | "rejected" | "cancelled") => {
     setProcessingId(id);
     try {
-      await respondRescheduleRequest(id, status);
+      const statusFormatted = status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Cancelled";
+      await respondRescheduleRequest(id, statusFormatted);
     } catch (err) {
       console.error("Failed to update reschedule status:", err);
     } finally {
@@ -54,7 +62,8 @@ export default function TeacherReschedulesList() {
     }
   };
 
-  const getStatusBadge = (status: ClassReschedule["status"]) => {
+  const getStatusBadge = (statusStr: string) => {
+    const status = statusStr.toLowerCase();
     switch (status) {
       case "approved":
         return (
@@ -103,7 +112,7 @@ export default function TeacherReschedulesList() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => fetchReschedules()}
+            onClick={() => fetchReschedules(true)}
             className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
             title="Refresh Reschedules"
           >
@@ -139,7 +148,7 @@ export default function TeacherReschedulesList() {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          My Requests ({reschedules.filter((r) => r.teacher_id === CURRENT_TEACHER_ID).length})
+          My Requests ({reschedules.filter((r: ClassReschedule) => getTeacherId(r) === CURRENT_TEACHER_ID).length})
         </button>
         <button
           onClick={() => setActiveTab("incoming_swaps")}
@@ -169,10 +178,31 @@ export default function TeacherReschedulesList() {
             </p>
           </div>
         ) : (
-          filteredReschedules.map((req) => {
-            const isMyRequest = req.teacher_id === CURRENT_TEACHER_ID;
-            const isTargetTeacher = req.target_teacher_id === CURRENT_TEACHER_ID;
-            const isPending = req.status === "pending";
+          filteredReschedules.map((req: ClassReschedule) => {
+            const reqTeacherId = getTeacherId(req);
+            const reqTargetTeacherId = getTargetTeacherId(req);
+            const reqStatus = getStatus(req);
+            const reqType = getType(req);
+
+            const isMyRequest = reqTeacherId === CURRENT_TEACHER_ID;
+            const isTargetTeacher = reqTargetTeacherId === CURRENT_TEACHER_ID;
+            const isPending = reqStatus === "pending";
+
+            const courseCode = req.course_code || req.courseCode || "CSE-401";
+            const courseTitle = req.course_title || req.courseTitle || "Course";
+            const batchName = req.batch_name || req.batchName || "Batch";
+            const teacherName = req.teacher_name || req.requestedByTeacherName || "Faculty";
+            const origDate = req.original_date || req.originalDate || "";
+            const origDay = req.original_day || "";
+            const origStart = req.original_start_time || req.originalTime?.split(" - ")[0] || "";
+            const origEnd = req.original_end_time || req.originalTime?.split(" - ")[1] || "";
+            const room = req.room || req.newRoom || "Room 402";
+            const targetDate = req.target_date || req.newDate || "";
+            const targetDay = req.target_day || "";
+            const targetStart = req.target_start_time || req.newStartTime || "";
+            const targetEnd = req.target_end_time || req.newEndTime || "";
+            const targetRoom = req.target_room || req.newRoom;
+            const targetTeacherName = req.target_teacher_name || req.targetTeacherName;
 
             return (
               <div key={req.id} className="py-4 first:pt-0 last:pb-0 hover:bg-slate-50/60 p-3 rounded-lg transition-colors">
@@ -183,22 +213,22 @@ export default function TeacherReschedulesList() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                          req.type === "teacher_swap"
+                          reqType === "teacher_swap"
                             ? "bg-purple-100 text-purple-800"
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {req.type === "teacher_swap" ? "Teacher Slot Swap" : "Class Reschedule"}
+                        {reqType === "teacher_swap" ? "Teacher Slot Swap" : "Class Reschedule"}
                       </span>
-                      {getStatusBadge(req.status)}
+                      {getStatusBadge(reqStatus)}
                     </div>
 
                     <div>
                       <h3 className="text-xs font-bold text-slate-900">
-                        {req.course_code}: {req.course_title}
+                        {courseCode}: {courseTitle}
                       </h3>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {req.batch_name} • Requested by: <span className="font-semibold text-slate-700">{req.teacher_name || "Faculty"}</span>
+                        {batchName} • Requested by: <span className="font-semibold text-slate-700">{teacherName}</span>
                       </p>
                     </div>
 
@@ -210,14 +240,14 @@ export default function TeacherReschedulesList() {
                         </span>
                         <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{req.original_date} ({req.original_day})</span>
+                          <span>{origDate} {origDay ? `(${origDay})` : ""}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-slate-600 mt-0.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{req.original_start_time} - {req.original_end_time}</span>
+                          <span>{origStart} - {origEnd}</span>
                           <span className="text-slate-400">•</span>
                           <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>{req.room}</span>
+                          <span>{room}</span>
                         </div>
                       </div>
 
@@ -227,16 +257,16 @@ export default function TeacherReschedulesList() {
                         </span>
                         <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
                           <Calendar className="w-3.5 h-3.5 text-brand-dark" />
-                          <span>{req.target_date} ({req.target_day})</span>
+                          <span>{targetDate} {targetDay ? `(${targetDay})` : ""}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-slate-700 font-medium mt-0.5">
                           <Clock className="w-3.5 h-3.5 text-brand-dark" />
-                          <span>{req.target_start_time} - {req.target_end_time}</span>
-                          {req.target_room && (
+                          <span>{targetStart} - {targetEnd}</span>
+                          {targetRoom && (
                             <>
                               <span className="text-slate-400">•</span>
                               <MapPin className="w-3 h-3 text-brand-dark" />
-                              <span>{req.target_room}</span>
+                              <span>{targetRoom}</span>
                             </>
                           )}
                         </div>
@@ -245,10 +275,10 @@ export default function TeacherReschedulesList() {
 
                     {/* Swap partner or reason */}
                     <div className="text-[11px] text-slate-600 space-y-1">
-                      {req.target_teacher_name && (
+                      {targetTeacherName && (
                         <div className="flex items-center gap-1.5 font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit">
                           <ArrowRightLeft className="w-3 h-3 text-purple-600" />
-                          <span>Swap Partner: {req.target_teacher_name}</span>
+                          <span>Swap Partner: {targetTeacherName}</span>
                         </div>
                       )}
                       {req.reason && (

@@ -30,6 +30,7 @@ import { useState, useEffect } from "react";
 import { api, TeacherDashboardData } from "@/lib/api";
 
 import { DashboardSkeleton } from "@/components/ui/Skeleton";
+import TeacherReschedulesList from "./TeacherReschedulesList";
 
 export default function TeacherDashboard() {
   const [dashboardData, setDashboardData] = useState<TeacherDashboardData | null>(null);
@@ -292,6 +293,9 @@ export default function TeacherDashboard() {
         </div>
 
       </div>
+
+      {/* Class Reschedules & Teacher Slot Swaps Section */}
+      <TeacherReschedulesList />
     </div>
   );
 }

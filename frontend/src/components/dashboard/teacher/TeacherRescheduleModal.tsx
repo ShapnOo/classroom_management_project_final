@@ -18,10 +18,11 @@ export default function TeacherRescheduleModal({
   initialClassroom,
   initialScheduleId,
 }: TeacherRescheduleModalProps) {
-  const { classrooms, teachers, createRescheduleRequest, fetchReschedules } = useStore();
+  const { classrooms, courses, batches, teachers, createRescheduleRequest, fetchReschedules } = useStore();
 
   const [requestType, setRequestType] = useState<"Reschedule" | "Swap">("Reschedule");
-  const [selectedClassroomId, setSelectedClassroomId] = useState<string>(initialClassroom?.id || classrooms[0]?.id || "");
+  const initialId = initialClassroom ? ('id' in initialClassroom ? String(initialClassroom.id) : String(initialClassroom.classroom?.id || "")) : classrooms[0]?.id || "";
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>(initialId);
   const [targetTeacherId, setTargetTeacherId] = useState<string>("");
   const [originalDate, setOriginalDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [originalTime, setOriginalTime] = useState<string>("10:00 AM - 11:30 AM");
@@ -35,7 +36,8 @@ export default function TeacherRescheduleModal({
 
   if (!isOpen) return null;
 
-  const currentClassroom = classrooms.find(c => c.id === selectedClassroomId) || initialClassroom;
+  const currentClassroom = classrooms.find(c => c.id === selectedClassroomId);
+  const currentRoom = currentClassroom?.room || (initialClassroom && 'classroom' in initialClassroom ? initialClassroom.classroom.room : "Room TBA");
   const currentTeacherId = currentClassroom?.teacherId || "t1000000-0000-4000-a000-000000000001";
 
   // Available target teachers for swap (excluding current teacher)
@@ -68,7 +70,7 @@ export default function TeacherRescheduleModal({
         newDate,
         newStartTime,
         newEndTime,
-        newRoom: newRoom || currentClassroom?.room || "Room TBA",
+        newRoom: newRoom || currentRoom || "Room TBA",
         reason,
       });
 
@@ -159,11 +161,15 @@ export default function TeacherRescheduleModal({
               onChange={e => setSelectedClassroomId(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             >
-              {classrooms.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.courseCode || "Course"} — {c.courseTitle || c.title} ({c.batchCode || c.room})
-                </option>
-              ))}
+              {classrooms.map(c => {
+                const course = courses.find(co => co.id === c.courseId);
+                const batch = batches.find(ba => ba.id === c.batchId);
+                return (
+                  <option key={c.id} value={c.id}>
+                    {course?.code || "Course"} — {course?.title || "Classroom"} ({batch?.code || c.room})
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -267,7 +273,7 @@ export default function TeacherRescheduleModal({
               type="text"
               value={newRoom}
               onChange={e => setNewRoom(e.target.value)}
-              placeholder={`Default: ${currentClassroom?.room || 'Room 402, Bldg C'}`}
+              placeholder={`Default: ${currentRoom || 'Room 402, Bldg C'}`}
               className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
