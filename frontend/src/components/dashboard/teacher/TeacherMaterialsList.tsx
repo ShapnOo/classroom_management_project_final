@@ -3,15 +3,19 @@
 import { 
   FolderOpen,
   ArrowRight,
-  Files
+  Files,
+  Search,
+  BookOpen,
+  GraduationCap
 } from "lucide-react";
 import Link from "next/link";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/lib/store";
 
 export default function TeacherMaterialsList() {
   const { getMyClassroomViews, materials, fetchClassrooms, fetchCourses, fetchBatches, fetchMaterials } = useStore();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"running" | "completed" | "all">("running");
 
   useEffect(() => {
     fetchClassrooms();
@@ -21,96 +25,169 @@ export default function TeacherMaterialsList() {
   }, []);
 
   const myClassrooms = getMyClassroomViews();
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  if (!selectedBatchId) {
-    const uniqueBatches = Array.from(new Map(myClassrooms.map(c => [c.batch.id, c.batch])).values());
-    return (
-      <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="pb-4 border-b border-slate-200">
-          <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to manage its materials.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {uniqueBatches.map(b => {
-            const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
-            return (
-              <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
-                <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
-                <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  const filteredClassrooms = useMemo(() => {
+    return myClassrooms.filter((c) => {
+      // 1. Status Filter
+      if (statusFilter === "running" && c.classroom.status === "completed") return false;
+      if (statusFilter === "completed" && c.classroom.status !== "completed") return false;
 
-  const batchClasses = myClassrooms.filter(c => c.batch.id === selectedBatchId);
-  const batchInfo = batchClasses[0]?.batch;
+      // 2. Search Query
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        c.course.title.toLowerCase().includes(q) ||
+        c.course.code.toLowerCase().includes(q) ||
+        c.batch.name.toLowerCase().includes(q)
+      );
+    });
+  }, [myClassrooms, statusFilter, searchQuery]);
+
+  const runningCount = myClassrooms.filter((c) => c.classroom.status !== "completed").length;
+  const completedCount = myClassrooms.filter((c) => c.classroom.status === "completed").length;
 
   return (
-    <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-      <div className="pb-4 border-b border-slate-200 flex items-center gap-3">
-        <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
-          <ArrowRight className="w-4 h-4 rotate-180" />
-        </button>
+    <div className="w-full mx-auto space-y-5 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view its materials.</p>
+          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-brand-dark" />
+            Course Materials Directory
+          </h2>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Select a course from your assigned batches to upload or manage lecture slides and files
+          </p>
+        </div>
+
+        {/* Search Input Box */}
+        <div className="relative w-full md:w-72 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by course code, title, or batch..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-xs"
+          />
         </div>
       </div>
 
-      {/* Course List Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {batchClasses.map(({ classroom: cls, course, batch, colors }) => {
-          const courseMatCount = materials.filter(m => m.classroomId === cls.id || m.courseId === course.id).length;
-          return (
-            <div key={cls.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group">
-              <div className="p-5 flex-1 flex flex-col">
-                
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>
-                    {course.code}
-                  </span>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
-                    {batch.name}
-                  </span>
-                </div>
-                
-                <div className="flex items-start justify-between gap-2 mb-4">
-                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-2">
-                    {course.title}
-                  </h3>
-                  <FolderOpen className="w-8 h-8 text-slate-300 shrink-0 group-hover:text-brand-dark/20 transition-colors" />
-                </div>
-                
-                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-slate-500">
-                  <div className="flex items-center gap-1.5">
-                    <Files className="w-3.5 h-3.5" />
-                    {courseMatCount} File{courseMatCount === 1 ? "" : "s"}
-                  </div>
-                  <span>Available</span>
-                </div>
+      {/* Status Filter Tabs (Running by default) */}
+      <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded-xl border border-slate-200">
+        <button
+          onClick={() => setStatusFilter("running")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            statusFilter === "running"
+              ? "bg-brand-dark text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          Running Courses ({runningCount})
+        </button>
+        <button
+          onClick={() => setStatusFilter("completed")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            statusFilter === "completed"
+              ? "bg-brand-dark text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          Completed Courses ({completedCount})
+        </button>
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            statusFilter === "all"
+              ? "bg-brand-dark text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          All Courses ({myClassrooms.length})
+        </button>
+      </div>
 
-              </div>
-              
-              <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                <Link 
-                  href={`/dashboard/teacher/materials/${cls.id}`}
-                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-[13px] font-medium hover:bg-slate-100 hover:text-brand-dark transition-colors shadow-sm group-hover:border-brand-dark/30"
-                >
-                  View Materials <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          );
-        })}
+      {/* Clean List View Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-5 py-3.5">Course Code</th>
+                <th className="px-5 py-3.5">Course Title</th>
+                <th className="px-5 py-3.5">Academic Batch</th>
+                <th className="px-5 py-3.5">Uploaded Files</th>
+                <th className="px-5 py-3.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {filteredClassrooms.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-500">
+                    <FolderOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="font-semibold text-slate-700">No matching course materials found</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      No courses match the selected status filter (&quot;{statusFilter}&quot;) or search query.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredClassrooms.map(({ classroom: cls, course, batch, colors }) => {
+                  const courseMatCount = materials.filter(
+                    (m) => m.classroomId === cls.id || m.courseId === course.id
+                  ).length;
+
+                  return (
+                    <tr key={cls.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-5 py-4 font-bold text-slate-900">
+                        <span className={`inline-block px-2.5 py-1 rounded text-[11px] font-bold ${colors.light} ${colors.text}`}>
+                          {course.code}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 font-semibold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-slate-400 group-hover:text-brand-dark transition-colors" />
+                          <span className="group-hover:text-brand-dark transition-colors">{course.title}</span>
+                          {cls.status === "completed" && (
+                            <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Completed</span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4 text-slate-400" />
+                          <span>{batch.name}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4 font-medium text-slate-700">
+                        <div className="flex items-center gap-1.5 text-slate-600">
+                          <Files className="w-3.5 h-3.5 text-brand-dark" />
+                          <span>{courseMatCount} Material File{courseMatCount === 1 ? "" : "s"}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4 text-right">
+                        <Link
+                          href={`/dashboard/teacher/materials/${cls.id}`}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-200 hover:border-brand-dark/40 text-slate-700 hover:text-brand-dark font-semibold text-xs rounded-lg transition-all shadow-2xs group-hover:bg-brand-dark/5"
+                        >
+                          <span>View Materials</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
   );
 }
-

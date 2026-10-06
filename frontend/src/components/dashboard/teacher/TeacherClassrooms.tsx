@@ -38,9 +38,9 @@ export default function TeacherClassrooms() {
 
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>("all");
 
   const filtered = myClassrooms.filter((v) => {
     if (selectedBatchId && selectedBatchId !== "all" && v.batch.id !== selectedBatchId) return false;
