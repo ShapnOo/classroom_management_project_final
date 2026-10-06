@@ -86,6 +86,8 @@ export const SEED_IDS = {
 };
 
 export const CURRENT_TEACHER_ID = SEED_IDS.TEACHER_1;
+export const CURRENT_STUDENT_BATCH_ID = SEED_IDS.BATCH_SP26_A;
+export const CURRENT_STUDENT_ID = "st-001";
 
 export const seedSettings: AppSettings = {
   schoolName: "Jahangirnagar University",

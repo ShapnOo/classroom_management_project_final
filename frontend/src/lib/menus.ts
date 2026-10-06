@@ -118,38 +118,12 @@ export const teacherMenu: MenuItem[] = [
 
 export const studentMenu: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard/student" },
-  { title: "My Classrooms", icon: MonitorPlay, href: "#" },
-  { title: "My Courses", icon: BookOpen, href: "#" },
-  { 
-    title: "Class Timeline", icon: Clock,
-    submenu: [
-      { title: "Class History", href: "#" },
-      { title: "Topics Covered", href: "#" },
-    ]
-  },
-  { title: "Course Progress", icon: TrendingUp, href: "#" },
-  { title: "Course Materials", icon: FolderOpen, href: "#" },
-  { 
-    title: "Assignments", icon: ListTodo,
-    submenu: [
-      { title: "Upcoming", href: "#" },
-      { title: "Submitted", href: "#" },
-      { title: "Graded", href: "#" },
-    ]
-  },
-  { 
-    title: "Class Tests", icon: FileText,
-    submenu: [
-      { title: "Upcoming Tests", href: "#" },
-      { title: "Test History", href: "#" },
-      { title: "Results", href: "#" },
-    ]
-  },
-  { title: "Attendance", icon: ClipboardCheck, href: "#" },
-  { title: "Academic Performance", icon: BarChart3, href: "#" },
-  { title: "Announcements", icon: Bell, href: "#" },
+  { title: "My Classrooms", icon: MonitorPlay, href: "/dashboard/student/classrooms" },
+  { title: "My Courses", icon: BookOpen, href: "/dashboard/student/courses" },
+  { title: "Course Materials", icon: FolderOpen, href: "/dashboard/student/materials" },
+  { title: "Assignments", icon: ListTodo, href: "/dashboard/student/assignments" },
+  { title: "Class Tests", icon: FileText, href: "/dashboard/student/tests" },
+  { title: "Attendance", icon: ClipboardCheck, href: "/dashboard/student/attendance" },
+  { title: "Academic Performance", icon: BarChart3, href: "/dashboard/student/results" },
   { title: "Calendar", icon: CalendarDays, href: "/dashboard/student/calendar" },
-  { title: "Notifications", icon: Bell, href: "#" },
-  { title: "My Profile", icon: User, href: "#" },
-  { title: "Settings", icon: Settings, href: "#" },
 ];

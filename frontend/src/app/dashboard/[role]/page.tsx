@@ -1,5 +1,6 @@
 import TeacherDashboard from "@/components/dashboard/teacher/TeacherDashboard";
 import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
+import StudentDashboard from "@/components/dashboard/student/StudentDashboard";
 
 export default async function DashboardPage({
   params,
@@ -15,6 +16,10 @@ export default async function DashboardPage({
 
   if (role === "admin") {
     return <AdminDashboard />;
+  }
+
+  if (role === "student") {
+    return <StudentDashboard />;
   }
 
   return (
