@@ -504,6 +504,13 @@ export const api = {
   deleteMaterial: (id: string) =>
     request<{ message: string }>(`/admin/activities/materials/${id}`, { method: "DELETE" }),
 
+  // ── Class Rescheduling & Teacher Slot Exchange ──
+  getReschedules: () => request<ClassReschedule[]>("/teacher/reschedules"),
+  createReschedule: (data: Partial<ClassReschedule>) =>
+    request<ClassReschedule>("/teacher/reschedules", { method: "POST", body: JSON.stringify(data) }),
+  updateRescheduleStatus: (id: string, status: "Approved" | "Rejected" | "Cancelled") =>
+    request<ClassReschedule>(`/teacher/reschedules/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
+
   // ── Consolidated Dashboard API ──
   getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
   getTeacherDashboard: () => request<TeacherDashboardData>("/teacher/dashboard"),

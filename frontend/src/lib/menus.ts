@@ -16,7 +16,8 @@ import {
   ListTodo,
   TrendingUp,
   Clock,
-  Award
+  Award,
+  ArrowRightLeft
 } from "lucide-react";
 
 export type MenuItem = {
@@ -103,6 +104,7 @@ export const teacherMenu: MenuItem[] = [
   { title: "Final Evaluation", icon: Award, href: "/dashboard/teacher/evaluation" },
   { title: "Announcements", icon: Bell, href: "/dashboard/teacher/announcements" },
   { title: "Calendar", icon: CalendarDays, href: "/dashboard/teacher/calendar" },
+  { title: "Class Reschedules", icon: ArrowRightLeft, href: "/dashboard/teacher/reschedules" },
   { 
     title: "Progress & Analytics", icon: BarChart3,
     submenu: [

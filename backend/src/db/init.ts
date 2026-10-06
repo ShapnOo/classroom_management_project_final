@@ -428,6 +428,17 @@ export async function resetAndSeedInitialData() {
       ON CONFLICT (id) DO NOTHING;
     `);
 
+    // 17. Class Reschedules & Teacher Swaps
+    await client.query(`
+      INSERT INTO class_reschedules (
+        id, classroom_id, request_type, requested_by_teacher_id, target_teacher_id,
+        original_date, original_time, new_date, new_start_time, new_end_time, new_room, reason, status
+      ) VALUES
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', 'Reschedule', '${SEED_IDS.TEACHER_1}', NULL, '2026-10-12', '10:00 AM - 11:30 AM', '2026-10-15', '03:00 PM', '04:30 PM', 'Room 402, Bldg C', 'Department Faculty Meeting Conflict', 'Approved'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', 'Swap', '${SEED_IDS.TEACHER_1}', '${SEED_IDS.TEACHER_2}', '2026-10-14', '02:00 PM - 03:30 PM', '2026-10-16', '10:00 AM', '11:30 AM', 'Room 305, Bldg A', 'Requested slot exchange for conference attendance', 'Pending')
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
     // 17. Seed Student Transcripts
     await seedStudentTranscripts(client);
 

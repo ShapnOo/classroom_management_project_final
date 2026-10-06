@@ -246,3 +246,29 @@ export type Announcement = {
   priority: "Normal" | "High";
   attachment?: AnnouncementAttachment;
 };
+
+// ─── Class Rescheduling & Teacher Slot Exchange ─────────────────────────────
+
+export type ClassReschedule = {
+  id: string;
+  classroomId: string;
+  scheduleId?: string;
+  courseTitle?: string;
+  courseCode?: string;
+  batchName?: string;
+  requestType: "Reschedule" | "Swap";
+  requestedByTeacherId: string;
+  requestedByTeacherName?: string;
+  targetTeacherId?: string;
+  targetTeacherName?: string;
+  targetClassroomId?: string;
+  originalDate: string;
+  originalTime: string;
+  newDate: string;
+  newStartTime: string;
+  newEndTime: string;
+  newRoom?: string;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  createdAt?: string;
+};

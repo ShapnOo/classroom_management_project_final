@@ -231,6 +231,26 @@ CREATE TABLE IF NOT EXISTS student_transcripts (
   CONSTRAINT unique_student_course UNIQUE(student_id, course_id)
 );
 
+-- 12. Class Reschedules & Slot Swapping
+CREATE TABLE IF NOT EXISTS class_reschedules (
+  id VARCHAR(64) PRIMARY KEY,
+  classroom_id VARCHAR(64) REFERENCES classrooms(id) ON DELETE CASCADE,
+  schedule_id VARCHAR(64) REFERENCES class_schedules(id) ON DELETE SET NULL,
+  request_type VARCHAR(20) NOT NULL DEFAULT 'Reschedule', -- 'Reschedule' or 'Swap'
+  requested_by_teacher_id VARCHAR(64) REFERENCES teachers(id) ON DELETE CASCADE,
+  target_teacher_id VARCHAR(64) REFERENCES teachers(id) ON DELETE SET NULL,
+  target_classroom_id VARCHAR(64) REFERENCES classrooms(id) ON DELETE SET NULL,
+  original_date DATE NOT NULL,
+  original_time VARCHAR(50) NOT NULL,
+  new_date DATE NOT NULL,
+  new_start_time VARCHAR(20) NOT NULL,
+  new_end_time VARCHAR(20) NOT NULL,
+  new_room VARCHAR(100),
+  reason TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'Pending', -- 'Pending', 'Approved', 'Rejected', 'Cancelled'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 11. Performance Optimization Indexes
 CREATE INDEX IF NOT EXISTS idx_student_transcripts_student ON student_transcripts(student_id);
 CREATE INDEX IF NOT EXISTS idx_student_transcripts_course ON student_transcripts(course_id);
@@ -239,5 +259,8 @@ CREATE INDEX IF NOT EXISTS idx_students_batch ON students(batch_id);
 CREATE INDEX IF NOT EXISTS idx_classrooms_batch ON classrooms(batch_id);
 CREATE INDEX IF NOT EXISTS idx_grade_records_student ON grade_records(student_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(student_id);
+CREATE INDEX IF NOT EXISTS idx_class_reschedules_teacher ON class_reschedules(requested_by_teacher_id);
+CREATE INDEX IF NOT EXISTS idx_class_reschedules_target_teacher ON class_reschedules(target_teacher_id);
+
 
 

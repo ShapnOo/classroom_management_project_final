@@ -7,7 +7,7 @@ import type {
   Session, Department, Program, Batch, Student, Teacher,
   Course, SyllabusTopic, Classroom, ClassSchedule, Assignment, Test,
   ClassroomView, ClassSession, AttendanceRecord, GradeRecord,
-  Announcement, AdminUser, AppSettings
+  Announcement, AdminUser, AppSettings, ClassReschedule
 } from "./types";
 import { CLASSROOM_COLORS } from "./types";
 import {
@@ -40,6 +40,7 @@ type AppState = {
   materials: any[];
   admins: AdminUser[];
   settings: AppSettings;
+  reschedules: ClassReschedule[];
   isLoading: boolean;
   isBackendConnected: boolean;
 };
@@ -67,6 +68,9 @@ type AppActions = {
   fetchAnnouncements: (force?: boolean) => Promise<Announcement[]>;
   fetchMaterials: (classroomId?: string, force?: boolean) => Promise<any[]>;
   fetchSettings: (force?: boolean) => Promise<AppSettings>;
+  fetchReschedules: (force?: boolean) => Promise<ClassReschedule[]>;
+  createRescheduleRequest: (r: Partial<ClassReschedule>) => Promise<void>;
+  respondRescheduleRequest: (id: string, status: "Approved" | "Rejected" | "Cancelled") => Promise<void>;
 
   // Sync / Refresh & Cache Control
   refreshFromBackend: () => Promise<void>;
@@ -174,6 +178,7 @@ const initialState: AppState = {
   materials: [],
   admins: seedAdmins,
   settings: seedSettings,
+  reschedules: [],
   isLoading: false,
   isBackendConnected: false,
 };
@@ -357,6 +362,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState(prev => ({ ...prev, materials: data, isBackendConnected: true }));
     }, [], force);
   }, [cachedFetch]);
+
+  const fetchReschedules = useCallback(async (force = false) => {
+    return cachedFetch('reschedules', 'reschedules', () => api.getReschedules(), data => {
+      setState(prev => ({ ...prev, reschedules: data, isBackendConnected: true }));
+    }, [], force);
+  }, [cachedFetch]);
+
+  const createRescheduleRequest = useCallback(async (r: Partial<ClassReschedule>) => {
+    try {
+      const created = await api.createReschedule(r);
+      if (created) {
+        invalidateCache('reschedules');
+        setState(prev => ({ ...prev, reschedules: [created, ...prev.reschedules] }));
+        return;
+      }
+    } catch (e) {
+      console.warn("createRescheduleRequest fallback:", e);
+    }
+    const fallback: ClassReschedule = {
+      id: genId(),
+      classroomId: r.classroomId || "",
+      scheduleId: r.scheduleId,
+      requestType: r.requestType || "Reschedule",
+      requestedByTeacherId: r.requestedByTeacherId || "t1000000-0000-4000-a000-000000000001",
+      targetTeacherId: r.targetTeacherId,
+      originalDate: r.originalDate || "",
+      originalTime: r.originalTime || "",
+      newDate: r.newDate || "",
+      newStartTime: r.newStartTime || "",
+      newEndTime: r.newEndTime || "",
+      newRoom: r.newRoom,
+      reason: r.reason || "",
+      status: r.requestType === "Swap" ? "Pending" : "Approved",
+      createdAt: new Date().toISOString(),
+    };
+    setState(prev => ({ ...prev, reschedules: [fallback, ...prev.reschedules] }));
+  }, [invalidateCache]);
+
+  const respondRescheduleRequest = useCallback(async (id: string, status: "Approved" | "Rejected" | "Cancelled") => {
+    try {
+      await api.updateRescheduleStatus(id, status);
+      invalidateCache('reschedules');
+    } catch (e) {
+      console.warn("respondRescheduleRequest fallback:", e);
+    }
+    setState(prev => ({
+      ...prev,
+      reschedules: prev.reschedules.map(r => r.id === id ? { ...r, status } : r)
+    }));
+  }, [invalidateCache]);
 
   const addMaterial = useCallback(async (m: any) => {
     try {
@@ -852,6 +907,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchAnnouncements,
     fetchMaterials,
     fetchSettings,
+    fetchReschedules,
+    createRescheduleRequest,
+    respondRescheduleRequest,
     refreshFromBackend,
     invalidateCache,
     addSession, updateSession, deleteSession,

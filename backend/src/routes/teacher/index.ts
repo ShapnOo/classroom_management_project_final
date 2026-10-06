@@ -57,7 +57,11 @@ router.get("/results", getResults);
 router.post("/results", saveGradeRecord);
 
 router.get("/materials", getMaterials);
-router.post("/materials", createMaterial);
-router.delete("/materials/:id", deleteMaterial);
+import { getReschedules, createReschedule, updateRescheduleStatus } from "../../controllers/teacher/reschedule.controller.js";
+
+// Class Rescheduling & Teacher Slot Exchange
+router.get("/reschedules", getReschedules);
+router.post("/reschedules", createReschedule);
+router.put("/reschedules/:id/status", updateRescheduleStatus);
 
 export default router;
