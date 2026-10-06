@@ -116,7 +116,15 @@ export const api = {
   // Health
   checkHealth: () => request<{ status: string; service: string }>("/health"),
 
-  // Batch Promotion
+  // Batch Promotion & Student Progression
+  getPromotionQueue: () => request<any[]>("/admin/academic/promotion-queue"),
+  getPromotionHistory: () => request<any[]>("/admin/academic/promotion-history"),
+  getNonPromotedStudents: () => request<any[]>("/admin/academic/non-promoted-students"),
+  reintegrateStudent: (payload: { studentId: string; targetBatchId: string; newStatus?: string }) =>
+    request<any>("/admin/academic/reintegrate-student", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   executeBatchPromotion: (payload: { sourceBatchId: string; targetSemester: number; studentDecisions: Array<{ studentId: string; decision: string }> }) =>
     request<{ sourceBatchId: string; targetSemester: number; count: number }>("/admin/academic/batch-promotion", {
       method: "POST",

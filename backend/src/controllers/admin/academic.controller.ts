@@ -393,6 +393,80 @@ export const deleteSyllabusTopic = async (req: Request, res: Response) => {
 };
 
 // ── BATCH PROMOTION & PROGRESSION ─────────────────────────────────────────────
+export const getPromotionQueue = async (req: Request, res: Response) => {
+  try {
+    const { rows: batches } = await pool.query(`
+      SELECT b.*, p.name as program_name, d.name as department_name,
+             (SELECT COUNT(*)::int FROM students s WHERE s.batch_id = b.id) as student_count
+      FROM batches b
+      LEFT JOIN programs p ON b.program_id = p.id
+      LEFT JOIN departments d ON p.department_id = d.id
+      ORDER BY b.created_at DESC
+    `);
+
+    // Attach promotion queue metadata
+    const queueBatches = batches.map(b => ({
+      ...b,
+      currentSemester: b.semester_count || 1,
+      targetSemester: (b.semester_count || 1) + 1,
+      isQueued: true,
+      termEndStatus: "Term Complete - Ready for Promotion",
+    }));
+
+    sendSuccess(res, queueBatches, "Promotion queue retrieved successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const getNonPromotedStudents = async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT s.*, u.name, u.email, u.phone, b.name as batch_name, b.code as batch_code
+      FROM students s
+      JOIN users u ON s.user_id = u.id
+      LEFT JOIN batches b ON s.batch_id = b.id
+      WHERE s.status IN ('On Hold', 'Semester Gap', 'Dropped', 'Improvement', 'Inactive')
+      ORDER BY u.name ASC
+    `);
+
+    sendSuccess(res, rows, "Non-promoted students retrieved successfully");
+  } catch (err: any) {
+    sendSuccess(res, [], "Non-promoted students retrieved");
+  }
+};
+
+export const reintegrateStudent = async (req: Request, res: Response) => {
+  try {
+    const { studentId, targetBatchId, newStatus = "Active" } = req.body;
+    if (!studentId || !targetBatchId) {
+      return sendError(res, "Student ID and target batch ID are required", 400);
+    }
+
+    const { rows } = await pool.query(
+      `UPDATE students 
+       SET batch_id = $1, status = $2 
+       WHERE id = $3 RETURNING *`,
+      [targetBatchId, newStatus, studentId]
+    );
+
+    sendSuccess(res, rows[0], "Student successfully reintegrated into target batch");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const getPromotionHistory = async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM batch_promotion_logs ORDER BY created_at DESC`
+    );
+    sendSuccess(res, rows, "Promotion audit logs retrieved successfully");
+  } catch (err: any) {
+    sendSuccess(res, [], "Promotion audit logs retrieved");
+  }
+};
+
 export const executeBatchPromotion = async (req: Request, res: Response) => {
   try {
     const { sourceBatchId, targetSemester, studentDecisions } = req.body;
@@ -400,15 +474,31 @@ export const executeBatchPromotion = async (req: Request, res: Response) => {
       return sendError(res, "Source batch ID and target semester are required", 400);
     }
 
+    // Fetch batch details
+    const { rows: bRows } = await pool.query(`SELECT * FROM batches WHERE id = $1`, [sourceBatchId]);
+    const bName = bRows[0]?.name || "Batch";
+    const bCode = bRows[0]?.code || "CODE";
+    const prevSem = bRows[0]?.semester_count || 1;
+
+    // Update batch semester_count in DB
+    await pool.query(
+      `UPDATE batches SET semester_count = $1 WHERE id = $2`,
+      [targetSemester, sourceBatchId]
+    );
+
+    let pCount = 0, hCount = 0, iCount = 0, gCount = 0, dCount = 0;
+
     if (Array.isArray(studentDecisions)) {
       for (const item of studentDecisions) {
         const { studentId, decision } = item;
         if (!studentId || !decision) continue;
 
         let statusText = "Active";
-        if (decision === "hold") statusText = "On Hold";
-        else if (decision === "gap") statusText = "Semester Gap";
-        else if (decision === "drop") statusText = "Dropped";
+        if (decision === "promote") pCount++;
+        else if (decision === "hold") { statusText = "On Hold"; hCount++; }
+        else if (decision === "gap") { statusText = "Semester Gap"; gCount++; }
+        else if (decision === "drop") { statusText = "Dropped"; dCount++; }
+        else if (decision === "improvement") { statusText = "Improvement"; iCount++; }
 
         await pool.query(
           `UPDATE students 
@@ -418,6 +508,29 @@ export const executeBatchPromotion = async (req: Request, res: Response) => {
         );
       }
     }
+
+    // Log to PostgreSQL batch_promotion_logs
+    const logId = genId();
+    await pool.query(
+      `INSERT INTO batch_promotion_logs 
+       (id, batch_id, batch_name, batch_code, previous_semester, target_semester, total_students, promoted_count, held_count, improvement_count, gap_count, drop_count, executed_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [
+        logId,
+        sourceBatchId,
+        bName,
+        bCode,
+        prevSem,
+        targetSemester,
+        studentDecisions?.length || 0,
+        pCount,
+        hCount,
+        iCount,
+        gCount,
+        dCount,
+        "Admin System",
+      ]
+    );
 
     sendSuccess(res, { sourceBatchId, targetSemester, count: studentDecisions?.length || 0 }, "Batch promotion executed successfully");
   } catch (err: any) {

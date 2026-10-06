@@ -39,7 +39,7 @@ export default function BatchesPage() {
   const [promotionSourceBatchId, setPromotionSourceBatchId] = useState("");
   const [promotionTargetSemester, setPromotionTargetSemester] = useState(2);
   const [studentProgressionDecisions, setStudentProgressionDecisions] = useState<
-    Record<string, "promote" | "improvement" | "retake" | "drop">
+    Record<string, "promote" | "improvement" | "hold" | "gap" | "drop">
   >({});
   const [promotionSuccessToast, setPromotionSuccessToast] = useState<string | null>(null);
 

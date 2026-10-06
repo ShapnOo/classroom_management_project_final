@@ -52,6 +52,7 @@ export type Student = {
   name: string;
   email: string;
   batchId: string;
+  status?: string;
   phone?: string;
   documents?: StudentDocument[];
 };
@@ -89,6 +90,9 @@ export type Course = {
 export type SyllabusTopic = {
   id: string;
   courseId: string;
+  programId?: string;
+  batchId?: string;
+  semester?: number;
   topic: string;
   week: number;
   subTopics: string[];

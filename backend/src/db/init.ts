@@ -29,6 +29,8 @@ export const SEED_IDS = {
   BATCH_SP26_B: "c4ce1ed1-879d-4b4e-a877-da2b376aae1d",
   BATCH_FA25_A: "1bb542f2-202b-4bb7-af5a-0546e2b18407",
   BATCH_FA26_C: "35144c16-c129-4702-ac46-ed049860ae43",
+  BATCH_47_EXP: "e5a31b28-4747-4747-8747-exp474747474",
+  BATCH_48_QUE: "e5a31b28-4848-4848-8848-que484848484",
 
   // Admins
   ADMIN_1: "fc09a540-73c3-4809-9da9-4562372bd0cf",
@@ -96,6 +98,22 @@ export async function initDatabase() {
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
+      CREATE TABLE IF NOT EXISTS batch_promotion_logs (
+        id VARCHAR(64) PRIMARY KEY,
+        batch_id VARCHAR(64) REFERENCES batches(id) ON DELETE CASCADE,
+        batch_name VARCHAR(255) NOT NULL,
+        batch_code VARCHAR(50) NOT NULL,
+        previous_semester INT NOT NULL,
+        target_semester INT NOT NULL,
+        total_students INT NOT NULL DEFAULT 0,
+        promoted_count INT NOT NULL DEFAULT 0,
+        held_count INT NOT NULL DEFAULT 0,
+        improvement_count INT NOT NULL DEFAULT 0,
+        gap_count INT NOT NULL DEFAULT 0,
+        drop_count INT NOT NULL DEFAULT 0,
+        executed_by VARCHAR(255) DEFAULT 'System Admin',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_student ON student_transcripts(student_id);
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_course ON student_transcripts(course_id);
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_semester ON student_transcripts(semester);
@@ -105,6 +123,8 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(student_id);
     `);
     console.log("Database schema & performance indexes initialized successfully.");
+
+    await seedPromotionLogs();
 
     const { rows } = await pool.query("SELECT id FROM departments LIMIT 1");
     if (rows.length === 0 || !rows[0].id.includes("-")) {
@@ -117,6 +137,102 @@ export async function initDatabase() {
   } catch (error) {
     console.error("Database initialization error:", error);
     throw error;
+  }
+}
+
+export async function seedPromotionLogs() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*)::int as count FROM batch_promotion_logs");
+    if (rows[0].count === 0) {
+      const logs = [
+        {
+          id: "promo_log_1",
+          batch_id: SEED_IDS.BATCH_SP26_A,
+          batch_name: "Spring 2026 — Section A",
+          batch_code: "SP26-A",
+          previous_semester: 1,
+          target_semester: 2,
+          total_students: 42,
+          promoted_count: 40,
+          held_count: 1,
+          improvement_count: 1,
+          gap_count: 0,
+          drop_count: 0,
+          executed_by: "System Admin",
+        },
+        {
+          id: "promo_log_2",
+          batch_id: SEED_IDS.BATCH_FA25_A,
+          batch_name: "Fall 2025 — Section A",
+          batch_code: "FA25-A",
+          previous_semester: 7,
+          target_semester: 8,
+          total_students: 50,
+          promoted_count: 48,
+          held_count: 1,
+          improvement_count: 1,
+          gap_count: 0,
+          drop_count: 0,
+          executed_by: "System Admin",
+        },
+        {
+          id: "promo_log_3",
+          batch_id: SEED_IDS.BATCH_SP26_B,
+          batch_name: "Spring 2026 — Section B",
+          batch_code: "SP26-B",
+          previous_semester: 1,
+          target_semester: 2,
+          total_students: 38,
+          promoted_count: 36,
+          held_count: 1,
+          improvement_count: 1,
+          gap_count: 0,
+          drop_count: 0,
+          executed_by: "System Admin",
+        },
+        {
+          id: "promo_log_4",
+          batch_id: SEED_IDS.BATCH_47_EXP,
+          batch_name: "Batch 47 (CSE 2021-2025) — Graduated",
+          batch_code: "B47-EXP",
+          previous_semester: 7,
+          target_semester: 8,
+          total_students: 45,
+          promoted_count: 45,
+          held_count: 0,
+          improvement_count: 0,
+          gap_count: 0,
+          drop_count: 0,
+          executed_by: "System Admin",
+        },
+      ];
+
+      for (const log of logs) {
+        await pool.query(
+          `INSERT INTO batch_promotion_logs 
+           (id, batch_id, batch_name, batch_code, previous_semester, target_semester, total_students, promoted_count, held_count, improvement_count, gap_count, drop_count, executed_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            log.id,
+            log.batch_id,
+            log.batch_name,
+            log.batch_code,
+            log.previous_semester,
+            log.target_semester,
+            log.total_students,
+            log.promoted_count,
+            log.held_count,
+            log.improvement_count,
+            log.gap_count,
+            log.drop_count,
+            log.executed_by,
+          ]
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Failed to seed promotion logs:", err);
   }
 }
 
@@ -167,7 +283,9 @@ export async function resetAndSeedInitialData() {
       ('${SEED_IDS.BATCH_SP26_A}', 'SP26-A', 'Spring 2026 — Section A', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_SPRING_2026}', 'A', 'Active', 8),
       ('${SEED_IDS.BATCH_SP26_B}', 'SP26-B', 'Spring 2026 — Section B', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_SPRING_2026}', 'B', 'Active', 8),
       ('${SEED_IDS.BATCH_FA25_A}', 'FA25-A', 'Fall 2025 — Section A', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2025}', 'A', 'Completed', 8),
-      ('${SEED_IDS.BATCH_FA26_C}', 'FA26-C', 'Fall 2026 — Section C', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2026}', 'C', 'Upcoming', 8)
+      ('${SEED_IDS.BATCH_FA26_C}', 'FA26-C', 'Fall 2026 — Section C', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2026}', 'C', 'Upcoming', 8),
+      ('${SEED_IDS.BATCH_47_EXP}', 'B47-EXP', 'Batch 47 (CSE 2021-2025) — Graduated', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2025}', 'A', 'Completed', 8),
+      ('${SEED_IDS.BATCH_48_QUE}', 'B48-QUE', 'Batch 48 (CSE 2022-2026) — Queued', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_SPRING_2026}', 'A', 'Active', 7)
       ON CONFLICT (id) DO NOTHING;
     `);
 

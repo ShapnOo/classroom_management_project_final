@@ -6,7 +6,8 @@ import {
   getBatches, createBatch, updateBatch, deleteBatch,
   getCourses, createCourse, updateCourse, deleteCourse,
   getSyllabusTopics, createSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic,
-  executeBatchPromotion, getRescheduleRequests, updateRescheduleRequest,
+  executeBatchPromotion, getPromotionQueue, getPromotionHistory, getNonPromotedStudents, reintegrateStudent,
+  getRescheduleRequests, updateRescheduleRequest,
   getCampusRooms, updateCampusRoom
 } from "../../controllers/admin/academic.controller.js";
 
@@ -36,7 +37,11 @@ router.post("/batches", createBatch);
 router.put("/batches/:id", updateBatch);
 router.delete("/batches/:id", deleteBatch);
 
-// Batch Promotion
+// Batch Promotion & Student Progression
+router.get("/promotion-queue", getPromotionQueue);
+router.get("/promotion-history", getPromotionHistory);
+router.get("/non-promoted-students", getNonPromotedStudents);
+router.post("/reintegrate-student", reintegrateStudent);
 router.post("/batch-promotion", executeBatchPromotion);
 
 // Reschedule Requests
