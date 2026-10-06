@@ -216,7 +216,7 @@ export const getStudentMaterials = async (req: Request, res: Response) => {
 };
 
 /**
- * Get Student Assignments with submission status
+ * Get Student Assignments with submission status and document attachments
  */
 export const getStudentAssignments = async (req: Request, res: Response) => {
   try {
@@ -225,12 +225,18 @@ export const getStudentAssignments = async (req: Request, res: Response) => {
 
     const { rows } = await pool.query(
       `SELECT a.*, cr.code as course_code, cr.title as course_title,
-              g.obtained_marks, g.grade, g.feedback,
-              CASE WHEN g.id IS NOT NULL THEN 'Submitted' ELSE 'Pending' END as student_submission_status
+              sub.submission_text, sub.attachment_urls, sub.github_url,
+              sub.submitted_at, sub.obtained_marks, sub.feedback,
+              CASE 
+                WHEN sub.obtained_marks IS NOT NULL THEN 'Graded'
+                WHEN sub.id IS NOT NULL THEN 'Submitted'
+                WHEN a.due_date < CURRENT_DATE THEN 'Overdue'
+                ELSE 'Active'
+              END as student_submission_status
        FROM assignments a
        JOIN classrooms c ON a.classroom_id = c.id
        JOIN courses cr ON c.course_id = cr.id
-       LEFT JOIN grade_records g ON g.activity_id = a.id AND g.student_id = $1
+       LEFT JOIN assignment_submissions sub ON sub.assignment_id = a.id AND sub.student_id = $1
        WHERE c.batch_id = $2
        ORDER BY a.due_date DESC`,
       [student.id, student.batch_id]
@@ -243,28 +249,35 @@ export const getStudentAssignments = async (req: Request, res: Response) => {
 };
 
 /**
- * Submit an assignment response / solution
+ * Submit an assignment with text, document attachments & links
  */
 export const submitAssignment = async (req: Request, res: Response) => {
   try {
     const student = await resolveStudentContext(req);
     if (!student) return sendError(res, "Student not found", 404);
 
-    const { assignmentId, classroomId, submissionText } = req.body;
+    const { assignmentId, classroomId, submissionText, attachmentUrls, githubUrl } = req.body;
     if (!assignmentId || !classroomId) {
       return sendError(res, "Assignment ID and Classroom ID are required", 400);
     }
 
-    const gradeId = crypto.randomUUID();
+    const subId = crypto.randomUUID();
+    const attachmentsJson = JSON.stringify(attachmentUrls || []);
 
-    // Upsert submission in grade_records table
+    // Upsert into assignment_submissions
     const { rows } = await pool.query(
-      `INSERT INTO grade_records (id, classroom_id, student_id, activity_type, activity_id, obtained_marks, feedback)
-       VALUES ($1, $2, $3, 'assignment', $4, 0, $5)
-       ON CONFLICT (student_id, activity_id)
-       DO UPDATE SET feedback = EXCLUDED.feedback, updated_at = NOW()
+      `INSERT INTO assignment_submissions 
+         (id, assignment_id, student_id, submission_text, attachment_urls, github_url, status, submitted_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'Submitted', NOW())
+       ON CONFLICT (student_id, assignment_id)
+       DO UPDATE SET 
+         submission_text = EXCLUDED.submission_text,
+         attachment_urls = EXCLUDED.attachment_urls,
+         github_url = EXCLUDED.github_url,
+         submitted_at = NOW(),
+         status = 'Submitted'
        RETURNING *`,
-      [gradeId, classroomId, student.id, assignmentId, submissionText || "Submitted solution"]
+      [subId, assignmentId, student.id, submissionText || "", attachmentsJson, githubUrl || ""]
     );
 
     // Increment submissions count on assignment
@@ -273,7 +286,7 @@ export const submitAssignment = async (req: Request, res: Response) => {
       [assignmentId]
     );
 
-    sendSuccess(res, rows[0], "Assignment submitted successfully", 201);
+    sendSuccess(res, rows[0], "Assignment submitted successfully with documents", 201);
   } catch (err: any) {
     sendError(res, err.message);
   }

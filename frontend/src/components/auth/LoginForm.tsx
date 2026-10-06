@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GraduationCap, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, authStorage } from "@/lib/api";
 
 const demoCredentials = {
   Admin: { email: "admin@edu", password: "admin123", path: "/dashboard/admin" },
@@ -19,6 +19,20 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
+
+  useEffect(() => {
+    const user = authStorage.getUser();
+    const token = authStorage.getToken();
+    if (token && user && user.role) {
+      const userRole = user.role.toLowerCase();
+      const targetPath = userRole === "admin" 
+        ? "/dashboard/admin" 
+        : userRole === "teacher" 
+          ? "/dashboard/teacher" 
+          : "/dashboard/student";
+      router.replace(targetPath);
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

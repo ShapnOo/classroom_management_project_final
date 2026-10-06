@@ -521,10 +521,16 @@ export const api = {
   getStudentClassrooms: () => request<any[]>("/student/classrooms"),
   getStudentMaterials: () => request<any[]>("/student/materials"),
   getStudentAssignments: () => request<any[]>("/student/assignments"),
-  submitStudentAssignment: (assignmentId: string, classroomId: string, submissionText: string) =>
+  submitStudentAssignment: (
+    assignmentId: string,
+    classroomId: string,
+    submissionText: string,
+    attachmentUrls?: Array<{ name: string; url: string; size: string; type?: string }>,
+    githubUrl?: string
+  ) =>
     request<any>(`/student/assignments/${assignmentId}/submit`, {
       method: "POST",
-      body: JSON.stringify({ assignmentId, classroomId, submissionText }),
+      body: JSON.stringify({ assignmentId, classroomId, submissionText, attachmentUrls, githubUrl }),
     }),
   getStudentTests: () => request<any[]>("/student/tests"),
   getStudentAttendance: () => request<any[]>("/student/attendance"),

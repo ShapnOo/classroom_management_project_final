@@ -262,5 +262,24 @@ CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(
 CREATE INDEX IF NOT EXISTS idx_class_reschedules_teacher ON class_reschedules(requested_by_teacher_id);
 CREATE INDEX IF NOT EXISTS idx_class_reschedules_target_teacher ON class_reschedules(target_teacher_id);
 
+-- 13. Student Assignment Submissions
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+  id VARCHAR(64) PRIMARY KEY,
+  assignment_id VARCHAR(64) REFERENCES assignments(id) ON DELETE CASCADE,
+  student_id VARCHAR(64) REFERENCES students(id) ON DELETE CASCADE,
+  submission_text TEXT,
+  attachment_urls JSONB DEFAULT '[]',
+  github_url VARCHAR(255),
+  status VARCHAR(30) DEFAULT 'Submitted',
+  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  obtained_marks NUMERIC(5,2),
+  feedback TEXT,
+  graded_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT unique_student_assignment UNIQUE(student_id, assignment_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment ON assignment_submissions(assignment_id);
+CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student ON assignment_submissions(student_id);
+
 
 
