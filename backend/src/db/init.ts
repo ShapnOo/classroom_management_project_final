@@ -9,15 +9,36 @@ const __dirname = path.dirname(__filename);
 
 // Standard authentic UUID v4 definitions for core seed entities
 export const SEED_IDS = {
-  // Departments
-  DEPT_CSE: "114914b4-ff80-48d7-8290-ac7ea3cbdfaf",
-  DEPT_MTH: "654cc707-b3fc-4428-8bfa-cf0024263142",
-  DEPT_PHY: "9f895bcd-bd98-4624-abda-37a22111a378",
-
-  // Programs
-  PROG_BSC_CS: "70b58daf-cae1-4e39-b58b-943cd1e45912",
-  PROG_PGDIT:  "7a3bcad5-44d5-4ea7-b510-ea234cfd8fa0",
+  // Programs (Top-Level Academic Degrees & Schools) - 12 Programs
+  PROG_BSC_CS:  "70b58daf-cae1-4e39-b58b-943cd1e45912",
+  PROG_PGDIT:   "7a3bcad5-44d5-4ea7-b510-ea234cfd8fa0",
   PROG_BSC_MTH: "1ae5de70-3136-4c3c-85e7-de7f2ce5d58b",
+  PROG_SET:     "11111111-0000-4000-8000-000000000001",
+  PROG_SBAS:    "11111111-0000-4000-8000-000000000002",
+  PROG_SBLS:    "11111111-0000-4000-8000-000000000003",
+  PROG_SSSG:    "11111111-0000-4000-8000-000000000004",
+  PROG_FAH:     "11111111-0000-4000-8000-000000000005",
+  PROG_SLLS:    "11111111-0000-4000-8000-000000000006",
+  PROG_FMAH:    "11111111-0000-4000-8000-000000000007",
+  PROG_FAUD:    "11111111-0000-4000-8000-000000000008",
+  PROG_EDEP:    "11111111-0000-4000-8000-000000000009",
+
+  // Departments (Under Programs) - 15 Departments
+  DEPT_CSE:   "114914b4-ff80-48d7-8290-ac7ea3cbdfaf",
+  DEPT_MTH:   "654cc707-b3fc-4428-8bfa-cf0024263142",
+  DEPT_PHY:   "9f895bcd-bd98-4624-abda-37a22111a378",
+  DEPT_SWE:   "22222222-0000-4000-8000-000000000001",
+  DEPT_ITS:   "22222222-0000-4000-8000-000000000002",
+  DEPT_CHEM:  "22222222-0000-4000-8000-000000000003",
+  DEPT_EEE:   "22222222-0000-4000-8000-000000000004",
+  DEPT_CEE:   "22222222-0000-4000-8000-000000000005",
+  DEPT_ME:    "22222222-0000-4000-8000-000000000006",
+  DEPT_FIN:   "22222222-0000-4000-8000-000000000007",
+  DEPT_MKT:   "22222222-0000-4000-8000-000000000008",
+  DEPT_PHARM: "22222222-0000-4000-8000-000000000009",
+  DEPT_BMB:   "22222222-0000-4000-8000-000000000010",
+  DEPT_ECON:  "22222222-0000-4000-8000-000000000011",
+  DEPT_LAW:   "22222222-0000-4000-8000-000000000012",
 
   // Sessions
   SES_SPRING_2026: "59d346bc-a55c-490f-ba0a-69ce85ec3063",
@@ -95,6 +116,7 @@ export async function initDatabase() {
     await pool.query(schemaSql);
     await pool.query(`
       ALTER TABLE courses ALTER COLUMN credits TYPE NUMERIC(3,1);
+      ALTER TABLE departments ADD COLUMN IF NOT EXISTS program_id VARCHAR(64) REFERENCES programs(id) ON DELETE SET NULL;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
@@ -126,9 +148,9 @@ export async function initDatabase() {
 
     await seedPromotionLogs();
 
-    const { rows } = await pool.query("SELECT id FROM departments LIMIT 1");
-    if (rows.length === 0 || !rows[0].id.includes("-")) {
-      console.log("Re-seeding database with complex authentic GUID primary keys...");
+    const { rows } = await pool.query("SELECT COUNT(*)::int as count FROM departments");
+    if (rows.length === 0 || rows[0].count < 10) {
+      console.log("Seeding full 12 Academic Programs & 15 Departments hierarchy into scholaris_db...");
       await resetAndSeedInitialData();
     } else {
       console.log("Existing GUID data detected in scholaris_db.");
@@ -250,21 +272,42 @@ export async function resetAndSeedInitialData() {
       ON CONFLICT (id) DO NOTHING;
     `);
 
-    // 1. Departments
+    // 1. Programs FIRST (12 Degree / Academic Programs)
     await client.query(`
-      INSERT INTO departments (id, name, code) VALUES
-      ('${SEED_IDS.DEPT_CSE}', 'Computer Science & Engineering', 'CSE'),
-      ('${SEED_IDS.DEPT_MTH}', 'Mathematics', 'MTH'),
-      ('${SEED_IDS.DEPT_PHY}', 'Physics', 'PHY')
+      INSERT INTO programs (id, name, code, duration) VALUES
+      ('${SEED_IDS.PROG_BSC_CS}', 'School of Computer Science & AI', 'SCSAI', '4 Years'),
+      ('${SEED_IDS.PROG_PGDIT}', 'Institute of Information Technology', 'IIT', '1 Year'),
+      ('${SEED_IDS.PROG_BSC_MTH}', 'School of Physical & Mathematical Sciences', 'SPMS', '4 Years'),
+      ('${SEED_IDS.PROG_SET}', 'Faculty of Engineering & Technology', 'FET', '4 Years'),
+      ('${SEED_IDS.PROG_SBAS}', 'School of Business & Financial Management', 'SBFM', '4 Years'),
+      ('${SEED_IDS.PROG_SBLS}', 'School of Biological & Pharmaceutical Sciences', 'SBPS', '4 Years'),
+      ('${SEED_IDS.PROG_SSSG}', 'School of Social Sciences & Public Policy', 'SSSPP', '4 Years'),
+      ('${SEED_IDS.PROG_FAH}', 'Faculty of Arts & Cultural Studies', 'FACS', '4 Years'),
+      ('${SEED_IDS.PROG_SLLS}', 'School of Law & Legal Studies', 'SLLS', '4 Years'),
+      ('${SEED_IDS.PROG_FMAH}', 'Faculty of Medicine & Health Sciences', 'FMHS', '5 Years'),
+      ('${SEED_IDS.PROG_FAUD}', 'Faculty of Architecture & Urban Design', 'FAUD', '5 Years'),
+      ('${SEED_IDS.PROG_EDEP}', 'Executive & Professional Diploma Program', 'EPDP', '1 Year')
       ON CONFLICT (id) DO NOTHING;
     `);
 
-    // 2. Programs
+    // 2. Departments SECOND (15 Departments linked under Programs)
     await client.query(`
-      INSERT INTO programs (id, department_id, name, code, duration) VALUES
-      ('${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.DEPT_CSE}', 'B.Sc. in Computer Science', 'B.Sc. CS', '4 Years'),
-      ('${SEED_IDS.PROG_PGDIT}', '${SEED_IDS.DEPT_CSE}', 'Postgraduate Diploma in IT', 'PGDIT', '1 Year'),
-      ('${SEED_IDS.PROG_BSC_MTH}', '${SEED_IDS.DEPT_MTH}', 'B.Sc. Mathematics', 'B.Sc. MTH', '3 Years')
+      INSERT INTO departments (id, program_id, name, code) VALUES
+      ('${SEED_IDS.DEPT_CSE}', '${SEED_IDS.PROG_BSC_CS}', 'Computer Science & Engineering', 'CSE'),
+      ('${SEED_IDS.DEPT_SWE}', '${SEED_IDS.PROG_BSC_CS}', 'Software Engineering & Data Science', 'SWE'),
+      ('${SEED_IDS.DEPT_ITS}', '${SEED_IDS.PROG_PGDIT}', 'Information Technology Systems', 'ITS'),
+      ('${SEED_IDS.DEPT_MTH}', '${SEED_IDS.PROG_BSC_MTH}', 'Mathematics & Applied Statistics', 'MTH'),
+      ('${SEED_IDS.DEPT_PHY}', '${SEED_IDS.PROG_BSC_MTH}', 'Physics & Electronics', 'PHY'),
+      ('${SEED_IDS.DEPT_CHEM}', '${SEED_IDS.PROG_BSC_MTH}', 'Chemistry & Material Science', 'CHEM'),
+      ('${SEED_IDS.DEPT_EEE}', '${SEED_IDS.PROG_SET}', 'Electrical & Electronic Engineering', 'EEE'),
+      ('${SEED_IDS.DEPT_CEE}', '${SEED_IDS.PROG_SET}', 'Civil & Environmental Engineering', 'CEE'),
+      ('${SEED_IDS.DEPT_ME}', '${SEED_IDS.PROG_SET}', 'Mechanical Engineering', 'ME'),
+      ('${SEED_IDS.DEPT_FIN}', '${SEED_IDS.PROG_SBAS}', 'Finance & Investment Banking', 'FIN'),
+      ('${SEED_IDS.DEPT_MKT}', '${SEED_IDS.PROG_SBAS}', 'Marketing & Digital Commerce', 'MKT'),
+      ('${SEED_IDS.DEPT_PHARM}', '${SEED_IDS.PROG_SBLS}', 'Pharmacy & Clinical Research', 'PHARM'),
+      ('${SEED_IDS.DEPT_BMB}', '${SEED_IDS.PROG_SBLS}', 'Biochemistry & Molecular Biology', 'BMB'),
+      ('${SEED_IDS.DEPT_ECON}', '${SEED_IDS.PROG_SSSG}', 'Economics & Public Governance', 'ECON'),
+      ('${SEED_IDS.DEPT_LAW}', '${SEED_IDS.PROG_SLLS}', 'Jurisprudence & Legal Studies', 'LAW')
       ON CONFLICT (id) DO NOTHING;
     `);
 

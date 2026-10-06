@@ -3,19 +3,20 @@
 -- ════════════════════════════════════════════════════════════════════════════
 
 -- 1. Academic Structure
-CREATE TABLE IF NOT EXISTS departments (
+CREATE TABLE IF NOT EXISTS programs (
   id VARCHAR(64) PRIMARY KEY,
+  department_id VARCHAR(64),
   name VARCHAR(255) NOT NULL,
   code VARCHAR(50) NOT NULL UNIQUE,
+  duration VARCHAR(50) DEFAULT '4 Years',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS programs (
+CREATE TABLE IF NOT EXISTS departments (
   id VARCHAR(64) PRIMARY KEY,
-  department_id VARCHAR(64) REFERENCES departments(id) ON DELETE CASCADE,
+  program_id VARCHAR(64) REFERENCES programs(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
-  code VARCHAR(50) NOT NULL,
-  duration VARCHAR(50),
+  code VARCHAR(50) NOT NULL UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

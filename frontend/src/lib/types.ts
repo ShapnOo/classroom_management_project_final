@@ -10,16 +10,21 @@ export type Session = {
 
 export type Department = {
   id: string;
+  programId?: string;
+  programName?: string;
+  programCode?: string;
   name: string;
   code: string;
 };
 
 export type Program = {
   id: string;
-  departmentId: string;
+  departmentId?: string;
   name: string;
   code: string;
   duration: string;
+  departmentCount?: number;
+  departments?: { id: string; name: string; code: string }[];
 };
 
 export type BatchCourse = {

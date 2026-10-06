@@ -149,12 +149,33 @@ export const api = {
   // ── Departments ──
   getDepartments: async (): Promise<Department[]> => {
     const rows = await request<any[]>("/admin/academic/departments");
-    return rows.map(r => ({ id: r.id, name: r.name, code: r.code }));
+    return rows.map(r => ({
+      id: r.id,
+      programId: r.program_id,
+      programName: r.program_name,
+      programCode: r.program_code,
+      name: r.name,
+      code: r.code,
+    }));
   },
   createDepartment: (data: Omit<Department, "id">) =>
-    request<Department>("/admin/academic/departments", { method: "POST", body: JSON.stringify(data) }),
+    request<Department>("/admin/academic/departments", {
+      method: "POST",
+      body: JSON.stringify({
+        programId: data.programId,
+        name: data.name,
+        code: data.code,
+      }),
+    }),
   updateDepartment: (id: string, data: Partial<Department>) =>
-    request<Department>(`/admin/academic/departments/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    request<Department>(`/admin/academic/departments/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        programId: data.programId,
+        name: data.name,
+        code: data.code,
+      }),
+    }),
   deleteDepartment: (id: string) =>
     request<{ message: string }>(`/admin/academic/departments/${id}`, { method: "DELETE" }),
 
@@ -167,6 +188,8 @@ export const api = {
       name: r.name,
       code: r.code,
       duration: r.duration || "4 Years",
+      departmentCount: r.department_count ? Number(r.department_count) : 0,
+      departments: r.departments || [],
     }));
   },
   createProgram: (data: Omit<Program, "id">) =>

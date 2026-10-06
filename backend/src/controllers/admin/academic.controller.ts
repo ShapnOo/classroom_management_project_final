@@ -8,7 +8,14 @@ const genId = () => crypto.randomUUID();
 // ── DEPARTMENTS ───────────────────────────────────────────────────────────────
 export const getDepartments = async (req: Request, res: Response) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM departments ORDER BY name ASC");
+    const { rows } = await pool.query(`
+      SELECT d.*, 
+             p.name as program_name, 
+             p.code as program_code
+      FROM departments d
+      LEFT JOIN programs p ON d.program_id = p.id
+      ORDER BY d.name ASC
+    `);
     sendSuccess(res, rows, "Departments retrieved successfully");
   } catch (err: any) {
     sendError(res, err.message);
@@ -17,13 +24,13 @@ export const getDepartments = async (req: Request, res: Response) => {
 
 export const createDepartment = async (req: Request, res: Response) => {
   try {
-    const { name, code } = req.body;
+    const { programId, name, code } = req.body;
     if (!name || !code) return sendError(res, "Name and code are required", 400);
 
     const id = genId();
     const { rows } = await pool.query(
-      "INSERT INTO departments (id, name, code) VALUES ($1, $2, $3) RETURNING *",
-      [id, name, code]
+      "INSERT INTO departments (id, program_id, name, code) VALUES ($1, $2, $3, $4) RETURNING *",
+      [id, programId || null, name, code]
     );
     sendSuccess(res, rows[0], "Department created successfully", 201);
   } catch (err: any) {
@@ -34,10 +41,10 @@ export const createDepartment = async (req: Request, res: Response) => {
 export const updateDepartment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, code } = req.body;
+    const { programId, name, code } = req.body;
     const { rows } = await pool.query(
-      "UPDATE departments SET name = COALESCE($1, name), code = COALESCE($2, code) WHERE id = $3 RETURNING *",
-      [name, code, id]
+      "UPDATE departments SET program_id = COALESCE($1, program_id), name = COALESCE($2, name), code = COALESCE($3, code) WHERE id = $4 RETURNING *",
+      [programId || null, name, code, id]
     );
     if (rows.length === 0) return sendError(res, "Department not found", 404);
     sendSuccess(res, rows[0], "Department updated successfully");
@@ -60,9 +67,16 @@ export const deleteDepartment = async (req: Request, res: Response) => {
 export const getPrograms = async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query(`
-      SELECT p.*, d.name as department_name, d.code as department_code 
+      SELECT p.*, 
+        COUNT(d.id)::int as department_count,
+        COALESCE(
+          json_agg(
+            json_build_object('id', d.id, 'name', d.name, 'code', d.code)
+          ) FILTER (WHERE d.id IS NOT NULL), '[]'
+        ) as departments
       FROM programs p
-      LEFT JOIN departments d ON p.department_id = d.id
+      LEFT JOIN departments d ON d.program_id = p.id
+      GROUP BY p.id
       ORDER BY p.name ASC
     `);
     sendSuccess(res, rows, "Programs retrieved successfully");
@@ -74,13 +88,13 @@ export const getPrograms = async (req: Request, res: Response) => {
 export const createProgram = async (req: Request, res: Response) => {
   try {
     const { departmentId, name, code, duration } = req.body;
-    if (!departmentId || !name || !code) {
-      return sendError(res, "Department, name, and code are required", 400);
+    if (!name || !code) {
+      return sendError(res, "Name and code are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(
       "INSERT INTO programs (id, department_id, name, code, duration) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [id, departmentId, name, code, duration || "4 Years"]
+      [id, departmentId || null, name, code, duration || "4 Years"]
     );
     sendSuccess(res, rows[0], "Program created successfully", 201);
   } catch (err: any) {
@@ -99,7 +113,7 @@ export const updateProgram = async (req: Request, res: Response) => {
           code = COALESCE($3, code),
           duration = COALESCE($4, duration)
       WHERE id = $5 RETURNING *
-    `, [departmentId, name, code, duration, id]);
+    `, [departmentId || null, name, code, duration, id]);
     if (rows.length === 0) return sendError(res, "Program not found", 404);
     sendSuccess(res, rows[0], "Program updated successfully");
   } catch (err: any) {
