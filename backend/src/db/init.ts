@@ -1,10 +1,89 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import { pool } from "../config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Standard authentic UUID v4 definitions for core seed entities
+export const SEED_IDS = {
+  // Departments
+  DEPT_CSE: "114914b4-ff80-48d7-8290-ac7ea3cbdfaf",
+  DEPT_MTH: "654cc707-b3fc-4428-8bfa-cf0024263142",
+  DEPT_PHY: "9f895bcd-bd98-4624-abda-37a22111a378",
+
+  // Programs
+  PROG_BSC_CS: "70b58daf-cae1-4e39-b58b-943cd1e45912",
+  PROG_PGDIT:  "7a3bcad5-44d5-4ea7-b510-ea234cfd8fa0",
+  PROG_BSC_MTH: "1ae5de70-3136-4c3c-85e7-de7f2ce5d58b",
+
+  // Sessions
+  SES_SPRING_2026: "59d346bc-a55c-490f-ba0a-69ce85ec3063",
+  SES_FALL_2025:   "c088b44a-a372-4953-9e86-bdb8739ed659",
+  SES_FALL_2026:   "f1dece0c-a017-48b3-9422-1cc1ada34271",
+
+  // Batches
+  BATCH_SP26_A: "98b7201d-f795-4069-9229-42117595fb3f",
+  BATCH_SP26_B: "c4ce1ed1-879d-4b4e-a877-da2b376aae1d",
+  BATCH_FA25_A: "1bb542f2-202b-4bb7-af5a-0546e2b18407",
+  BATCH_FA26_C: "35144c16-c129-4702-ac46-ed049860ae43",
+
+  // Admins
+  ADMIN_1: "fc09a540-73c3-4809-9da9-4562372bd0cf",
+  ADMIN_2: "19288376-94b8-4e81-a895-6cbc80724486",
+
+  // Teachers
+  TEACHER_1: "1a3f6e61-2a04-4f91-9897-1f97b99604c5",
+  TEACHER_2: "61fbef9f-b9b2-49f8-bcf3-53f10d69ff9c",
+  TEACHER_3: "3209ab89-4eec-423c-9e3b-1adacfa1996b",
+  TEACHER_4: "2c5148b5-7a95-4cdf-80dd-af220483c48b",
+  TEACHER_5: "1b8be174-4360-4e90-a762-3f7d9ffbd373",
+
+  // Classrooms
+  CLS_1: "9f33d641-11fd-4ad1-812f-ec032f67ec4b",
+  CLS_2: "5bc205fe-5187-4816-9faf-b1ed01ebc92e",
+  CLS_3: "94592bc8-2f7a-4636-bb7c-d7b61ca094bd",
+  CLS_4: "93e8e4e0-76ed-429d-ba4a-059130ad2310",
+  CLS_5: "68bd42f0-6161-4a90-896e-412f6574da93",
+
+  // 20 Courses
+  COURSE_101: "4f07a4a9-8472-4b2a-a92c-63b723577d20",
+  COURSE_102: "8c773e34-58cb-4fdf-9730-1b777a83d789",
+  COURSE_103: "2e8587d4-8d26-44ec-b82b-8a7155694bb1",
+  COURSE_104: "31d60bdf-023a-4467-b501-44759bf896e8",
+  COURSE_201: "a43063f2-1a48-4395-8efd-88b449b2c3a5",
+  COURSE_202: "732b130e-26f5-4654-a6c3-18873fef4045",
+  COURSE_203: "b890a5a2-3f41-4770-985b-cf10928929e7",
+  COURSE_204: "94a861d8-f32b-426b-9c71-70bf892cd412",
+  COURSE_301: "e6f43702-8692-4463-bfb7-3b2d1d4f2603",
+  COURSE_302: "627ab75e-efb8-4c28-98e6-e028bfae6894",
+  COURSE_303: "94c8e74e-761a-4d2a-89a1-07bc9d963384",
+  COURSE_304: "367175ae-1d89-4a41-b84e-e17088b9a528",
+  COURSE_305: "6d7e008a-6b83-4eb0-8be0-b5bf36709fa3",
+  COURSE_306: "8e22894b-4b21-42a9-b6aa-4c2ab1e2bb4a",
+  COURSE_401: "15c25608-8889-4b82-a720-d3e91129f10a",
+  COURSE_402: "119f4a56-0775-4d7a-b9c1-4b1bbcfdf37b",
+  COURSE_412: "d2d71597-2a44-42b7-8d9e-10884d592965",
+  COURSE_425: "d35a111a-12cf-4b72-9017-d7796dcf906c",
+  COURSE_426: "0c78a0d9-0b73-45ab-bc15-e23114949a2a",
+  COURSE_499: "ea17c385-e244-469b-83ee-01f6aa3d1796",
+
+  // Assignments
+  ASGN_1: "766efb62-1cb2-473d-82d2-ca4b96716091",
+  ASGN_2: "a2b0e9a5-76b6-45ef-89a1-5d9c223c34a2",
+  ASGN_3: "c4631ab5-8c70-4f9e-9907-fdf027e8d641",
+  ASGN_4: "b218413b-280f-4889-a201-995b28d6174a",
+  ASGN_5: "f3796d19-4809-43c2-a89e-26fbb10e3049",
+
+  // Tests
+  TST_1: "216fa301-447d-4186-b489-8d77bfbb1090",
+  TST_2: "627514a0-a7d1-4cb5-85a2-ea1bc41094ab",
+  TST_3: "b7e4091a-7b3b-4890-a764-77bfd440938b",
+  TST_4: "971846b0-4a87-4340-9e10-da9b02a24911",
+  TST_5: "1a8f94cb-5b23-45c1-901a-cf2a912bb302",
+};
 
 export async function initDatabase() {
   console.log("Initializing PostgreSQL Database Schema...");
@@ -13,6 +92,7 @@ export async function initDatabase() {
     const schemaSql = fs.readFileSync(schemaSqlPath, "utf-8");
     await pool.query(schemaSql);
     await pool.query(`
+      ALTER TABLE courses ALTER COLUMN credits TYPE NUMERIC(3,1);
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
@@ -26,13 +106,12 @@ export async function initDatabase() {
     `);
     console.log("Database schema & performance indexes initialized successfully.");
 
-    // Check if initial settings exist
     const { rows } = await pool.query("SELECT id FROM departments LIMIT 1");
-    if (rows.length === 0) {
-      console.log("Seeding full administrative and academic demo data...");
-      await seedInitialData();
+    if (rows.length === 0 || !rows[0].id.includes("-")) {
+      console.log("Re-seeding database with complex authentic GUID primary keys...");
+      await resetAndSeedInitialData();
     } else {
-      console.log("Existing data detected in scholaris_db.");
+      console.log("Existing GUID data detected in scholaris_db.");
       await seedStudentTranscripts();
     }
   } catch (error) {
@@ -41,10 +120,12 @@ export async function initDatabase() {
   }
 }
 
-export async function seedInitialData() {
+export async function resetAndSeedInitialData() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    await client.query("TRUNCATE TABLE student_transcripts, attendance_records, class_sessions, grade_records, assignments, tests, class_schedules, classrooms, syllabus_topics, course_materials, courses, students, teachers, admins, users, batches, academic_sessions, programs, departments CASCADE;");
 
     // 0. App Settings
     await client.query(`
@@ -56,71 +137,71 @@ export async function seedInitialData() {
     // 1. Departments
     await client.query(`
       INSERT INTO departments (id, name, code) VALUES
-      ('dept-1', 'Computer Science & Engineering', 'CSE'),
-      ('dept-2', 'Mathematics', 'MTH'),
-      ('dept-3', 'Physics', 'PHY')
+      ('${SEED_IDS.DEPT_CSE}', 'Computer Science & Engineering', 'CSE'),
+      ('${SEED_IDS.DEPT_MTH}', 'Mathematics', 'MTH'),
+      ('${SEED_IDS.DEPT_PHY}', 'Physics', 'PHY')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 2. Programs
     await client.query(`
       INSERT INTO programs (id, department_id, name, code, duration) VALUES
-      ('prog-1', 'dept-1', 'B.Sc. in Computer Science', 'B.Sc. CS', '4 Years'),
-      ('prog-2', 'dept-1', 'Postgraduate Diploma in IT', 'PGDIT', '1 Year'),
-      ('prog-3', 'dept-2', 'B.Sc. Mathematics', 'B.Sc. MTH', '3 Years')
+      ('${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.DEPT_CSE}', 'B.Sc. in Computer Science', 'B.Sc. CS', '4 Years'),
+      ('${SEED_IDS.PROG_PGDIT}', '${SEED_IDS.DEPT_CSE}', 'Postgraduate Diploma in IT', 'PGDIT', '1 Year'),
+      ('${SEED_IDS.PROG_BSC_MTH}', '${SEED_IDS.DEPT_MTH}', 'B.Sc. Mathematics', 'B.Sc. MTH', '3 Years')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 3. Academic Sessions
     await client.query(`
       INSERT INTO academic_sessions (id, name, start_date, end_date, status) VALUES
-      ('ses-1', 'Spring 2026', '2026-01-15', '2026-05-31', 'Active'),
-      ('ses-2', 'Fall 2025', '2025-08-15', '2025-12-31', 'Completed'),
-      ('ses-3', 'Fall 2026', '2026-08-15', '2026-12-31', 'Upcoming')
+      ('${SEED_IDS.SES_SPRING_2026}', 'Spring 2026', '2026-01-15', '2026-05-31', 'Active'),
+      ('${SEED_IDS.SES_FALL_2025}', 'Fall 2025', '2025-08-15', '2025-12-31', 'Completed'),
+      ('${SEED_IDS.SES_FALL_2026}', 'Fall 2026', '2026-08-15', '2026-12-31', 'Upcoming')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 4. Batches
     await client.query(`
       INSERT INTO batches (id, code, name, program_id, session_id, section, status, semester_count) VALUES
-      ('batch-1', 'SP26-A', 'Spring 2026 — Section A', 'prog-1', 'ses-1', 'A', 'Active', 8),
-      ('batch-2', 'SP26-B', 'Spring 2026 — Section B', 'prog-1', 'ses-1', 'B', 'Active', 8),
-      ('batch-3', 'FA25-A', 'Fall 2025 — Section A', 'prog-1', 'ses-2', 'A', 'Completed', 8),
-      ('batch-4', 'FA26-C', 'Fall 2026 — Section C', 'prog-1', 'ses-3', 'C', 'Upcoming', 8)
+      ('${SEED_IDS.BATCH_SP26_A}', 'SP26-A', 'Spring 2026 — Section A', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_SPRING_2026}', 'A', 'Active', 8),
+      ('${SEED_IDS.BATCH_SP26_B}', 'SP26-B', 'Spring 2026 — Section B', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_SPRING_2026}', 'B', 'Active', 8),
+      ('${SEED_IDS.BATCH_FA25_A}', 'FA25-A', 'Fall 2025 — Section A', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2025}', 'A', 'Completed', 8),
+      ('${SEED_IDS.BATCH_FA26_C}', 'FA26-C', 'Fall 2026 — Section C', '${SEED_IDS.PROG_BSC_CS}', '${SEED_IDS.SES_FALL_2026}', 'C', 'Upcoming', 8)
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 5. Admins & Teachers Users
     await client.query(`
       INSERT INTO users (id, name, email, password_hash, role) VALUES
-      ('admin-1', 'System Admin', 'admin@edu', 'admin123', 'admin'),
-      ('admin-2', 'Jane Staff', 'j.staff@edu', 'admin123', 'admin'),
-      ('teacher-1', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'teacher123', 'teacher'),
-      ('teacher-2', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'teacher123', 'teacher'),
-      ('teacher-3', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', 'teacher123', 'teacher'),
-      ('teacher-4', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', 'teacher123', 'teacher'),
-      ('teacher-5', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', 'teacher123', 'teacher')
+      ('${SEED_IDS.ADMIN_1}', 'System Admin', 'admin@edu', 'admin123', 'admin'),
+      ('${SEED_IDS.ADMIN_2}', 'Jane Staff', 'j.staff@edu', 'admin123', 'admin'),
+      ('${SEED_IDS.TEACHER_1}', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'teacher123', 'teacher'),
+      ('${SEED_IDS.TEACHER_2}', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'teacher123', 'teacher'),
+      ('${SEED_IDS.TEACHER_3}', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', 'teacher123', 'teacher'),
+      ('${SEED_IDS.TEACHER_4}', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', 'teacher123', 'teacher'),
+      ('${SEED_IDS.TEACHER_5}', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', 'teacher123', 'teacher')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     await client.query(`
       INSERT INTO admins (id, name, email, role) VALUES
-      ('admin-1', 'System Admin', 'admin@edu', 'Super Admin'),
-      ('admin-2', 'Jane Staff', 'j.staff@edu', 'Staff')
+      ('${SEED_IDS.ADMIN_1}', 'System Admin', 'admin@edu', 'Super Admin'),
+      ('${SEED_IDS.ADMIN_2}', 'Jane Staff', 'j.staff@edu', 'Staff')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     await client.query(`
       INSERT INTO teachers (id, name, email, department_id, designation) VALUES
-      ('teacher-1', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', 'dept-1', 'Professor & Coordinator PGDIT'),
-      ('teacher-2', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', 'dept-1', 'Professor'),
-      ('teacher-3', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', 'dept-1', 'Professor'),
-      ('teacher-4', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', 'dept-2', 'Professor'),
-      ('teacher-5', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', 'dept-3', 'Professor')
+      ('${SEED_IDS.TEACHER_1}', 'Prof. Dr. Shamim Al Mamun', 'sam@juniv.edu', '${SEED_IDS.DEPT_CSE}', 'Professor & Coordinator PGDIT'),
+      ('${SEED_IDS.TEACHER_2}', 'Prof. Dr. Risala Tasin Khan', 'rtkhan@juniv.edu', '${SEED_IDS.DEPT_CSE}', 'Professor'),
+      ('${SEED_IDS.TEACHER_3}', 'Prof. Dr. Mohammad Shahidul Islam', 'shahidul@juniv.edu', '${SEED_IDS.DEPT_CSE}', 'Professor'),
+      ('${SEED_IDS.TEACHER_4}', 'Prof. Md. Fazlul Karim Patwary', 'patwary@juniv.edu', '${SEED_IDS.DEPT_MTH}', 'Professor'),
+      ('${SEED_IDS.TEACHER_5}', 'Prof. Dr. M. Mesbahuddin Sarker', 'mesbah@juniv.edu', '${SEED_IDS.DEPT_PHY}', 'Professor')
       ON CONFLICT (id) DO NOTHING;
     `);
 
-    // 6. 175 Students across 4 Batches
+    // 6. 175 Students across 4 Batches (with fully random GUIDs)
     const studentNames = [
       "Abdur Rahman", "Ayesha Siddiqa", "Mahmudul Hasan", "Nusrat Jahan", "Kamrul Islam", "Fatema Begum", "Rakibul Hasan",
       "Jannatul Ferdous", "Mehedi Hasan", "Sanjida Akter", "Tariqul Islam", "Sumaiya Akter", "Ariful Islam", "Sadia Afrin",
@@ -132,15 +213,15 @@ export async function seedInitialData() {
     ];
 
     const batches = [
-      { id: "batch-1", prefix: "SP26A", count: 42 },
-      { id: "batch-2", prefix: "SP26B", count: 38 },
-      { id: "batch-3", prefix: "FA25A", count: 50 },
-      { id: "batch-4", prefix: "FA26C", count: 45 },
+      { id: SEED_IDS.BATCH_SP26_A, prefix: "SP26A", count: 42 },
+      { id: SEED_IDS.BATCH_SP26_B, prefix: "SP26B", count: 38 },
+      { id: SEED_IDS.BATCH_FA25_A, prefix: "FA25A", count: 50 },
+      { id: SEED_IDS.BATCH_FA26_C, prefix: "FA26C", count: 45 },
     ];
 
     for (const b of batches) {
       for (let i = 1; i <= b.count; i++) {
-        const studentId = `std-${b.id}-${i}`;
+        const studentId = crypto.randomUUID();
         const rollNo = `${b.prefix}${String(i).padStart(3, "0")}`;
         const name = studentNames[(i - 1) % studentNames.length];
         const email = `${b.prefix.toLowerCase()}${i}@edu`;
@@ -163,88 +244,99 @@ export async function seedInitialData() {
     }
 
     // 7. 20 Academic Courses across 8 Semesters
-    await client.query(`
-      INSERT INTO courses (id, code, title, program_id, credits) VALUES
-      ('course-1', 'CSE-101', 'Structured Programming Language', 'prog-1', 3),
-      ('course-2', 'CSE-102', 'Structured Programming Lab', 'prog-1', 1.5),
-      ('course-3', 'CSE-103', 'Discrete Mathematics', 'prog-1', 3),
-      ('course-4', 'CSE-104', 'Electrical Circuits & Electronics', 'prog-1', 3),
-      ('course-5', 'CSE-201', 'Data Structures & Algorithms', 'prog-1', 3),
-      ('course-6', 'CSE-202', 'Data Structures Lab', 'prog-1', 1.5),
-      ('course-7', 'CSE-203', 'Object Oriented Programming', 'prog-1', 3),
-      ('course-8', 'CSE-204', 'Digital Logic Design', 'prog-1', 3),
-      ('course-9', 'CSE-301', 'Algorithm Analysis & Design', 'prog-1', 3),
-      ('course-10', 'CSE-302', 'Computer Architecture', 'prog-1', 3),
-      ('course-11', 'CSE-303', 'Operating Systems', 'prog-1', 3),
-      ('course-12', 'CSE-304', 'Operating Systems Lab', 'prog-1', 1.5),
-      ('course-13', 'CSE-305', 'Database Management Systems', 'prog-1', 3),
-      ('course-14', 'CSE-306', 'Database Management Systems Lab', 'prog-1', 1.5),
-      ('course-15', 'CSE-401', 'Computer Networks', 'prog-1', 3),
-      ('course-16', 'CSE-402', 'Computer Networks Lab', 'prog-1', 1.5),
-      ('course-17', 'CSE-412', 'Software Engineering & System Design', 'prog-1', 3),
-      ('course-18', 'CSE-425', 'Artificial Intelligence & Machine Learning', 'prog-1', 3),
-      ('course-19', 'CSE-426', 'Artificial Intelligence Lab', 'prog-1', 1.5),
-      ('course-20', 'CSE-499', 'B.Sc. Thesis / Capstone Project', 'prog-1', 6)
-      ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, credits = EXCLUDED.credits;
-    `);
+    const coursesData = [
+      { id: SEED_IDS.COURSE_101, code: 'CSE-101', title: 'Structured Programming Language', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_102, code: 'CSE-102', title: 'Structured Programming Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_103, code: 'CSE-103', title: 'Discrete Mathematics', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_104, code: 'CSE-104', title: 'Electrical Circuits & Electronics', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_201, code: 'CSE-201', title: 'Data Structures & Algorithms', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_202, code: 'CSE-202', title: 'Data Structures Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_203, code: 'CSE-203', title: 'Object Oriented Programming', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_204, code: 'CSE-204', title: 'Digital Logic Design', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_301, code: 'CSE-301', title: 'Algorithm Analysis & Design', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_302, code: 'CSE-302', title: 'Computer Architecture', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_303, code: 'CSE-303', title: 'Operating Systems', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_304, code: 'CSE-304', title: 'Operating Systems Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_305, code: 'CSE-305', title: 'Database Management Systems', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_306, code: 'CSE-306', title: 'Database Management Systems Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_401, code: 'CSE-401', title: 'Computer Networks', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_402, code: 'CSE-402', title: 'Computer Networks Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_412, code: 'CSE-412', title: 'Software Engineering & System Design', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_425, code: 'CSE-425', title: 'Artificial Intelligence & Machine Learning', program_id: SEED_IDS.PROG_BSC_CS, credits: 3 },
+      { id: SEED_IDS.COURSE_426, code: 'CSE-426', title: 'Artificial Intelligence Lab', program_id: SEED_IDS.PROG_BSC_CS, credits: 1.5 },
+      { id: SEED_IDS.COURSE_499, code: 'CSE-499', title: 'B.Sc. Thesis / Capstone Project', program_id: SEED_IDS.PROG_BSC_CS, credits: 6 },
+    ];
+
+    for (const c of coursesData) {
+      await client.query(`
+        INSERT INTO courses (id, code, title, program_id, credits)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, credits = EXCLUDED.credits;
+      `, [c.id, c.code, c.title, c.program_id, c.credits]);
+    }
 
     // 8. Syllabus Topics
-    await client.query(`
-      INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status) VALUES
-      ('syl-1', 'course-1', 'Introduction & ER Model', 1, ARRAY['What is a Database?', 'ER Diagrams', 'Entity Relationships'], 'done', 'Published'),
-      ('syl-2', 'course-1', 'Relational Model & SQL', 2, ARRAY['Relational Algebra', 'SQL SELECT', 'Joins & Subqueries'], 'done', 'Published'),
-      ('syl-3', 'course-1', 'Functional Dependencies', 3, ARRAY['Armstrong''s Axioms', 'Closure Sets', 'Minimal Cover'], 'done', 'Published'),
-      ('syl-4', 'course-1', 'Normalization (1NF–3NF)', 4, ARRAY['1NF', '2NF', '3NF', 'Anomalies'], 'done', 'Published'),
-      ('syl-5', 'course-1', 'BCNF & Denormalization', 5, ARRAY['3NF Examples', 'BCNF Examples', 'Practical Problems'], 'current', 'Published'),
-      ('syl-6', 'course-1', 'Transactions & Concurrency', 6, ARRAY['ACID Properties', 'Deadlocks', 'Serializability'], 'pending', 'Published'),
-      ('syl-7', 'course-1', 'Indexing & Query Optimization', 7, ARRAY['B+ Tree', 'Hash Index', 'Query Cost'], 'pending', 'Draft'),
-      ('syl-8', 'course-2', 'SDLC Models', 1, ARRAY['Waterfall', 'Agile', 'Spiral'], 'done', 'Published'),
-      ('syl-9', 'course-2', 'Requirements Engineering', 2, ARRAY['Functional & Non-functional', 'Use Case Diagrams'], 'done', 'Published'),
-      ('syl-10', 'course-2', 'System Design & UML', 3, ARRAY['Class Diagrams', 'Sequence Diagrams'], 'current', 'Published'),
-      ('syl-11', 'course-2', 'Design Patterns', 4, ARRAY['Singleton', 'Observer', 'Factory'], 'pending', 'Draft'),
-      ('syl-12', 'course-4', 'Intro to AI & Search', 1, ARRAY['BFS', 'DFS', 'A* Search'], 'done', 'Published'),
-      ('syl-13', 'course-4', 'Machine Learning Basics', 2, ARRAY['Supervised Learning', 'Unsupervised Learning'], 'current', 'Published'),
-      ('syl-14', 'course-4', 'Neural Networks', 3, ARRAY['Perceptrons', 'Backpropagation'], 'pending', 'Draft')
-      ON CONFLICT (id) DO NOTHING;
-    `);
+    const syllabusData = [
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Introduction & ER Model', week: 1, sub_topics: ['What is a Database?', 'ER Diagrams', 'Entity Relationships'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Relational Model & SQL', week: 2, sub_topics: ['Relational Algebra', 'SQL SELECT', 'Joins & Subqueries'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Functional Dependencies', week: 3, sub_topics: ["Armstrong's Axioms", 'Closure Sets', 'Minimal Cover'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Normalization (1NF–3NF)', week: 4, sub_topics: ['1NF', '2NF', '3NF', 'Anomalies'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'BCNF & Denormalization', week: 5, sub_topics: ['3NF Examples', 'BCNF Examples', 'Practical Problems'], teacher_status: 'current', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Transactions & Concurrency', week: 6, sub_topics: ['ACID Properties', 'Deadlocks', 'Serializability'], teacher_status: 'pending', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_305, topic: 'Indexing & Query Optimization', week: 7, sub_topics: ['B+ Tree', 'Hash Index', 'Query Cost'], teacher_status: 'pending', admin_status: 'Draft' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_412, topic: 'SDLC Models', week: 1, sub_topics: ['Waterfall', 'Agile', 'Spiral'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_412, topic: 'Requirements Engineering', week: 2, sub_topics: ['Functional & Non-functional', 'Use Case Diagrams'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_412, topic: 'System Design & UML', week: 3, sub_topics: ['Class Diagrams', 'Sequence Diagrams'], teacher_status: 'current', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_412, topic: 'Design Patterns', week: 4, sub_topics: ['Singleton', 'Observer', 'Factory'], teacher_status: 'pending', admin_status: 'Draft' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_425, topic: 'Intro to AI & Search', week: 1, sub_topics: ['BFS', 'DFS', 'A* Search'], teacher_status: 'done', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_425, topic: 'Machine Learning Basics', week: 2, sub_topics: ['Supervised Learning', 'Unsupervised Learning'], teacher_status: 'current', admin_status: 'Published' },
+      { id: crypto.randomUUID(), course_id: SEED_IDS.COURSE_425, topic: 'Neural Networks', week: 3, sub_topics: ['Perceptrons', 'Backpropagation'], teacher_status: 'pending', admin_status: 'Draft' }
+    ];
+
+    for (const s of syllabusData) {
+      await client.query(`
+        INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (id) DO NOTHING;
+      `, [s.id, s.course_id, s.topic, s.week, s.sub_topics, s.teacher_status, s.admin_status]);
+    }
 
     // 9. Classrooms
     await client.query(`
       INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index) VALUES
-      ('cls-1', 'course-1', 'batch-1', 'teacher-1', 'Room 402, Bldg C', '2026-01-15', '2026-05-20', 'ongoing', 18, 26, 0),
-      ('cls-2', 'course-2', 'batch-2', 'teacher-1', 'Room 305, Bldg A', '2026-01-16', '2026-05-22', 'ongoing', 15, 20, 1),
-      ('cls-3', 'course-3', 'batch-3', 'teacher-4', 'Room 201, Bldg B', '2025-08-15', '2025-12-20', 'completed', 24, 24, 2),
-      ('cls-4', 'course-4', 'batch-1', 'teacher-1', 'Lab 2, Bldg D', '2026-01-15', '2026-05-20', 'ongoing', 8, 24, 2),
-      ('cls-5', 'course-5', 'batch-4', 'teacher-2', 'Room 101, Bldg B', '2026-08-15', '2026-12-20', 'upcoming', 0, 24, 3)
+      ('${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_1}', 'Room 402, Bldg C', '2026-01-15', '2026-05-20', 'ongoing', 18, 26, 0),
+      ('${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', '${SEED_IDS.BATCH_SP26_B}', '${SEED_IDS.TEACHER_1}', 'Room 305, Bldg A', '2026-01-16', '2026-05-22', 'ongoing', 15, 20, 1),
+      ('${SEED_IDS.CLS_3}', '${SEED_IDS.COURSE_101}', '${SEED_IDS.BATCH_FA25_A}', '${SEED_IDS.TEACHER_4}', 'Room 201, Bldg B', '2025-08-15', '2025-12-20', 'completed', 24, 24, 2),
+      ('${SEED_IDS.CLS_4}', '${SEED_IDS.COURSE_425}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_1}', 'Lab 2, Bldg D', '2026-01-15', '2026-05-20', 'ongoing', 8, 24, 2),
+      ('${SEED_IDS.CLS_5}', '${SEED_IDS.COURSE_201}', '${SEED_IDS.BATCH_FA26_C}', '${SEED_IDS.TEACHER_2}', 'Room 101, Bldg B', '2026-08-15', '2026-12-20', 'upcoming', 0, 24, 3)
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 10. Class Schedules
     await client.query(`
       INSERT INTO class_schedules (id, classroom_id, day, start_time, end_time, room) VALUES
-      ('sch-1', 'cls-1', 'Monday', '10:00 AM', '11:30 AM', 'Room 402'),
-      ('sch-2', 'cls-1', 'Wednesday', '10:00 AM', '11:30 AM', 'Room 402'),
-      ('sch-3', 'cls-2', 'Tuesday', '02:00 PM', '03:30 PM', 'Room 305'),
-      ('sch-4', 'cls-2', 'Thursday', '02:00 PM', '03:30 PM', 'Room 305'),
-      ('sch-5', 'cls-4', 'Monday', '12:00 PM', '01:30 PM', 'Lab 2'),
-      ('sch-6', 'cls-4', 'Wednesday', '12:00 PM', '01:30 PM', 'Lab 2'),
-      ('sch-7', 'cls-3', 'Wednesday', '09:00 AM', '11:00 AM', 'Room 201'),
-      ('sch-8', 'cls-5', 'Friday', '09:00 AM', '12:00 PM', 'Room 101')
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', 'Monday', '10:00 AM', '11:30 AM', 'Room 402'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', 'Wednesday', '10:00 AM', '11:30 AM', 'Room 402'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', 'Tuesday', '02:00 PM', '03:30 PM', 'Room 305'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', 'Thursday', '02:00 PM', '03:30 PM', 'Room 305'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_4}', 'Monday', '12:00 PM', '01:30 PM', 'Lab 2'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_4}', 'Wednesday', '12:00 PM', '01:30 PM', 'Lab 2'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_3}', 'Wednesday', '09:00 AM', '11:00 AM', 'Room 201'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_5}', 'Friday', '09:00 AM', '12:00 PM', 'Room 101')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 11. Class Sessions & Attendance Records
-    let sessIdx = 1;
-    let attIdx = 1;
     const activeClassrooms = [
-      { id: "cls-1", batchId: "batch-1", count: 42, sessions: 10, prefix: "SP26A" },
-      { id: "cls-2", batchId: "batch-2", count: 38, sessions: 8, prefix: "SP26B" },
-      { id: "cls-4", batchId: "batch-1", count: 42, sessions: 6, prefix: "SP26A" },
+      { id: SEED_IDS.CLS_1, batchId: SEED_IDS.BATCH_SP26_A, count: 42, sessions: 10 },
+      { id: SEED_IDS.CLS_2, batchId: SEED_IDS.BATCH_SP26_B, count: 38, sessions: 8 },
+      { id: SEED_IDS.CLS_4, batchId: SEED_IDS.BATCH_SP26_A, count: 42, sessions: 6 },
     ];
 
     for (const ac of activeClassrooms) {
+      const { rows: batchStudents } = await client.query("SELECT id FROM students WHERE batch_id = $1", [ac.batchId]);
       for (let s = 1; s <= ac.sessions; s++) {
-        const sessionId = `cses-${sessIdx++}`;
+        const sessionId = crypto.randomUUID();
         const sessionDate = `2026-0${Math.floor((s + 1) / 2)}-${String(10 + s).padStart(2, "0")}T10:00:00Z`;
 
         await client.query(
@@ -254,11 +346,11 @@ export async function seedInitialData() {
           [sessionId, ac.id, sessionDate, `Topic ${s}: Core Concept Lecture`, `Completed syllabus requirements and live examples for session ${s}`]
         );
 
-        for (let st = 1; st <= ac.count; st++) {
-          const studentId = `std-${ac.batchId}-${st}`;
+        for (let st = 0; st < batchStudents.length; st++) {
+          const studentId = batchStudents[st].id;
           const hash = (st * 13 + s * 7) % 100;
           const status = hash < 75 ? "present" : hash < 90 ? "late" : "absent";
-          const attId = `att-${attIdx++}`;
+          const attId = crypto.randomUUID();
 
           await client.query(
             `INSERT INTO attendance_records (id, session_id, classroom_id, student_id, status)
@@ -273,40 +365,40 @@ export async function seedInitialData() {
     // 12. Assignments
     await client.query(`
       INSERT INTO assignments (id, classroom_id, title, description, due_date, total_marks, status, submissions) VALUES
-      ('asgn-1', 'cls-1', 'ER Diagram Design', 'Design an enterprise ER Diagram for university hall management', '2026-10-25', 20, 'Active', 38),
-      ('asgn-2', 'cls-1', 'SQL Queries Practice', 'Complex SQL nested joins, grouping, and analytic window functions', '2026-11-02', 20, 'Upcoming', 0),
-      ('asgn-3', 'cls-2', 'Agile Case Study', 'Evaluate Scrum vs Kanban for an e-commerce platform migration', '2026-10-20', 20, 'Completed', 38),
-      ('asgn-4', 'cls-2', 'UML Diagram - Library System', 'Full class and sequence diagrams following standard OMG UML 2.5', '2026-11-10', 20, 'Active', 5),
-      ('asgn-5', 'cls-4', 'Search Algorithm Impl.', 'Implement A* search with Manhattan distance heuristic in Python', '2026-11-15', 20, 'Active', 10)
+      ('${SEED_IDS.ASGN_1}', '${SEED_IDS.CLS_1}', 'ER Diagram Design', 'Design an enterprise ER Diagram for university hall management', '2026-10-25', 20, 'Active', 38),
+      ('${SEED_IDS.ASGN_2}', '${SEED_IDS.CLS_1}', 'SQL Queries Practice', 'Complex SQL nested joins, grouping, and analytic window functions', '2026-11-02', 20, 'Upcoming', 0),
+      ('${SEED_IDS.ASGN_3}', '${SEED_IDS.CLS_2}', 'Agile Case Study', 'Evaluate Scrum vs Kanban for an e-commerce platform migration', '2026-10-20', 20, 'Completed', 38),
+      ('${SEED_IDS.ASGN_4}', '${SEED_IDS.CLS_2}', 'UML Diagram - Library System', 'Full class and sequence diagrams following standard OMG UML 2.5', '2026-11-10', 20, 'Active', 5),
+      ('${SEED_IDS.ASGN_5}', '${SEED_IDS.CLS_4}', 'Search Algorithm Impl.', 'Implement A* search with Manhattan distance heuristic in Python', '2026-11-15', 20, 'Active', 10)
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 13. Tests
     await client.query(`
       INSERT INTO tests (id, classroom_id, title, description, test_date, duration, total_marks, status, submissions) VALUES
-      ('tst-1', 'cls-1', 'Midterm: Normalization', 'Written exam on functional dependencies up to 3NF & BCNF', '2026-10-25', '1h 30m', 50, 'Active', 40),
-      ('tst-2', 'cls-1', 'Quiz 1: SQL Basics', 'Multiple choice and short SQL query syntax', '2026-11-02', '30m', 20, 'Upcoming', 0),
-      ('tst-3', 'cls-2', 'Final Exam: SE', 'Comprehensive final evaluation on software engineering principles', '2026-12-15', '2h', 100, 'Upcoming', 0),
-      ('tst-4', 'cls-2', 'Midterm: SDLC & UML', 'Mid-semester theoretical and diagrammatic assessment', '2026-10-15', '1h', 50, 'Completed', 38),
-      ('tst-5', 'cls-4', 'Lab Test 1: Search Algo.', 'Hands-on coding exam on graph search algorithms', '2026-11-20', '1h', 30, 'Upcoming', 0)
+      ('${SEED_IDS.TST_1}', '${SEED_IDS.CLS_1}', 'Midterm: Normalization', 'Written exam on functional dependencies up to 3NF & BCNF', '2026-10-25', '1h 30m', 50, 'Active', 40),
+      ('${SEED_IDS.TST_2}', '${SEED_IDS.CLS_1}', 'Quiz 1: SQL Basics', 'Multiple choice and short SQL query syntax', '2026-11-02', '30m', 20, 'Upcoming', 0),
+      ('${SEED_IDS.TST_3}', '${SEED_IDS.CLS_2}', 'Final Exam: SE', 'Comprehensive final evaluation on software engineering principles', '2026-12-15', '2h', 100, 'Upcoming', 0),
+      ('${SEED_IDS.TST_4}', '${SEED_IDS.CLS_2}', 'Midterm: SDLC & UML', 'Mid-semester theoretical and diagrammatic assessment', '2026-10-15', '1h', 50, 'Completed', 38),
+      ('${SEED_IDS.TST_5}', '${SEED_IDS.CLS_4}', 'Lab Test 1: Search Algo.', 'Hands-on coding exam on graph search algorithms', '2026-11-20', '1h', 30, 'Upcoming', 0)
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 14. Grade Records for Completed / Active Tests
-    let grdIdx = 1;
     const testGrading = [
-      { testId: "tst-4", clsId: "cls-2", batchId: "batch-2", totalMarks: 50, count: 38 },
-      { testId: "tst-1", clsId: "cls-1", batchId: "batch-1", totalMarks: 50, count: 40 },
+      { testId: SEED_IDS.TST_4, clsId: SEED_IDS.CLS_2, batchId: SEED_IDS.BATCH_SP26_B, totalMarks: 50 },
+      { testId: SEED_IDS.TST_1, clsId: SEED_IDS.CLS_1, batchId: SEED_IDS.BATCH_SP26_A, totalMarks: 50 },
     ];
 
     for (const tg of testGrading) {
-      for (let st = 1; st <= tg.count; st++) {
-        const studentId = `std-${tg.batchId}-${st}`;
+      const { rows: bStudents } = await client.query("SELECT id FROM students WHERE batch_id = $1", [tg.batchId]);
+      for (let st = 0; st < bStudents.length; st++) {
+        const studentId = bStudents[st].id;
         const hash = (st * 11 + tg.testId.length * 5) % 100;
-        const scorePercent = 60 + (hash % 41); // 60 to 100%
+        const scorePercent = 60 + (hash % 41);
         const obtainedMarks = Math.round((scorePercent / 100) * tg.totalMarks);
         const remarks = scorePercent >= 90 ? "Excellent" : scorePercent >= 80 ? "Good" : scorePercent >= 70 ? "Average" : "Needs Improvement";
-        const gradeId = `grd-tst-${grdIdx++}`;
+        const gradeId = crypto.randomUUID();
 
         await client.query(
           `INSERT INTO grade_records (id, classroom_id, student_id, test_id, obtained_marks, total_marks, remarks)
@@ -320,19 +412,19 @@ export async function seedInitialData() {
     // 15. Announcements
     await client.query(`
       INSERT INTO announcements (id, title, content, date, author_id, author_name, author_role, audience_type, status, priority) VALUES
-      ('ann-1', 'Welcome to the Spring 2026 Semester!', 'We are excited to welcome all students to the new semester. Please check your course schedules and ensure you have access to all required materials. If you encounter any issues, contact the administration.', '2026-08-10T09:00:00Z', 'admin-1', 'System Admin', 'Admin', 'Global', 'Published', 'Normal'),
-      ('ann-2', 'Database System Midterm Update', 'The midterm syllabus for Database Systems has been updated. We will now cover Normalization up to 3NF. BCNF will be moved to the final exam.', '2026-08-12T14:30:00Z', 'teacher-1', 'Prof. Dr. Shamim Al Mamun', 'Teacher', 'Course', 'Published', 'High'),
-      ('ann-3', 'Library Digital Access Upgrade', 'All students and faculty now have unlimited access to IEEE Xplore and ACM Digital Library from both campus Wi-Fi and remote VPN.', '2026-08-15T11:00:00Z', 'admin-1', 'System Admin', 'Admin', 'Global', 'Published', 'Normal')
+      ('${crypto.randomUUID()}', 'Welcome to the Spring 2026 Semester!', 'We are excited to welcome all students to the new semester. Please check your course schedules and ensure you have access to all required materials. If you encounter any issues, contact the administration.', '2026-08-10T09:00:00Z', '${SEED_IDS.ADMIN_1}', 'System Admin', 'Admin', 'Global', 'Published', 'Normal'),
+      ('${crypto.randomUUID()}', 'Database System Midterm Update', 'The midterm syllabus for Database Systems has been updated. We will now cover Normalization up to 3NF. BCNF will be moved to the final exam.', '2026-08-12T14:30:00Z', '${SEED_IDS.TEACHER_1}', 'Prof. Dr. Shamim Al Mamun', 'Teacher', 'Course', 'Published', 'High'),
+      ('${crypto.randomUUID()}', 'Library Digital Access Upgrade', 'All students and faculty now have unlimited access to IEEE Xplore and ACM Digital Library from both campus Wi-Fi and remote VPN.', '2026-08-15T11:00:00Z', '${SEED_IDS.ADMIN_1}', 'System Admin', 'Admin', 'Global', 'Published', 'Normal')
       ON CONFLICT (id) DO NOTHING;
     `);
 
     // 16. Course Materials
     await client.query(`
       INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_size) VALUES
-      ('mat-1', 'cls-1', 'course-1', 'Lecture 1: ER Modeling & Relational Diagrams', 'Comprehensive slide deck introducing ER entity types, weak entities, and cardinality constraints.', 'ER_Modeling_Lecture1.pdf', 'application/pdf', '2.4 MB'),
-      ('mat-2', 'cls-1', 'course-1', 'SQL Lab Exercises & Sample Dataset', 'Hands-on practice script for inner/outer joins, grouping, and subqueries.', 'SQL_Lab_Practice_Spring2026.sql', 'text/plain', '180 KB'),
-      ('mat-3', 'cls-2', 'course-2', 'Agile & Scrum Process Guide', 'Overview of sprint planning, backlog grooming, daily standups, and retrospective templates.', 'Scrum_Guide_2026.pdf', 'application/pdf', '1.8 MB'),
-      ('mat-4', 'cls-4', 'course-4', 'A* Search Algorithm Python Notebook', 'Interactive Python code implementing A* search with heuristic visualization.', 'A_Star_Search_Implementation.ipynb', 'application/json', '520 KB')
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', 'Lecture 1: ER Modeling & Relational Diagrams', 'Comprehensive slide deck introducing ER entity types, weak entities, and cardinality constraints.', 'ER_Modeling_Lecture1.pdf', 'application/pdf', '2.4 MB'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', 'SQL Lab Exercises & Sample Dataset', 'Hands-on practice script for inner/outer joins, grouping, and subqueries.', 'SQL_Lab_Practice_Spring2026.sql', 'text/plain', '180 KB'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', 'Agile & Scrum Process Guide', 'Overview of sprint planning, backlog grooming, daily standups, and retrospective templates.', 'Scrum_Guide_2026.pdf', 'application/pdf', '1.8 MB'),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_4}', '${SEED_IDS.COURSE_425}', 'A* Search Algorithm Python Notebook', 'Interactive Python code implementing A* search with heuristic visualization.', 'A_Star_Search_Implementation.ipynb', 'application/json', '520 KB')
       ON CONFLICT (id) DO NOTHING;
     `);
 
@@ -340,7 +432,7 @@ export async function seedInitialData() {
     await seedStudentTranscripts(client);
 
     await client.query("COMMIT");
-    console.log("Full realistic demo data populated successfully in PostgreSQL!");
+    console.log("Full realistic demo data populated with authentic complex GUIDs successfully in PostgreSQL!");
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Seeding error:", err);
@@ -351,53 +443,27 @@ export async function seedInitialData() {
 }
 
 export async function seedStudentTranscripts(clientOrPool: any = pool) {
-  // 1. Ensure all 20 Courses exist in database
-  await clientOrPool.query(`
-    INSERT INTO courses (id, code, title, program_id, credits) VALUES
-    ('course-1', 'CSE-101', 'Structured Programming Language', 'prog-1', 3.0),
-    ('course-2', 'CSE-102', 'Structured Programming Lab', 'prog-1', 1.5),
-    ('course-3', 'CSE-103', 'Discrete Mathematics', 'prog-1', 3.0),
-    ('course-4', 'CSE-104', 'Electrical Circuits & Electronics', 'prog-1', 3.0),
-    ('course-5', 'CSE-201', 'Data Structures & Algorithms', 'prog-1', 3.0),
-    ('course-6', 'CSE-202', 'Data Structures Lab', 'prog-1', 1.5),
-    ('course-7', 'CSE-203', 'Object Oriented Programming', 'prog-1', 3.0),
-    ('course-8', 'CSE-204', 'Digital Logic Design', 'prog-1', 3.0),
-    ('course-9', 'CSE-301', 'Algorithm Analysis & Design', 'prog-1', 3.0),
-    ('course-10', 'CSE-302', 'Computer Architecture', 'prog-1', 3.0),
-    ('course-11', 'CSE-303', 'Operating Systems', 'prog-1', 3.0),
-    ('course-12', 'CSE-304', 'Operating Systems Lab', 'prog-1', 1.5),
-    ('course-13', 'CSE-305', 'Database Management Systems', 'prog-1', 3.0),
-    ('course-14', 'CSE-306', 'Database Management Systems Lab', 'prog-1', 1.5),
-    ('course-15', 'CSE-401', 'Computer Networks', 'prog-1', 3.0),
-    ('course-16', 'CSE-402', 'Computer Networks Lab', 'prog-1', 1.5),
-    ('course-17', 'CSE-412', 'Software Engineering & System Design', 'prog-1', 3.0),
-    ('course-18', 'CSE-425', 'Artificial Intelligence & Machine Learning', 'prog-1', 3.0),
-    ('course-19', 'CSE-426', 'Artificial Intelligence Lab', 'prog-1', 1.5),
-    ('course-20', 'CSE-499', 'B.Sc. Thesis / Capstone Project', 'prog-1', 6.0)
-    ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, credits = EXCLUDED.credits;
-  `);
-
   const allCoursesList = [
-    { id: "course-1", semester: "Semester 1" },
-    { id: "course-2", semester: "Semester 1" },
-    { id: "course-3", semester: "Semester 1" },
-    { id: "course-4", semester: "Semester 1" },
-    { id: "course-5", semester: "Semester 2" },
-    { id: "course-6", semester: "Semester 2" },
-    { id: "course-7", semester: "Semester 2" },
-    { id: "course-8", semester: "Semester 2" },
-    { id: "course-9", semester: "Semester 3" },
-    { id: "course-10", semester: "Semester 3" },
-    { id: "course-11", semester: "Semester 3" },
-    { id: "course-12", semester: "Semester 3" },
-    { id: "course-13", semester: "Semester 4" },
-    { id: "course-14", semester: "Semester 4" },
-    { id: "course-15", semester: "Semester 4" },
-    { id: "course-16", semester: "Semester 4" },
-    { id: "course-17", semester: "Semester 5" },
-    { id: "course-18", semester: "Semester 5" },
-    { id: "course-19", semester: "Semester 5" },
-    { id: "course-20", semester: "Semester 5" },
+    { id: SEED_IDS.COURSE_101, semester: "Semester 1" },
+    { id: SEED_IDS.COURSE_102, semester: "Semester 1" },
+    { id: SEED_IDS.COURSE_103, semester: "Semester 1" },
+    { id: SEED_IDS.COURSE_104, semester: "Semester 1" },
+    { id: SEED_IDS.COURSE_201, semester: "Semester 2" },
+    { id: SEED_IDS.COURSE_202, semester: "Semester 2" },
+    { id: SEED_IDS.COURSE_203, semester: "Semester 2" },
+    { id: SEED_IDS.COURSE_204, semester: "Semester 2" },
+    { id: SEED_IDS.COURSE_301, semester: "Semester 3" },
+    { id: SEED_IDS.COURSE_302, semester: "Semester 3" },
+    { id: SEED_IDS.COURSE_303, semester: "Semester 3" },
+    { id: SEED_IDS.COURSE_304, semester: "Semester 3" },
+    { id: SEED_IDS.COURSE_305, semester: "Semester 4" },
+    { id: SEED_IDS.COURSE_306, semester: "Semester 4" },
+    { id: SEED_IDS.COURSE_401, semester: "Semester 4" },
+    { id: SEED_IDS.COURSE_402, semester: "Semester 4" },
+    { id: SEED_IDS.COURSE_412, semester: "Semester 5" },
+    { id: SEED_IDS.COURSE_425, semester: "Semester 5" },
+    { id: SEED_IDS.COURSE_426, semester: "Semester 5" },
+    { id: SEED_IDS.COURSE_499, semester: "Semester 5" },
   ];
 
   function calcGradeInfo(score: number) {
@@ -420,7 +486,7 @@ export async function seedStudentTranscripts(clientOrPool: any = pool) {
 
     for (let cIdx = 0; cIdx < allCoursesList.length; cIdx++) {
       const courseInfo = allCoursesList[cIdx];
-      const trId = `tr-${studentId}-${courseInfo.id}`;
+      const trId = crypto.randomUUID();
       const baseSeed = (studentSeed * 13 + (cIdx + 1) * 29) % 100;
 
       const ctMark = Math.min(15, Math.max(10, Math.round(11.5 + (baseSeed % 4.5))));
@@ -436,7 +502,7 @@ export async function seedStudentTranscripts(clientOrPool: any = pool) {
       await clientOrPool.query(`
         INSERT INTO student_transcripts (id, student_id, course_id, semester, ct_mark, assn_mark, proj_mark, att_mark, midterm_mark, final_exam_mark, total_score, letter_grade, grade_point)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (id) DO UPDATE SET
+        ON CONFLICT (student_id, course_id) DO UPDATE SET
           ct_mark = EXCLUDED.ct_mark,
           assn_mark = EXCLUDED.assn_mark,
           proj_mark = EXCLUDED.proj_mark,
@@ -452,12 +518,11 @@ export async function seedStudentTranscripts(clientOrPool: any = pool) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith("init.ts")) {
-  initDatabase().then(() => {
-    console.log("Database initialized and ready.");
+  resetAndSeedInitialData().then(() => {
+    console.log("Database reset, re-seeded with authentic complex GUID keys and ready.");
     process.exit(0);
   }).catch((err) => {
     console.error("Initialization failed:", err);
     process.exit(1);
   });
 }
-

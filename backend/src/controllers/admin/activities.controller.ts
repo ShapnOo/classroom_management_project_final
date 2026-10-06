@@ -3,7 +3,7 @@ import { pool } from "../../config/db.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import crypto from "crypto";
 
-const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
+const genId = () => crypto.randomUUID();
 
 // ── CLASS SESSIONS ────────────────────────────────────────────────────────────
 export const getClassSessions = async (req: Request, res: Response) => {

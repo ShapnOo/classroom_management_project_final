@@ -3,7 +3,7 @@ import { pool } from "../../config/db.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import crypto from "crypto";
 
-const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
+const genId = () => crypto.randomUUID();
 
 // ── TEACHERS ──────────────────────────────────────────────────────────────────
 export const getTeachers = async (req: Request, res: Response) => {
@@ -98,8 +98,8 @@ export const getStudents = async (req: Request, res: Response) => {
              COALESCE(s.documents, '[]'::jsonb) as documents, s.created_at,
              b.name as "batchName", b.code as "batchCode", p.name as "programName"
       FROM students s
-      JOIN batches b ON s.batch_id = b.id
-      JOIN programs p ON b.program_id = p.id
+      LEFT JOIN batches b ON s.batch_id = b.id
+      LEFT JOIN programs p ON b.program_id = p.id
     `;
     const params: any[] = [];
     if (batchId) {

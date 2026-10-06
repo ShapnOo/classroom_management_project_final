@@ -304,11 +304,16 @@ export const api = {
     const rows = await request<any[]>(url);
     return rows.map(r => ({
       id: r.id,
-      rollNo: r.roll_no,
+      rollNo: r.rollNo || r.roll_no || "",
       name: r.name,
       email: r.email,
-      batchId: r.batch_id,
+      batchId: r.batchId || r.batch_id || "",
       phone: r.phone || "",
+      documents: Array.isArray(r.documents)
+        ? r.documents
+        : typeof r.documents === "string"
+        ? JSON.parse(r.documents)
+        : [],
     }));
   },
   createStudent: (data: Omit<Student, "id">) =>

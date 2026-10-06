@@ -219,12 +219,6 @@ export default function AdminStudents() {
     reader.readAsText(file);
     e.target.value = "";
   };
-      }, 2000);
-    };
-
-    reader.readAsText(file);
-    e.target.value = "";
-  };
 
   const missingDocsCount = students.filter(s => !s.documents || s.documents.length === 0).length;
 
@@ -552,7 +546,7 @@ export default function AdminStudents() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-slate-700">Phone (Optional)</label>
+            <label className="text-[11px] font-medium text-slate-700">Phone Number <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="e.g. +8801700000000"

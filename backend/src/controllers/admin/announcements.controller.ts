@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import crypto from "crypto";
 
-const genId = () => Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
+const genId = () => crypto.randomUUID();
 
 export const getAnnouncements = async (req: Request, res: Response) => {
   try {
