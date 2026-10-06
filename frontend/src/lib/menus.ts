@@ -87,14 +87,6 @@ export const adminMenu: MenuItem[] = [
 export const teacherMenu: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard/teacher" },
   { title: "My Classrooms", icon: MonitorPlay, href: "/dashboard/teacher/classrooms" },
-  { title: "My Courses", icon: BookOpen, href: "/dashboard/teacher/courses" },
-  { 
-    title: "Class Sessions", icon: PlaySquare,
-    submenu: [
-      { title: "Start Class", href: "/dashboard/teacher/sessions/start" },
-      { title: "Class History", href: "/dashboard/teacher/sessions/history" },
-    ]
-  },
   { title: "Course Materials", icon: FolderOpen, href: "/dashboard/teacher/materials" },
   { title: "Students", icon: Users, href: "/dashboard/teacher/students" },
   { title: "Attendance", icon: ClipboardCheck, href: "/dashboard/teacher/attendance" },
@@ -107,10 +99,9 @@ export const teacherMenu: MenuItem[] = [
   { 
     title: "Progress & Analytics", icon: BarChart3,
     submenu: [
-      { title: "Reports", href: "/dashboard/teacher/results" }
+      { title: "Reports & Grades", href: "/dashboard/teacher/results" }
     ]
   },
-  { title: "Notifications", icon: Bell, href: "/dashboard/teacher/announcements" },
   { title: "My Profile", icon: User, href: "/dashboard/teacher/profile" },
   { title: "Settings", icon: Settings, href: "/dashboard/teacher/settings" },
 ];

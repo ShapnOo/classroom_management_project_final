@@ -15,7 +15,7 @@ export type GradeDraft = Record<string, { marks: string; remarks: string }>;
  */
 export function useGradingData(classroomId: string, target: GradeTarget, totalMarks: number) {
   const {
-    gradeRecords, students, getClassroomView, upsertGradeRecord,
+    gradeRecords, students, assignments, tests, getClassroomView, upsertGradeRecord,
     fetchClassrooms, fetchCourses, fetchBatches, fetchTeachers, fetchSessions, fetchPrograms,
     fetchStudents, fetchAssignments, fetchTests, fetchGradeRecords,
   } = useStore();
@@ -33,7 +33,20 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
     fetchGradeRecords();
   }, []);
 
-  const view = getClassroomView(classroomId);
+  const resolvedClassroomId = useMemo(() => {
+    if (classroomId) return classroomId;
+    if (target.assignmentId) {
+      const a = assignments.find(item => item.id === target.assignmentId);
+      if (a) return a.classroomId;
+    }
+    if (target.testId) {
+      const t = tests.find(item => item.id === target.testId);
+      if (t) return t.classroomId;
+    }
+    return "";
+  }, [classroomId, target.assignmentId, target.testId, assignments, tests]);
+
+  const view = getClassroomView(resolvedClassroomId);
 
   const roster: Student[] = useMemo(
     () => (view ? students.filter(s => s.batchId === view.batch.id).sort((a, b) => a.rollNo.localeCompare(b.rollNo)) : []),
@@ -41,9 +54,9 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
   );
 
   const existing = useMemo(() => gradeRecords.filter(g =>
-    g.classroomId === classroomId &&
+    (resolvedClassroomId ? g.classroomId === resolvedClassroomId : true) &&
     (target.assignmentId ? g.assignmentId === target.assignmentId : g.testId === target.testId)
-  ), [gradeRecords, classroomId, target.assignmentId, target.testId]);
+  ), [gradeRecords, resolvedClassroomId, target.assignmentId, target.testId]);
 
   const [draft, setDraft] = useState<GradeDraft>({});
 
@@ -73,11 +86,16 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
 
   const save = async () => {
     const entries = Object.entries(draft).filter(([, v]) => v.marks !== "");
+    const targetClassroomId = resolvedClassroomId || view?.classroom.id || "";
+    if (!targetClassroomId) {
+      throw new Error("Classroom ID could not be identified for saving grades.");
+    }
+
     setSaving(true);
     try {
       await Promise.all(entries.map(([studentId, v]) =>
         upsertGradeRecord({
-          classroomId,
+          classroomId: targetClassroomId,
           studentId,
           ...target,
           obtainedMarks: Number(v.marks),
@@ -85,6 +103,7 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
           remarks: v.remarks,
         })
       ));
+      await fetchGradeRecords(true);
       return entries.length;
     } finally {
       setSaving(false);

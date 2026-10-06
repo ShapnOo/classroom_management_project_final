@@ -302,11 +302,11 @@ export const getStudentTests = async (req: Request, res: Response) => {
 
     const { rows } = await pool.query(
       `SELECT t.*, cr.code as course_code, cr.title as course_title,
-              g.obtained_marks, g.grade, g.feedback
-       FROM class_tests t
+              g.obtained_marks, g.remarks as feedback
+       FROM tests t
        JOIN classrooms c ON t.classroom_id = c.id
        JOIN courses cr ON c.course_id = cr.id
-       LEFT JOIN grade_records g ON g.activity_id = t.id AND g.student_id = $1
+       LEFT JOIN grade_records g ON g.test_id = t.id AND g.student_id = $1
        WHERE c.batch_id = $2
        ORDER BY t.test_date DESC`,
       [student.id, student.batch_id]

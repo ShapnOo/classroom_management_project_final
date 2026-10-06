@@ -775,21 +775,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateGradeRecord = (id: string, r: Partial<GradeRecord>) =>
     update("gradeRecords", prev => prev.map(x => x.id === id ? { ...x, ...r } : x));
   const upsertGradeRecord = async (data: Omit<GradeRecord, "id">) => {
+    const tempId = genId();
     setState(s => {
       const existing = s.gradeRecords.find(r =>
         r.classroomId === data.classroomId &&
         r.studentId === data.studentId &&
-        r.assignmentId === data.assignmentId &&
-        r.testId === data.testId
+        (data.assignmentId ? r.assignmentId === data.assignmentId : !r.assignmentId) &&
+        (data.testId ? r.testId === data.testId : !r.testId)
       );
       if (existing) {
-        return { ...s, gradeRecords: s.gradeRecords.map(r =>
-          r.id === existing.id ? { ...r, ...data } : r
-        )};
+        return {
+          ...s,
+          gradeRecords: s.gradeRecords.map(r => r.id === existing.id ? { ...r, ...data } : r)
+        };
       }
-      return { ...s, gradeRecords: [...s.gradeRecords, { ...data, id: genId() }] };
+      return { ...s, gradeRecords: [...s.gradeRecords, { ...data, id: tempId }] };
     });
-    api.saveGradeRecord(data).catch(console.error);
+
+    try {
+      const saved = await api.saveGradeRecord(data);
+      if (saved && saved.id) {
+        setState(s => ({
+          ...s,
+          gradeRecords: s.gradeRecords.map(r =>
+            (r.id === tempId || (r.classroomId === data.classroomId && r.studentId === data.studentId && (data.assignmentId ? r.assignmentId === data.assignmentId : r.testId === data.testId)))
+              ? { ...r, ...saved }
+              : r
+          )
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to save grade record to backend:", e);
+      throw e;
+    }
   };
 
   // ── Settings ──

@@ -40,7 +40,7 @@ export default function TeacherClassrooms() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>("all");
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   const filtered = myClassrooms.filter((v) => {
     if (selectedBatchId && selectedBatchId !== "all" && v.batch.id !== selectedBatchId) return false;
@@ -54,26 +54,32 @@ export default function TeacherClassrooms() {
 
   const uniqueBatches = Array.from(new Map(myClassrooms.map((c) => [c.batch.id, c.batch])).values());
 
-  // If no batch is selected yet and teacher has batches, show batch selector with option to view all
-  if (selectedBatchId === null && uniqueBatches.length > 1) {
+  // Batch-wise initial view: show batch cards first if no specific batch is selected
+  if (selectedBatchId === null) {
     return (
-      <div className="space-y-5 animate-in fade-in duration-300 pb-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">My Assigned Classrooms</h2>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark/10 text-brand-dark uppercase tracking-wider">
+                Batch Directory
+              </span>
+            </div>
+            <h2 className="text-base font-bold text-slate-900 mt-1">My Academic Batches</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Select an academic batch to view assigned courses, or explore all classrooms.
+              Select an assigned batch to enter and view its course classrooms and student rosters.
             </p>
           </div>
           <button
             onClick={() => setSelectedBatchId("all")}
-            className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-brand-dark/30 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-1.5 self-start md:self-auto"
+            className="px-4 py-2 bg-white border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-2 self-start md:self-auto"
           >
-            View All Classrooms ({myClassrooms.length}) <ArrowRight className="w-3.5 h-3.5" />
+            <span>View All Classrooms Across Batches ({myClassrooms.length})</span>
+            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {uniqueBatches.map((b) => {
             const batchClasses = myClassrooms.filter((c) => c.batch.id === b.id);
             const totalStudents = batchClasses[0]?.students.length || 0;
@@ -83,38 +89,58 @@ export default function TeacherClassrooms() {
               <button
                 key={b.id}
                 onClick={() => setSelectedBatchId(b.id)}
-                className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark hover:shadow-md transition-all group block text-left relative overflow-hidden"
+                className="bg-white border border-slate-200 rounded-xl p-6 hover:border-brand-dark hover:shadow-md transition-all group block text-left relative overflow-hidden flex flex-col justify-between"
               >
-                <div className="h-1.5 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark transition-colors mb-4" />
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                      Academic Batch
+                <div>
+                  <div className="h-1.5 w-full rounded-full bg-brand-dark/20 group-hover:bg-brand-dark transition-colors mb-4" />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-bold text-brand-dark bg-brand-dark/10 rounded uppercase tracking-wider mb-1">
+                        Batch: {b.code}
+                      </span>
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                        {b.name}
+                      </h3>
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 group-hover:bg-brand-dark group-hover:text-white text-slate-400 flex items-center justify-center transition-all shrink-0">
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                      <BookOpen className="w-4 h-4 text-brand-dark" />
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Assigned Courses</p>
+                        <p className="font-bold text-slate-800">{batchClasses.length} Course{batchClasses.length > 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Total Students</p>
+                        <p className="font-bold text-slate-800">{totalStudents} Enrolled</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between pt-2">
+                    {ongoingCount > 0 ? (
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Classrooms Active</span>
+                    )}
+
+                    <span className="text-xs font-semibold text-brand-dark group-hover:underline flex items-center gap-1">
+                      Enter Batch <ArrowRight className="w-3.5 h-3.5" />
                     </span>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-dark transition-colors mt-0.5">
-                      {b.name}
-                    </h3>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-dark group-hover:translate-x-0.5 transition-all" />
                 </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                    {batchClasses.length} Course{batchClasses.length > 1 ? "s" : ""}
-                  </span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
-                    {totalStudents} Students
-                  </span>
-                </div>
-
-                {ongoingCount > 0 && (
-                  <div className="mt-2 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {ongoingCount} Ongoing course{ongoingCount > 1 ? "s" : ""}
-                  </div>
-                )}
               </button>
             );
           })}

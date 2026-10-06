@@ -381,10 +381,32 @@ export const api = {
       submissions: Number(r.submissions) || 0,
     }));
   },
-  createAssignment: (data: Omit<Assignment, "id">) =>
-    request<Assignment>("/admin/activities/assignments", { method: "POST", body: JSON.stringify(data) }),
-  updateAssignment: (id: string, data: Partial<Assignment>) =>
-    request<Assignment>(`/admin/activities/assignments/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  createAssignment: async (data: Omit<Assignment, "id">): Promise<Assignment> => {
+    const r = await request<any>("/admin/activities/assignments", { method: "POST", body: JSON.stringify(data) });
+    return {
+      id: r.id,
+      classroomId: r.classroom_id || data.classroomId,
+      title: r.title || data.title,
+      description: r.description || data.description || "",
+      dueDate: r.due_date ? r.due_date.split("T")[0] : data.dueDate,
+      totalMarks: Number(r.total_marks) || data.totalMarks,
+      status: r.status || data.status,
+      submissions: Number(r.submissions) || 0,
+    };
+  },
+  updateAssignment: async (id: string, data: Partial<Assignment>): Promise<Assignment> => {
+    const r = await request<any>(`/admin/activities/assignments/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return {
+      id: r.id || id,
+      classroomId: r.classroom_id || data.classroomId || "",
+      title: r.title || data.title || "",
+      description: r.description || data.description || "",
+      dueDate: r.due_date ? r.due_date.split("T")[0] : (data.dueDate || ""),
+      totalMarks: Number(r.total_marks) || data.totalMarks || 20,
+      status: r.status || data.status || "Active",
+      submissions: Number(r.submissions) || data.submissions || 0,
+    };
+  },
   deleteAssignment: (id: string) =>
     request<{ message: string }>(`/admin/activities/assignments/${id}`, { method: "DELETE" }),
 
@@ -403,10 +425,34 @@ export const api = {
       submissions: Number(r.submissions) || 0,
     }));
   },
-  createTest: (data: Omit<Test, "id">) =>
-    request<Test>("/admin/activities/tests", { method: "POST", body: JSON.stringify(data) }),
-  updateTest: (id: string, data: Partial<Test>) =>
-    request<Test>(`/admin/activities/tests/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  createTest: async (data: Omit<Test, "id">): Promise<Test> => {
+    const r = await request<any>("/admin/activities/tests", { method: "POST", body: JSON.stringify(data) });
+    return {
+      id: r.id,
+      classroomId: r.classroom_id || data.classroomId,
+      title: r.title || data.title,
+      description: r.description || data.description || "",
+      testDate: r.test_date ? r.test_date.split("T")[0] : data.testDate,
+      duration: r.duration || data.duration,
+      totalMarks: Number(r.total_marks) || data.totalMarks,
+      status: r.status || data.status,
+      submissions: Number(r.submissions) || 0,
+    };
+  },
+  updateTest: async (id: string, data: Partial<Test>): Promise<Test> => {
+    const r = await request<any>(`/admin/activities/tests/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    return {
+      id: r.id || id,
+      classroomId: r.classroom_id || data.classroomId || "",
+      title: r.title || data.title || "",
+      description: r.description || data.description || "",
+      testDate: r.test_date ? r.test_date.split("T")[0] : (data.testDate || ""),
+      duration: r.duration || data.duration || "1h",
+      totalMarks: Number(r.total_marks) || data.totalMarks || 25,
+      status: r.status || data.status || "Upcoming",
+      submissions: Number(r.submissions) || data.submissions || 0,
+    };
+  },
   deleteTest: (id: string) =>
     request<{ message: string }>(`/admin/activities/tests/${id}`, { method: "DELETE" }),
 
@@ -454,8 +500,19 @@ export const api = {
       remarks: r.remarks || "",
     }));
   },
-  saveGradeRecord: (data: Omit<GradeRecord, "id">) =>
-    request<GradeRecord>("/admin/activities/results", { method: "POST", body: JSON.stringify(data) }),
+  saveGradeRecord: async (data: Omit<GradeRecord, "id">): Promise<GradeRecord> => {
+    const r = await request<any>("/admin/activities/results", { method: "POST", body: JSON.stringify(data) });
+    return {
+      id: r.id,
+      classroomId: r.classroom_id || data.classroomId,
+      studentId: r.student_id || data.studentId,
+      assignmentId: r.assignment_id || data.assignmentId,
+      testId: r.test_id || data.testId,
+      obtainedMarks: Number(r.obtained_marks) ?? data.obtainedMarks,
+      totalMarks: Number(r.total_marks) ?? data.totalMarks,
+      remarks: r.remarks || data.remarks || "",
+    };
+  },
 
   // ── Announcements ──
   getAnnouncements: async (): Promise<Announcement[]> => {

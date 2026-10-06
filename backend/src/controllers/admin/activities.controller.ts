@@ -299,6 +299,8 @@ export const saveGradeRecord = async (req: Request, res: Response) => {
     if (!classroomId || !studentId || obtainedMarks === undefined || totalMarks === undefined) {
       return sendError(res, "Classroom, student, obtained marks, and total marks are required", 400);
     }
+    
+    let record: any;
     const { rows: updated } = await pool.query(`
       UPDATE grade_records
       SET obtained_marks = $1, total_marks = $2, remarks = $3
@@ -309,14 +311,75 @@ export const saveGradeRecord = async (req: Request, res: Response) => {
     `, [obtainedMarks, totalMarks, remarks || "", classroomId, studentId, assignmentId || null, testId || null]);
 
     if (updated.length > 0) {
-      return sendSuccess(res, updated[0], "Grade updated successfully");
+      record = updated[0];
+    } else {
+      const { rows: inserted } = await pool.query(`
+        INSERT INTO grade_records (id, classroom_id, student_id, assignment_id, test_id, obtained_marks, total_marks, remarks)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+      `, [genId(), classroomId, studentId, assignmentId || null, testId || null, obtainedMarks, totalMarks, remarks || ""]);
+      record = inserted[0];
     }
 
-    const { rows } = await pool.query(`
-      INSERT INTO grade_records (id, classroom_id, student_id, assignment_id, test_id, obtained_marks, total_marks, remarks)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
-    `, [genId(), classroomId, studentId, assignmentId || null, testId || null, obtainedMarks, totalMarks, remarks || ""]);
-    sendSuccess(res, rows[0], "Grade recorded successfully", 201);
+    // 1. If grading an assignment, update or create entry in assignment_submissions table
+    if (assignmentId) {
+      const subId = genId();
+      await pool.query(`
+        INSERT INTO assignment_submissions (id, assignment_id, student_id, obtained_marks, feedback, graded_at, status)
+        VALUES ($1, $2, $3, $4, $5, NOW(), 'Graded')
+        ON CONFLICT (student_id, assignment_id)
+        DO UPDATE SET 
+          obtained_marks = EXCLUDED.obtained_marks,
+          feedback = EXCLUDED.feedback,
+          graded_at = NOW(),
+          status = 'Graded'
+      `, [subId, assignmentId, studentId, obtainedMarks, remarks || ""]);
+
+      await pool.query(`
+        UPDATE assignments 
+        SET submissions = (SELECT COUNT(DISTINCT student_id)::int FROM grade_records WHERE assignment_id = $1)
+        WHERE id = $1
+      `, [assignmentId]);
+    }
+
+    // 2. If grading a test, update test submissions count
+    if (testId) {
+      await pool.query(`
+        UPDATE tests 
+        SET submissions = (SELECT COUNT(DISTINCT student_id)::int FROM grade_records WHERE test_id = $1)
+        WHERE id = $1
+      `, [testId]);
+    }
+
+    // 3. Sync continuous evaluation summary to student_transcripts
+    const { rows: clsRows } = await pool.query(`SELECT course_id FROM classrooms WHERE id = $1`, [classroomId]);
+    if (clsRows.length > 0) {
+      const courseId = clsRows[0].course_id;
+
+      const { rows: ctAvg } = await pool.query(`
+        SELECT COALESCE(AVG(obtained_marks), 0) as avg_ct
+        FROM grade_records
+        WHERE student_id = $1 AND classroom_id = $2 AND test_id IS NOT NULL
+      `, [studentId, classroomId]);
+
+      const { rows: assnAvg } = await pool.query(`
+        SELECT COALESCE(AVG(obtained_marks), 0) as avg_assn
+        FROM grade_records
+        WHERE student_id = $1 AND classroom_id = $2 AND assignment_id IS NOT NULL
+      `, [studentId, classroomId]);
+
+      const ctMark = Math.round(Number(ctAvg[0]?.avg_ct || 0) * 100) / 100;
+      const assnMark = Math.round(Number(assnAvg[0]?.avg_assn || 0) * 100) / 100;
+
+      const trId = genId();
+      await pool.query(`
+        INSERT INTO student_transcripts (id, student_id, course_id, semester, ct_mark, assn_mark)
+        VALUES ($1, $2, $3, 'Spring 2026', $4, $5)
+        ON CONFLICT (student_id, course_id)
+        DO UPDATE SET ct_mark = EXCLUDED.ct_mark, assn_mark = EXCLUDED.assn_mark
+      `, [trId, studentId, courseId, ctMark, assnMark]);
+    }
+
+    sendSuccess(res, record, "Grade recorded and saved to database successfully", 200);
   } catch (err: any) {
     sendError(res, err.message);
   }

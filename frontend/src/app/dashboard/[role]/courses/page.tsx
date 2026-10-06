@@ -1,16 +1,16 @@
-import TeacherCourses from "@/components/dashboard/teacher/TeacherCourses";
+import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "My Courses | Scholaris",
-  description: "View the courses you are assigned to teach.",
+  title: "My Classrooms & Courses | Scholaris",
+  description: "View the courses and classrooms you are assigned to teach.",
 };
 
 export default async function CoursesPage({ params }: { params: Promise<{ role: string }> }) {
   const { role } = await params;
 
   if (role === "teacher") {
-    return <TeacherCourses />;
+    redirect("/dashboard/teacher/classrooms");
   }
 
   // Fallback for other roles (admin, student)

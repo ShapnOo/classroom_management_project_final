@@ -205,13 +205,15 @@ export default function TeacherResults({ courseId }: TeacherResultsProps) {
   })).filter(g => g.count > 0);
 
   // Entry mode: select test and enter marks
-  const handleMarkSave = () => {
+  const handleMarkSave = async () => {
     if (!entryTestId) return;
     const test = tests.find(t => t.id === entryTestId);
     if (!test) return;
-    Object.entries(marks).forEach(([studentId, obtained]) => {
-      upsertGradeRecord({ classroomId: cls.id, studentId, testId: entryTestId, obtainedMarks: obtained, totalMarks: test.totalMarks });
-    });
+    const entries = Object.entries(marks);
+    await Promise.all(entries.map(([studentId, obtained]) =>
+      upsertGradeRecord({ classroomId: cls.id, studentId, testId: entryTestId, obtainedMarks: obtained, totalMarks: test.totalMarks })
+    ));
+    await fetchGradeRecords(true);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
