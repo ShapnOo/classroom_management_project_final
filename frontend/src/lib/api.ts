@@ -515,6 +515,20 @@ export const api = {
   // ── Consolidated Dashboard API ──
   getAdminDashboard: () => request<AdminDashboardData>("/admin/dashboard"),
   getTeacherDashboard: () => request<TeacherDashboardData>("/teacher/dashboard"),
+  getStudentDashboard: () => request<StudentDashboardData>("/student/dashboard"),
+
+  // ── Student Portal Dedicated APIs ──
+  getStudentClassrooms: () => request<any[]>("/student/classrooms"),
+  getStudentMaterials: () => request<any[]>("/student/materials"),
+  getStudentAssignments: () => request<any[]>("/student/assignments"),
+  submitStudentAssignment: (assignmentId: string, classroomId: string, submissionText: string) =>
+    request<any>(`/student/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ assignmentId, classroomId, submissionText }),
+    }),
+  getStudentTests: () => request<any[]>("/student/tests"),
+  getStudentAttendance: () => request<any[]>("/student/attendance"),
+  getStudentResults: () => request<any>("/student/results"),
 
   // ── Reports API ──
   getStudentTranscript: (studentId: string) => request<any>(`/admin/reports/transcripts/${studentId}`),
@@ -628,5 +642,69 @@ export interface TeacherDashboardData {
     batch_name: string;
     present_count: number;
     total_attendance_count: number;
+  }>;
+}
+
+export interface StudentDashboardData {
+  student: {
+    id: string;
+    name: string;
+    roll_no: string;
+    email: string;
+    batch_name?: string;
+    program_code?: string;
+  };
+  metrics: {
+    enrolledClassroomsCount: number;
+    upcomingAssignmentsCount: number;
+    upcomingTestsCount: number;
+    todayClassesCount: number;
+    avgAttendanceRate: number;
+  };
+  enrolledClassrooms: Array<{
+    id: string;
+    room: string;
+    status: string;
+    classes_completed: number;
+    total_classes: number;
+    course_title: string;
+    course_code: string;
+    batch_name: string;
+    teacher_name: string;
+    student_count: number;
+  }>;
+  todaySchedules: Array<{
+    id: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+    room: string;
+    course_title: string;
+    course_code: string;
+    teacher_name: string;
+  }>;
+  upcomingAssignments: Array<{
+    id: string;
+    title: string;
+    due_date: string;
+    total_marks: number;
+    course_code: string;
+    course_title: string;
+  }>;
+  upcomingTests: Array<{
+    id: string;
+    title: string;
+    test_date: string;
+    total_marks: number;
+    course_code: string;
+    course_title: string;
+  }>;
+  recentSessions: Array<{
+    id: string;
+    topic_covered: string;
+    conducted_at: string;
+    course_code: string;
+    course_title: string;
+    teacher_name: string;
   }>;
 }

@@ -7,6 +7,7 @@ import { initDatabase } from "./db/init.js";
 import { swaggerSpec } from "./config/swagger.js";
 import adminRoutes from "./routes/admin/index.js";
 import teacherRoutes from "./routes/teacher/index.js";
+import studentRoutes from "./routes/student/index.js";
 import authRoutes from "./routes/auth.routes.js";
 import { sendError, sendSuccess } from "./utils/response.js";
 
@@ -58,6 +59,9 @@ app.use("/api/admin", adminRoutes);
 
 // Dedicated Teacher Portal API Routes
 app.use("/api/teacher", teacherRoutes);
+
+// Dedicated Student Portal API Routes
+app.use("/api/student", studentRoutes);
 
 // Root API Welcome & Endpoint Discovery
 app.get("/", (req: Request, res: Response) => {
