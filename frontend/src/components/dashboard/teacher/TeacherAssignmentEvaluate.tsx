@@ -6,7 +6,8 @@ import {
   CheckCircle2,
   Clock,
   Save,
-  Users
+  Users,
+  Eye
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -106,8 +107,12 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
           
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-emerald-500/10 text-emerald-700">
-                Evaluation Mode
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
+                role === "admin"
+                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                  : "bg-emerald-500/10 text-emerald-700"
+              }`}>
+                {role === "admin" ? <><Eye className="w-3 h-3" /> Read-Only Admin View</> : "Evaluation Mode"}
               </span>
               <span className="text-[10px] font-medium text-slate-500">
                 {view.course.title} ({view.batch.code})
@@ -118,14 +123,20 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <button 
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0 disabled:opacity-60"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "Saving…" : "Save Marks"}
-          </button>
+          {role === "admin" ? (
+            <span className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs">
+              <Eye className="w-4 h-4 text-slate-500" /> Read-Only (Faculty Only Evaluation)
+            </span>
+          ) : (
+            <button 
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0 disabled:opacity-60"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              <Save className="w-4 h-4" />
+              {saving ? "Saving…" : "Save Marks"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -217,11 +228,13 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
                           value={entry?.marks || ""}
                           onChange={(e) => setMarks(student.id, e.target.value)}
                           placeholder="-"
-                          className={`w-12 text-center py-1.5 rounded-md text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-brand-dark/20 transition-all ${
+                          disabled={role === "admin"}
+                          readOnly={role === "admin"}
+                          className={`w-12 text-center py-1.5 rounded-md text-[13px] font-medium focus:outline-none transition-all ${
                             graded 
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700 border focus:border-emerald-500' 
-                              : 'bg-white border-slate-200 text-slate-900 border focus:border-brand-dark'
-                          }`}
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700 border' 
+                              : 'bg-white border-slate-200 text-slate-900 border'
+                          } ${role === "admin" ? "cursor-not-allowed opacity-80" : ""}`}
                         />
                         <span className="text-[13px] font-medium text-slate-400">/ {maxMarks}</span>
                       </div>
@@ -233,8 +246,12 @@ export default function TeacherAssignmentEvaluate({ courseId = "", assignmentId 
                         type="text"
                         value={entry?.remarks || ""}
                         onChange={(e) => setRemarks(student.id, e.target.value)}
-                        placeholder="Optional feedback"
-                        className="w-full min-w-[160px] px-2.5 py-1.5 rounded-md border border-slate-200 text-[12px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400"
+                        placeholder={role === "admin" ? "Faculty remarks" : "Optional feedback"}
+                        disabled={role === "admin"}
+                        readOnly={role === "admin"}
+                        className={`w-full min-w-[160px] px-2.5 py-1.5 rounded-md border border-slate-200 text-[12px] text-slate-700 focus:outline-none transition-all ${
+                          role === "admin" ? "bg-slate-50 cursor-not-allowed text-slate-600" : "bg-white"
+                        }`}
                       />
                     </td>
 

@@ -32,54 +32,49 @@ export const adminMenu: MenuItem[] = [
   { 
     title: "User Management", icon: Users,
     submenu: [
-      { title: "Teachers", href: "/dashboard/admin/users/teachers" },
-      { title: "Students", href: "/dashboard/admin/users/students" },
-      { title: "Admins", href: "/dashboard/admin/users/admins" },
+      { title: "Teachers Directory", href: "/dashboard/admin/users/teachers" },
+      { title: "Students Directory", href: "/dashboard/admin/users/students" },
+      { title: "System Admins", href: "/dashboard/admin/users/admins" },
     ]
   },
   { 
-    title: "Academic Management", icon: GraduationCap,
+    title: "Academic Setup", icon: GraduationCap,
     submenu: [
-      { title: "Departments", href: "/dashboard/admin/academic/departments" },
-      { title: "Programs", href: "/dashboard/admin/academic/programs" },
-      { title: "Sessions", href: "/dashboard/admin/academic/sessions" },
-      { title: "Batches", href: "/dashboard/admin/academic/batches" },
-      { title: "Courses", href: "/dashboard/admin/academic/courses" },
-      { title: "Syllabus", href: "/dashboard/admin/academic/syllabus" },
+      { title: "Departments & Programs", href: "/dashboard/admin/academic/departments" },
+      { title: "Sessions & Batches", href: "/dashboard/admin/academic/batches" },
+      { title: "Batch Promotion & Progression", href: "/dashboard/admin/academic/promotions" },
+      { title: "Courses & Curriculum", href: "/dashboard/admin/academic/courses" },
+      { title: "Syllabus Management", href: "/dashboard/admin/academic/syllabus" },
     ]
   },
   { 
     title: "Classroom Management", icon: MonitorPlay,
     submenu: [
       { title: "All Classrooms", href: "/dashboard/admin/academic/classrooms" },
-      { title: "Class Schedules", href: "/dashboard/admin/academic/schedules" },
+      { title: "Class Schedules & Routine", href: "/dashboard/admin/academic/schedules" },
+      { title: "Class Sessions History", href: "/dashboard/admin/academic/class-sessions" },
     ]
   },
   { 
-    title: "Academic Activities", icon: BookOpen,
+    title: "Assessments & Grading", icon: BookOpen,
     submenu: [
-      { title: "Class Sessions", href: "/dashboard/admin/academic/class-sessions" },
-      { title: "Attendance", href: "/dashboard/admin/academic/attendance" },
-      { title: "Assignments", href: "/dashboard/admin/academic/assignments" },
-      { title: "Class Tests", href: "/dashboard/admin/academic/tests" },
-      { title: "Results", href: "/dashboard/admin/academic/results" },
+      { title: "Assignments Monitor", href: "/dashboard/admin/academic/assignments" },
+      { title: "Class Tests Monitor", href: "/dashboard/admin/academic/tests" },
+      { title: "Attendance Ledger", href: "/dashboard/admin/academic/attendance" },
+      { title: "Results & Gradebook", href: "/dashboard/admin/academic/results" },
     ]
   },
-  { title: "Announcements", icon: Bell, href: "/dashboard/admin/announcements" },
-  { title: "Calendar", icon: CalendarDays, href: "/dashboard/admin/calendar" },
   { 
     title: "Reports & Analytics", icon: BarChart3,
     submenu: [
       { title: "Student Transcripts", href: "/dashboard/admin/reports/transcripts" },
-      { title: "Session & Semester Results", href: "/dashboard/admin/reports/results" },
-      { title: "Attendance Reports", href: "/dashboard/admin/reports/attendance" },
-      { title: "Course Progress", href: "/dashboard/admin/academic/syllabus" },
-      { title: "Assignment Reports", href: "/dashboard/admin/academic/assignments" },
-      { title: "Test Results", href: "/dashboard/admin/reports/tests" },
-      { title: "Student Performance", href: "/dashboard/admin/academic/results" },
+      { title: "Semester Results & GPA", href: "/dashboard/admin/reports/results" },
+      { title: "Attendance Analytics", href: "/dashboard/admin/reports/attendance" },
+      { title: "Test Performance", href: "/dashboard/admin/reports/tests" },
     ]
   },
-  { title: "Notifications", icon: Bell, href: "/dashboard/admin/announcements" },
+  { title: "Announcements", icon: Bell, href: "/dashboard/admin/announcements" },
+  { title: "Academic Calendar", icon: CalendarDays, href: "/dashboard/admin/calendar" },
   { title: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
   { title: "My Profile", icon: User, href: "/dashboard/admin/profile" },
 ];

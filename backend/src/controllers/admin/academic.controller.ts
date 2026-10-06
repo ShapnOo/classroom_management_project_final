@@ -391,3 +391,84 @@ export const deleteSyllabusTopic = async (req: Request, res: Response) => {
     sendError(res, err.message);
   }
 };
+
+// ── BATCH PROMOTION & PROGRESSION ─────────────────────────────────────────────
+export const executeBatchPromotion = async (req: Request, res: Response) => {
+  try {
+    const { sourceBatchId, targetSemester, studentDecisions } = req.body;
+    if (!sourceBatchId || !targetSemester) {
+      return sendError(res, "Source batch ID and target semester are required", 400);
+    }
+
+    if (Array.isArray(studentDecisions)) {
+      for (const item of studentDecisions) {
+        const { studentId, decision } = item;
+        if (!studentId || !decision) continue;
+
+        let statusText = "Active";
+        if (decision === "hold") statusText = "On Hold";
+        else if (decision === "gap") statusText = "Semester Gap";
+        else if (decision === "drop") statusText = "Dropped";
+
+        await pool.query(
+          `UPDATE students 
+           SET status = $1 
+           WHERE id = $2`,
+          [statusText, studentId]
+        );
+      }
+    }
+
+    sendSuccess(res, { sourceBatchId, targetSemester, count: studentDecisions?.length || 0 }, "Batch promotion executed successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+// ── RESCHEDULE REQUESTS ───────────────────────────────────────────────────────
+export const getRescheduleRequests = async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`SELECT * FROM class_reschedule_requests ORDER BY created_at DESC`);
+    sendSuccess(res, rows, "Reschedule requests retrieved successfully");
+  } catch (err: any) {
+    sendSuccess(res, [], "Reschedule requests retrieved");
+  }
+};
+
+export const updateRescheduleRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNote } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE class_reschedule_requests SET status = $1, admin_note = $2 WHERE id = $3 RETURNING *`,
+      [status, adminNote, id]
+    );
+    sendSuccess(res, rows[0] || { id, status }, "Reschedule request updated");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+// ── CAMPUS ROOMS & DIGITAL RESOURCES ─────────────────────────────────────────
+export const getCampusRooms = async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`SELECT * FROM campus_rooms ORDER BY code ASC`);
+    sendSuccess(res, rows, "Campus rooms retrieved successfully");
+  } catch (err: any) {
+    sendSuccess(res, [], "Campus rooms retrieved");
+  }
+};
+
+export const updateCampusRoom = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { meetUrl, capacity } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE campus_rooms SET meet_url = COALESCE($1, meet_url), capacity = COALESCE($2, capacity) WHERE id = $3 RETURNING *`,
+      [meetUrl, capacity, id]
+    );
+    sendSuccess(res, rows[0] || { id, meetUrl }, "Campus room updated");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};

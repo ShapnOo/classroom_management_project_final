@@ -5,7 +5,9 @@ import {
   getSessions, createSession, updateSession, deleteSession,
   getBatches, createBatch, updateBatch, deleteBatch,
   getCourses, createCourse, updateCourse, deleteCourse,
-  getSyllabusTopics, createSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic
+  getSyllabusTopics, createSyllabusTopic, updateSyllabusTopic, deleteSyllabusTopic,
+  executeBatchPromotion, getRescheduleRequests, updateRescheduleRequest,
+  getCampusRooms, updateCampusRoom
 } from "../../controllers/admin/academic.controller.js";
 
 const router = Router();
@@ -33,6 +35,17 @@ router.get("/batches", getBatches);
 router.post("/batches", createBatch);
 router.put("/batches/:id", updateBatch);
 router.delete("/batches/:id", deleteBatch);
+
+// Batch Promotion
+router.post("/batch-promotion", executeBatchPromotion);
+
+// Reschedule Requests
+router.get("/reschedules", getRescheduleRequests);
+router.patch("/reschedules/:id", updateRescheduleRequest);
+
+// Campus Rooms
+router.get("/rooms", getCampusRooms);
+router.patch("/rooms/:id", updateCampusRoom);
 
 // Courses
 router.get("/courses", getCourses);

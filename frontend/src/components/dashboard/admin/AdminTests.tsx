@@ -2,7 +2,7 @@
 
 import {
   FileText, Search, Plus, ArrowLeft, Calendar,
-  Users, Edit2, Trash2, Clock, CheckCircle2
+  Users, Edit2, Trash2, Clock, CheckCircle2, Eye
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -185,8 +185,8 @@ export default function AdminTests({ courseId }: AdminTestsProps) {
                   </div>
                 )}
                 <div className="mt-4 flex gap-2">
-                  <Link href={`/dashboard/admin/academic/tests/${courseId}/evaluate/${test.id}`} className="flex-1 py-1.5 bg-brand-dark text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center">
-                    Evaluate
+                  <Link href={`/dashboard/admin/academic/tests/${courseId}/evaluate/${test.id}`} className="flex-1 py-1.5 bg-slate-900 text-white rounded-lg text-[11px] font-medium hover:bg-slate-800 transition-colors shadow-sm text-center flex items-center justify-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-indigo-400" /> View Test Results & Marks
                   </Link>
                 </div>
               </div>

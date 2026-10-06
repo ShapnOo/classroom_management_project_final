@@ -116,6 +116,13 @@ export const api = {
   // Health
   checkHealth: () => request<{ status: string; service: string }>("/health"),
 
+  // Batch Promotion
+  executeBatchPromotion: (payload: { sourceBatchId: string; targetSemester: number; studentDecisions: Array<{ studentId: string; decision: string }> }) =>
+    request<{ sourceBatchId: string; targetSemester: number; count: number }>("/admin/academic/batch-promotion", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   // ── Settings ──
   getSettings: async (): Promise<AppSettings> => {
     const data = await request<{ schoolName: string; logoBase64: string }>("/admin/settings");

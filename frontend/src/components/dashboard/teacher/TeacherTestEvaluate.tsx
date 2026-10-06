@@ -8,7 +8,8 @@ import {
   Save,
   Clock,
   Download,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
@@ -118,8 +119,12 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
           
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-brand-light/30 text-brand-dark flex items-center gap-1">
-                <FileText className="w-3 h-3" /> Evaluating
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
+                role === "admin"
+                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                  : "bg-brand-light/30 text-brand-dark"
+              }`}>
+                {role === "admin" ? <><Eye className="w-3 h-3" /> Read-Only Admin View</> : <><FileText className="w-3 h-3" /> Evaluating</>}
               </span>
               <span className="text-[10px] font-medium text-slate-500">{formatDisplayDate(test.testDate)}</span>
             </div>
@@ -132,10 +137,16 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
             <Download className="w-4 h-4" />
             Export CSV
           </button>
-          <button onClick={handleSave} disabled={saving} className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-dark text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0 disabled:opacity-60">
-            <Save className="w-4 h-4" />
-            {saving ? "Saving…" : "Save Marks"}
-          </button>
+          {role === "admin" ? (
+            <span className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs">
+              <Eye className="w-4 h-4 text-slate-500" /> Read-Only View
+            </span>
+          ) : (
+            <button onClick={handleSave} disabled={saving} className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-dark text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0 disabled:opacity-60">
+              <Save className="w-4 h-4" />
+              {saving ? "Saving…" : "Save Marks"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -190,7 +201,11 @@ export default function TeacherTestEvaluate({ courseId = "", testId = "", role =
                               value={studentMark}
                               onChange={(e) => setMarks(student.id, e.target.value)}
                               placeholder="--"
-                              className="w-16 px-2 py-1.5 text-center border border-slate-200 rounded-md text-xs font-semibold focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none bg-slate-50 focus:bg-white transition-all text-slate-900"
+                              disabled={role === "admin"}
+                              readOnly={role === "admin"}
+                              className={`w-16 px-2 py-1.5 text-center border border-slate-200 rounded-md text-xs font-semibold focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark outline-none bg-slate-50 transition-all text-slate-900 ${
+                                role === "admin" ? "cursor-not-allowed opacity-80" : "focus:bg-white"
+                              }`}
                             />
                             <span className="text-slate-400 font-medium text-[10px]">/ {maxMarks}</span>
                           </div>
