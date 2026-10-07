@@ -120,6 +120,7 @@ export async function initDatabase() {
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 0;
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
       CREATE TABLE IF NOT EXISTS batch_promotion_logs (
         id VARCHAR(64) PRIMARY KEY,
         batch_id VARCHAR(64) REFERENCES batches(id) ON DELETE CASCADE,

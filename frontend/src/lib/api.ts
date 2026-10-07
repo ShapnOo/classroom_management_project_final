@@ -125,6 +125,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  submitImprovementMarks: (payload: { studentId: string; courseId?: string; marks: number; letterGrade?: string; remarks?: string }) =>
+    request<any>("/admin/academic/submit-improvement-marks", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   executeBatchPromotion: (payload: { sourceBatchId: string; targetSemester: number; studentDecisions: Array<{ studentId: string; decision: string }> }) =>
     request<{ sourceBatchId: string; targetSemester: number; count: number }>("/admin/academic/batch-promotion", {
       method: "POST",

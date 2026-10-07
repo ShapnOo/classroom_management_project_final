@@ -470,6 +470,40 @@ export const reintegrateStudent = async (req: Request, res: Response) => {
   }
 };
 
+export const submitImprovementMarks = async (req: Request, res: Response) => {
+  try {
+    const { studentId, courseId, marks, letterGrade, remarks } = req.body;
+    if (!studentId || marks === undefined) {
+      return sendError(res, "Student ID and marks are required", 400);
+    }
+
+    const numericMarks = Number(marks);
+    const grade = letterGrade || (numericMarks >= 80 ? "A+" : numericMarks >= 75 ? "A" : numericMarks >= 70 ? "A-" : numericMarks >= 65 ? "B+" : numericMarks >= 60 ? "B" : numericMarks >= 50 ? "C" : "D");
+    const gradePoint = numericMarks >= 80 ? 4.0 : numericMarks >= 75 ? 3.75 : numericMarks >= 70 ? 3.5 : numericMarks >= 65 ? 3.25 : numericMarks >= 60 ? 3.0 : numericMarks >= 50 ? 2.5 : 2.0;
+
+    if (courseId) {
+      await pool.query(
+        `INSERT INTO student_transcripts (id, student_id, course_id, semester, total_score, letter_grade, grade_point)
+         VALUES ($1, $2, $3, 'Improvement', $4, $5, $6)
+         ON CONFLICT (student_id, course_id) 
+         DO UPDATE SET total_score = $4, letter_grade = $5, grade_point = $6`,
+        [genId(), studentId, courseId, numericMarks, grade, gradePoint]
+      );
+    }
+
+    const { rows } = await pool.query(
+      `UPDATE students 
+       SET status = 'Active' 
+       WHERE id = $1 RETURNING *`,
+      [studentId]
+    );
+
+    sendSuccess(res, { student: rows[0], grade, gradePoint, marks: numericMarks }, "Improvement exam marks recorded successfully. Student cleared & promoted!");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
 export const getPromotionHistory = async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query(

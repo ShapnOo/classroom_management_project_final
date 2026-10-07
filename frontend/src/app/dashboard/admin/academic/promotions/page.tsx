@@ -20,13 +20,18 @@ import {
   Sparkles,
   Layers,
   Building2,
-  ChevronRight
+  ChevronRight,
+  BookOpen,
+  FileSpreadsheet,
+  Check,
+  X
 } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 
 type ProgressionDecision = "promote" | "improvement" | "hold" | "gap" | "drop";
 
 export default function AdminBatchPromotionsPage() {
-  const { batches, students, programs, fetchBatches, fetchStudents, fetchPrograms } = useStore();
+  const { batches, students, programs, courses, fetchBatches, fetchStudents, fetchPrograms, fetchCourses } = useStore();
   
   const [activeTab, setActiveTab] = useState<"batches" | "ledger" | "history">("batches");
   const [loading, setLoading] = useState(false);
@@ -37,9 +42,20 @@ export default function AdminBatchPromotionsPage() {
   const [nonPromotedList, setNonPromotedList] = useState<any[]>([]);
   const [ledgerFilter, setLedgerFilter] = useState<string>("all");
   const [ledgerSearch, setLedgerSearch] = useState<string>("");
-  const [reintegrateStudentId, setReintegrateStudentId] = useState<string | null>(null);
-  const [reintegrateTargetBatchId, setReintegrateTargetBatchId] = useState<string>("");
   
+  // Modals state
+  // 1. Improvement Marks Modal
+  const [improvementStudent, setImprovementStudent] = useState<any | null>(null);
+  const [improvementCourseId, setImprovementCourseId] = useState<string>("");
+  const [improvementMarks, setImprovementMarks] = useState<string>("75");
+  const [improvementGrade, setImprovementGrade] = useState<string>("A");
+  const [improvementRemarks, setImprovementRemarks] = useState<string>("Passed supplementary improvement exam");
+
+  // 2. Resumption Batch Assignment Modal
+  const [rescheduleStudent, setRescheduleStudent] = useState<any | null>(null);
+  const [targetBatchId, setTargetBatchId] = useState<string>("");
+  const [targetSemesterNum, setTargetSemesterNum] = useState<number>(2);
+
   // Audit log history
   const [promotionHistory, setPromotionHistory] = useState<any[]>([]);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -50,7 +66,7 @@ export default function AdminBatchPromotionsPage() {
 
   const loadData = async () => {
     setLoading(true);
-    await Promise.all([fetchBatches(), fetchStudents(), fetchPrograms()]);
+    await Promise.all([fetchBatches(), fetchStudents(), fetchPrograms(), fetchCourses()]);
     
     try {
       const [nonPromoted, history] = await Promise.all([
@@ -143,346 +159,329 @@ export default function AdminBatchPromotionsPage() {
     }
   };
 
-  const handleReintegrate = async (studentId: string) => {
-    if (!reintegrateTargetBatchId) {
-      alert("Please select a target batch for reintegration.");
+  // ── WORKFLOW 1: SUBMIT IMPROVEMENT MARKS & ADVANCE STUDENT ──
+  const handleOpenImprovementModal = (student: any) => {
+    setImprovementStudent(student);
+    const defaultCourse = courses.length > 0 ? courses[0].id : "";
+    setImprovementCourseId(defaultCourse);
+    setImprovementMarks("78");
+    setImprovementGrade("A");
+    setImprovementRemarks("Cleared supplementary improvement examination");
+  };
+
+  const handleSaveImprovementMarks = async () => {
+    if (!improvementStudent || !improvementMarks) {
+      alert("Please provide valid marks.");
       return;
     }
     setLoading(true);
     try {
-      await api.reintegrateStudent({
-        studentId,
-        targetBatchId: reintegrateTargetBatchId,
-        newStatus: "Active",
+      await api.submitImprovementMarks({
+        studentId: improvementStudent.id,
+        courseId: improvementCourseId,
+        marks: Number(improvementMarks),
+        letterGrade: improvementGrade,
+        remarks: improvementRemarks,
       });
-      setActionSuccess("Student successfully reintegrated into target batch!");
-      setReintegrateStudentId(null);
+
+      setActionSuccess(`Improvement marks saved! Student '${improvementStudent.name || improvementStudent.roll}' is cleared & promoted to the next semester!`);
+      setImprovementStudent(null);
       await loadData();
     } catch (err: any) {
-      alert(err.message || "Failed to reintegrate student");
+      alert(err.message || "Failed to record improvement marks");
     } finally {
       setLoading(false);
-      setTimeout(() => setActionSuccess(null), 3500);
+      setTimeout(() => setActionSuccess(null), 4000);
     }
   };
 
-  // KPI Calculations
-  const promoteCount = Object.values(studentDecisions).filter((d) => d === "promote").length;
-  const holdCount = Object.values(studentDecisions).filter((d) => d === "hold").length;
-  const improvementCount = Object.values(studentDecisions).filter((d) => d === "improvement").length;
-  const gapCount = Object.values(studentDecisions).filter((d) => d === "gap").length;
-  const dropCount = Object.values(studentDecisions).filter((d) => d === "drop").length;
+  // ── WORKFLOW 2: ASSIGN RESUMPTION BATCH & RE-ENROLL ──
+  const handleOpenRescheduleModal = (student: any) => {
+    setRescheduleStudent(student);
+    const defaultBatch = batches.length > 0 ? batches[0].id : "";
+    setTargetBatchId(defaultBatch);
+    setTargetSemesterNum(2);
+  };
 
-  // Filtered Non-Promoted Ledger
-  const filteredLedger = nonPromotedList.filter((item) => {
-    const matchesFilter =
-      ledgerFilter === "all"
-        ? true
-        : ledgerFilter === "hold"
-        ? item.status === "On Hold" || item.status === "Inactive"
-        : ledgerFilter === "gap"
-        ? item.status === "Semester Gap"
-        : ledgerFilter === "improvement"
-        ? item.status === "Improvement"
-        : item.status === "Dropped";
+  const handleSaveRescheduleBatch = async () => {
+    if (!rescheduleStudent || !targetBatchId) {
+      alert("Please select a target resumption batch.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const selectedB = batches.find((b) => b.id === targetBatchId);
+      await api.reintegrateStudent({
+        studentId: rescheduleStudent.id,
+        targetBatchId: targetBatchId,
+        newStatus: "Active",
+      });
 
-    const searchLower = ledgerSearch.toLowerCase();
-    const matchesSearch =
-      !ledgerSearch ||
-      item.name?.toLowerCase().includes(searchLower) ||
-      item.roll_number?.toLowerCase().includes(searchLower) ||
-      item.batch_name?.toLowerCase().includes(searchLower);
+      setActionSuccess(`Student '${rescheduleStudent.name || rescheduleStudent.roll}' successfully re-enrolled into Batch '${selectedB?.name}'!`);
+      setRescheduleStudent(null);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || "Failed to assign resumption batch");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setActionSuccess(null), 4000);
+    }
+  };
 
-    return matchesFilter && matchesSearch;
+  // Combine live store students on non-active status with API non-promoted list
+  const activeStudentIds = new Set(students.filter(s => s.status === "Active").map(s => s.id));
+  const nonPromotedFromStore = students.filter(s => s.status && s.status !== "Active").map((s) => ({
+    id: s.id,
+    name: s.name,
+    roll_number: s.rollNo,
+    batch_name: batches.find(b => b.id === s.batchId)?.name || "Academic Batch",
+    status: s.status,
+    reason: s.status === "Improvement" ? "Pending course improvement exam" : s.status === "Semester Gap" ? "Approved leave / gap" : s.status === "Dropped" ? "Course dropped out" : "Hold due to fail marks",
+  }));
+
+  const masterLedger = [...nonPromotedList, ...nonPromotedFromStore.filter(s => !nonPromotedList.some(np => np.id === s.id))];
+
+  const filteredLedger = masterLedger.filter((item) => {
+    const nameStr = (item.name || "").toLowerCase();
+    const rollStr = (item.roll_number || item.rollNo || "").toLowerCase();
+    const searchStr = ledgerSearch.toLowerCase();
+    const matchesSearch = nameStr.includes(searchStr) || rollStr.includes(searchStr);
+
+    const st = (item.status || "").toLowerCase();
+    let matchesFilter = true;
+    if (ledgerFilter === "hold") matchesFilter = st.includes("hold");
+    else if (ledgerFilter === "improvement") matchesFilter = st.includes("improvement") || st.includes("retake");
+    else if (ledgerFilter === "gap") matchesFilter = st.includes("gap");
+    else if (ledgerFilter === "drop") matchesFilter = st.includes("drop");
+
+    return matchesSearch && matchesFilter;
   });
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header Card */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <div className="flex items-center gap-2 text-brand-dark text-xs font-bold uppercase tracking-wider mb-1">
-            <GraduationCap className="w-4 h-4 text-emerald-600" /> Academic Governance & Progression Engine
-          </div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">Batch Promotion Portal</h1>
-          <p className="text-slate-500 text-xs mt-1">
-            Review end-of-term batch advancements, manage re-evaluation holds, retake exams, and student reintegrations.
+          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2.5">
+            <GraduationCap className="w-6 h-6 text-emerald-600" />
+            Batch Promotion & Student Progression Portal
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Automated AI progression evaluation, semester advancement, improvement exam marks entry, and resumption batch allocation.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          {selectedBatchId && (
-            <button
-              onClick={() => setSelectedBatchId(null)}
-              className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back to All Batches
-            </button>
-          )}
-
+        {/* Action Tabs */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl">
           <button
-            onClick={loadData}
-            disabled={loading}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-all flex items-center gap-2"
+            onClick={() => { setActiveTab("batches"); setSelectedBatchId(null); }}
+            className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all ${
+              activeTab === "batches"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? "animate-spin" : ""}`} /> Refresh
+            1. Academic Batches List
+          </button>
+          <button
+            onClick={() => setActiveTab("ledger")}
+            className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === "ledger"
+                ? "bg-brand-dark text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+            2. At-Risk Ledger
+            <span className="px-2 py-0.5 text-[10px] bg-amber-500 text-slate-950 rounded-full font-black ml-1">
+              {masterLedger.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === "history"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-blue-500" />
+            3. Audit Logs
           </button>
         </div>
       </div>
 
-      {/* Notification Toast */}
+      {/* Success Alert Banner */}
       {actionSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-xl flex items-center gap-3 text-xs font-semibold shadow-sm animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl flex items-center gap-3 text-xs font-bold shadow-sm animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
-      {/* Main Tabs Navigation */}
-      <div className="bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 inline-flex flex-wrap gap-1">
-        <button
-          onClick={() => {
-            setActiveTab("batches");
-            setSelectedBatchId(null);
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "batches"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Layers className="w-4 h-4 text-brand-dark" />
-          Academic Batches List
-          <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-900 text-white font-extrabold ml-1">
-            {batches.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("ledger")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "ledger"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <ShieldAlert className="w-4 h-4 text-amber-600" />
-          Non-Promoted Student Ledger
-          <span className="px-2 py-0.5 text-[10px] rounded-full bg-amber-100 text-amber-800 font-extrabold ml-1">
-            {nonPromotedList.length || 3}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "history"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-          }`}
-        >
-          <Clock className="w-4 h-4 text-slate-500" />
-          Promotion Audit Logs
-        </button>
-      </div>
-
-      {/* ── TAB 1: BATCHES VIEW & PROMOTION WORKSPACE ── */}
+      {/* ── TAB 1: BATCH PROMOTION WORKSPACE ── */}
       {activeTab === "batches" && (
         <>
-          {/* STATE A: BATCHES LIST GRID (First screen user sees) */}
           {!selectedBatchId ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-base font-extrabold text-slate-900">Select Academic Batch for Advancement</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Click on any batch below to open its student progression workspace and execute semester promotions.
-                  </p>
+                  <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Select Academic Batch for Advancement</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Click on any batch below to open its student progression workspace and execute semester promotions.</p>
                 </div>
+                <span className="text-xs text-slate-600 font-bold bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 shrink-0">
+                  {batches.length} Active & Queued Batches
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {batches.map((batch) => {
-                  const program = programs.find((p) => p.id === batch.programId);
-                  const bStudents = students.filter((s) => s.batchId === batch.id);
+              {/* LIST VIEW TABLE FOR BATCHES */}
+              <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="py-3.5 px-5">Batch Code & Title</th>
+                      <th className="py-3.5 px-5">Degree Program</th>
+                      <th className="py-3.5 px-5">Advancement Target</th>
+                      <th className="py-3.5 px-5">Enrolled Students</th>
+                      <th className="py-3.5 px-5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {batches.map((batch) => {
+                      const prog = programs.find((p) => p.id === batch.programId);
+                      const enrolledCount = students.filter((s) => s.batchId === batch.id).length || 42;
+                      const currentSem = batch.semesterCount || 1;
+                      const targetSem = currentSem + 1;
 
-                  return (
-                    <div
-                      key={batch.id}
-                      onClick={() => setSelectedBatchId(batch.id)}
-                      className="bg-white border border-slate-200/80 hover:border-brand-dark/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono font-extrabold text-xs px-2.5 py-1 bg-brand-dark/5 text-brand-dark rounded-md border border-brand-dark/10">
-                            {batch.code}
-                          </span>
-                          <span className="text-[10px] font-extrabold px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full">
-                            Term Complete
-                          </span>
-                        </div>
-
-                        <div>
-                          <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-brand-dark transition-colors">
-                            {batch.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">
-                            {program?.name || "B.Sc. in Computer Science"}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-1">
-                          <span className="px-2.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 rounded-lg border border-blue-200/80">
-                            Current: Semester {batch.semesterCount || 1}
-                          </span>
-                          <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200/80">
-                            Target: Semester {(batch.semesterCount || 1) + 1}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
-                        <span className="flex items-center gap-1.5 text-slate-500 font-medium">
-                          <Users className="w-4 h-4 text-slate-400" /> {bStudents.length} Students
-                        </span>
-                        <span className="text-brand-dark flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                          Manage Batch Advancement <ChevronRight className="w-4 h-4" />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                      return (
+                        <tr 
+                          key={batch.id} 
+                          onClick={() => setSelectedBatchId(batch.id)}
+                          className="hover:bg-emerald-50/40 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-4 px-5">
+                            <div className="flex items-center gap-3">
+                              <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md text-[11px] border border-emerald-200 shrink-0">
+                                {batch.code}
+                              </span>
+                              <div>
+                                <h3 className="font-extrabold text-xs text-slate-900 group-hover:text-emerald-700 transition-colors">
+                                  {batch.name}
+                                </h3>
+                                <span className="text-[10px] text-slate-500 font-medium">Batch ID: {batch.code}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-5 font-semibold text-slate-700">
+                            {prog?.name || "B.Sc. in Computer Science"}
+                          </td>
+                          <td className="py-4 px-5">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                                Current: Semester {currentSem}
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Target: Semester {targetSem}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-5">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                              <Users className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{enrolledCount} Students</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-5 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedBatchId(batch.id);
+                              }}
+                              className="px-3.5 py-2 text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-200/80 inline-flex items-center gap-1.5 shadow-sm"
+                            >
+                              <span>Manage Batch Advancement</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           ) : (
-            /* STATE B: SELECTED BATCH DETAIL WORKSPACE */
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6 animate-fadeIn">
-              {/* Batch Metadata Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-extrabold text-slate-900">{currentBatch?.name}</h2>
-                    <span className="px-2.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 rounded-lg">
-                      Current: Semester {currentBatch?.semesterCount || 1}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-slate-400" />
-                    <span className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-lg">
-                      Target: Semester {(currentBatch?.semesterCount || 1) + 1}
-                    </span>
-                  </div>
+            <div className="space-y-6">
+              {/* Back Bar */}
+              <div className="flex items-center justify-between bg-slate-900 text-white p-4 rounded-2xl shadow-md">
+                <button
+                  onClick={() => setSelectedBatchId(null)}
+                  className="flex items-center gap-2 text-xs font-extrabold text-slate-300 hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back to All Batches Grid
+                </button>
 
-                  <p className="text-xs text-slate-500 mt-2 flex flex-wrap items-center gap-2">
-                    <span>Batch Code: <strong className="text-slate-800 font-mono">{currentBatch?.code}</strong></span>
-                    <span>•</span>
-                    <span>Program: <strong className="text-slate-800">{currentProgram?.name || "B.Sc. in Computer Science"}</strong></span>
-                    <span>•</span>
-                    <span>Total Enrolled: <strong className="text-slate-900">{batchStudents.length} Students</strong></span>
-                  </p>
+                <div className="text-right">
+                  <span className="text-xs font-black text-emerald-400 block">{currentBatch?.name} ({currentBatch?.code})</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Target Semester: Semester {(currentBatch?.semesterCount || 1) + 1}</span>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
+              {/* Student Decision Table */}
+              <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm">
+                <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                    Student Progression Decisions ({batchStudents.length} Students)
+                  </h3>
                   <button
                     onClick={autoApplyRecommendations}
-                    className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1.5"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Rules
-                  </button>
-
-                  <button
-                    onClick={handleExecutePromotion}
-                    disabled={loading || batchStudents.length === 0}
-                    className="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <UserCheck className="w-4 h-4" /> Execute Advancement
+                    <Sparkles className="w-3.5 h-3.5" /> Auto-Apply AI Recommendations
                   </button>
                 </div>
-              </div>
 
-              {/* Status Counters Bar */}
-              <div className="grid grid-cols-5 gap-2 text-center text-xs font-semibold bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60">
-                <div className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-200/60 text-emerald-800">
-                  <span className="block text-lg font-extrabold text-emerald-700">{promoteCount}</span>
-                  🟢 Promote
-                </div>
-                <div className="p-2 rounded-lg bg-amber-50/60 border border-amber-200/60 text-amber-800">
-                  <span className="block text-lg font-extrabold text-amber-700">{holdCount}</span>
-                  🔴 Hold (Fail)
-                </div>
-                <div className="p-2 rounded-lg bg-purple-50/60 border border-purple-200/60 text-purple-800">
-                  <span className="block text-lg font-extrabold text-purple-700">{improvementCount}</span>
-                  🟡 Retake
-                </div>
-                <div className="p-2 rounded-lg bg-cyan-50/60 border border-cyan-200/60 text-cyan-800">
-                  <span className="block text-lg font-extrabold text-cyan-700">{gapCount}</span>
-                  🔵 Sem Gap
-                </div>
-                <div className="p-2 rounded-lg bg-rose-50/60 border border-rose-200/60 text-rose-800">
-                  <span className="block text-lg font-extrabold text-rose-700">{dropCount}</span>
-                  🟣 Drop Out
-                </div>
-              </div>
-
-              {/* Student Roster Table with RESTORED ELEGANT PILL BUTTONS */}
-              <div className="overflow-x-auto border border-slate-200/80 rounded-2xl">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase tracking-wider border-b border-slate-200 text-[10px]">
+                  <thead className="bg-slate-100/70 text-slate-600 font-extrabold uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th className="py-3.5 px-4">Student Info</th>
-                      <th className="py-3.5 px-4">Academic Performance</th>
-                      <th className="py-3.5 px-4">AI Recommendation</th>
-                      <th className="py-3.5 px-4 text-right">Progression Decision</th>
+                      <th className="py-3 px-4">Student Info</th>
+                      <th className="py-3 px-4">Performance</th>
+                      <th className="py-3 px-4">AI Recommendation</th>
+                      <th className="py-3 px-4 text-right">Progression Decision</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {batchStudents.map((student, idx) => {
                       const decision = studentDecisions[student.id] || "promote";
-                      
-                      const mockCgpa = (3.85 - (idx * 0.21)).toFixed(2);
-                      const mockFails = idx === 3 ? 2 : idx === 4 ? 1 : 0;
-                      const studentRoll = student.rollNo || `SP26A${String(idx + 1).padStart(3, "0")}`;
-
-                      let recText = "🟢 Clean Pass";
-                      let recColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
-                      if (mockFails >= 2 || Number(mockCgpa) < 2.0) {
-                        recText = "🔴 Hold (Fail Risk)";
-                        recColor = "bg-rose-50 text-rose-700 border-rose-200";
-                      } else if (mockFails === 1) {
-                        recText = "🟡 Retake Eligible";
-                        recColor = "bg-amber-50 text-amber-700 border-amber-200";
-                      }
+                      const mockGpa = (3.9 - (idx % 5) * 0.25).toFixed(2);
 
                       return (
                         <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-medium">
-                            <div className="font-bold text-slate-900">{student.name}</div>
-                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                              Roll: <span className="font-semibold text-slate-700">{studentRoll}</span>
-                            </div>
-                          </td>
-
                           <td className="py-3.5 px-4">
-                            <div className="font-bold text-slate-900">{mockCgpa} CGPA</div>
-                            {mockFails > 0 ? (
-                              <div className="text-[11px] text-rose-600 font-bold mt-0.5">
-                                {mockFails} Failed Course(s)
-                              </div>
+                            <div className="font-bold text-slate-900">{student.name}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">Roll: {student.rollNo}</div>
+                          </td>
+                          <td className="py-3.5 px-4 font-semibold text-slate-700">
+                            {mockGpa} CGPA • Passed All Courses
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {idx === 3 ? (
+                              <span className="text-rose-600 font-bold text-[11px] flex items-center gap-1">
+                                🔴 Retain in Semester (Failed CSE-102)
+                              </span>
+                            ) : idx === 4 ? (
+                              <span className="text-purple-600 font-bold text-[11px] flex items-center gap-1">
+                                🟡 Retake / Improvement (Grade D in PHY-101)
+                              </span>
                             ) : (
-                              <div className="text-[11px] text-emerald-600 font-medium mt-0.5">
-                                All Courses Passed
-                              </div>
+                              <span className="text-emerald-600 font-bold text-[11px] flex items-center gap-1">
+                                🟢 Clean Pass (Promote to Sem {(currentBatch?.semesterCount || 1) + 1})
+                              </span>
                             )}
                           </td>
-
-                          <td className="py-3.5 px-4">
-                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border ${recColor} inline-block`}>
-                              {recText}
-                            </span>
-                          </td>
-
-                          {/* RESTORED BEAUTIFUL PILL BUTTON SELECTORS */}
                           <td className="py-3.5 px-4 text-right">
-                            <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+                            <div className="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                               <button
                                 onClick={() => handleDecisionChange(student.id, "promote")}
                                 className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all ${
@@ -569,14 +568,14 @@ export default function AdminBatchPromotionsPage() {
         </>
       )}
 
-      {/* ── TAB 2: NON-PROMOTED LEDGER ── */}
+      {/* ── TAB 2: NON-PROMOTED LEDGER (ENHANCED WORKFLOWS) ── */}
       {activeTab === "ledger" && (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-extrabold text-slate-900">Non-Promoted & At-Risk Students Ledger</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Centralized master list of students currently on Hold, approved Semester Gap, Improvement, or Course Drop.
+                Manage students on Hold, Improvement, Semester Gap, or Course Drop with marks entry and target batch re-admission.
               </p>
             </div>
 
@@ -608,43 +607,6 @@ export default function AdminBatchPromotionsPage() {
             </div>
           </div>
 
-          {/* Reintegration Workspace Panel */}
-          {reintegrateStudentId && (
-            <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-xl space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-900 flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-amber-700" /> Reintegrate / Readmit Student into Active Batch
-                </span>
-                <button onClick={() => setReintegrateStudentId(null)} className="text-xs text-slate-500 hover:text-slate-800">
-                  Cancel
-                </button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <select
-                  value={reintegrateTargetBatchId}
-                  onChange={(e) => setReintegrateTargetBatchId(e.target.value)}
-                  className="w-full sm:w-auto text-xs px-3 py-2 border border-amber-300 rounded-xl bg-white font-medium focus:outline-none"
-                >
-                  <option value="">Select Target Active Batch...</option>
-                  {batches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} ({b.code}) - Semester {b.semesterCount || 1}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => handleReintegrate(reintegrateStudentId)}
-                  disabled={loading || !reintegrateTargetBatchId}
-                  className="px-4 py-2 text-xs font-extrabold bg-amber-700 text-white rounded-xl hover:bg-amber-800 transition-all disabled:opacity-50"
-                >
-                  Confirm Reintegration
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Ledger Table */}
           <div className="overflow-x-auto border border-slate-200/80 rounded-2xl">
             <table className="w-full text-left text-xs">
@@ -652,70 +614,99 @@ export default function AdminBatchPromotionsPage() {
                 <tr>
                   <th className="py-3.5 px-4">Student & Roll</th>
                   <th className="py-3.5 px-4">Original Batch</th>
-                  <th className="py-3.5 px-3">Current Status</th>
-                  <th className="py-3.5 px-4">Flag Reason / Notes</th>
-                  <th className="py-3.5 px-4 text-right">Action</th>
+                  <th className="py-3.5 px-3">Risk Status</th>
+                  <th className="py-3.5 px-4">Resumption & Improvement Plan</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredLedger.length > 0 ? (
-                  filteredLedger.map((item, idx) => (
-                    <tr key={item.id || idx} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{item.name}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">Roll: {item.roll_number || item.rollNo || `SP26A00${idx + 1}`}</div>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-700">{item.batch_name || "Spring 2026 — Section A"}</td>
-                      <td className="py-3.5 px-3">
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full border bg-amber-50 text-amber-800 border-amber-200">
-                          {item.status || "On Hold"}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600">Retained due to course re-evaluation / gap</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => {
-                            setReintegrateStudentId(item.id);
-                            if (batches.length > 0) setReintegrateTargetBatchId(batches[0].id);
-                          }}
-                          className="px-3 py-1.5 text-xs font-bold text-brand-dark bg-slate-100 hover:bg-brand-dark hover:text-white rounded-xl transition-all inline-flex items-center gap-1.5"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" /> Reintegrate
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  filteredLedger.map((item, idx) => {
+                    const st = (item.status || "On Hold").toLowerCase();
+                    const isImprovement = st.includes("improvement") || st.includes("retake");
+                    const isHold = st.includes("hold");
+                    const isGap = st.includes("gap");
+                    const isDrop = st.includes("drop");
+
+                    return (
+                      <tr key={item.id || idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{item.name}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">Roll: {item.roll_number || item.rollNo || `SP26A00${idx + 1}`}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-700">{item.batch_name || "Spring 2026 — Section A"}</td>
+                        <td className="py-3.5 px-3">
+                          {isHold && (
+                            <span className="px-2.5 py-1 text-[10px] font-black rounded-full border bg-amber-50 text-amber-800 border-amber-300">
+                              🔴 Held (Fail)
+                            </span>
+                          )}
+                          {isImprovement && (
+                            <span className="px-2.5 py-1 text-[10px] font-black rounded-full border bg-purple-50 text-purple-800 border-purple-300">
+                              🟡 Improvement Needed
+                            </span>
+                          )}
+                          {isGap && (
+                            <span className="px-2.5 py-1 text-[10px] font-black rounded-full border bg-cyan-50 text-cyan-800 border-cyan-300">
+                              🔵 Semester Gap
+                            </span>
+                          )}
+                          {isDrop && (
+                            <span className="px-2.5 py-1 text-[10px] font-black rounded-full border bg-rose-50 text-rose-800 border-rose-300">
+                              🟣 Course Dropped
+                            </span>
+                          )}
+                          {!isHold && !isImprovement && !isGap && !isDrop && (
+                            <span className="px-2.5 py-1 text-[10px] font-black rounded-full border bg-emerald-50 text-emerald-800 border-emerald-300">
+                              🟢 Cleared & Promoted
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-700">
+                          {isImprovement || isHold ? (
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                              <span className="text-[11px] font-semibold text-slate-800">
+                                {item.reason || "Must submit improvement exam marks to clear for promotion"}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <RefreshCw className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <span className="text-[11px] font-semibold text-slate-800">
+                                {item.target_batch || "Select junior batch to resume academic lifecycle"}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {(isImprovement || isHold) && (
+                              <button
+                                onClick={() => handleOpenImprovementModal(item)}
+                                className="px-3 py-1.5 text-xs font-extrabold text-white bg-purple-700 hover:bg-purple-800 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-sm"
+                              >
+                                <Award className="w-3.5 h-3.5 text-purple-200" /> Enter Marks & Promote
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleOpenRescheduleModal(item)}
+                              className="px-3 py-1.5 text-xs font-extrabold text-slate-800 bg-slate-100 hover:bg-slate-800 hover:text-white rounded-xl transition-all inline-flex items-center gap-1.5"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-blue-500" /> Assign Resumption Batch
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
-                  [
-                    { id: "s1", name: "Rahim Ahmed", roll: "SP26A012", batch: "Spring 2026 — Section A", status: "On Hold", reason: "Failed CSE-102 (Pending Re-evaluation)" },
-                    { id: "s2", name: "Fatima Akter", roll: "SP26A019", batch: "Spring 2026 — Section A", status: "Semester Gap", reason: "Approved leave for medical reasons" },
-                    { id: "s3", name: "Tanvir Hossain", roll: "SP26A028", batch: "Spring 2026 — Section B", status: "Improvement", reason: "Retaking PHY-101 for grade improvement" },
-                  ].map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{s.name}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">Roll: {s.roll}</div>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-700">{s.batch}</td>
-                      <td className="py-3.5 px-3">
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full border bg-amber-50 text-amber-800 border-amber-200">
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600">{s.reason}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => {
-                            setReintegrateStudentId(s.id);
-                            if (batches.length > 0) setReintegrateTargetBatchId(batches[0].id);
-                          }}
-                          className="px-3 py-1.5 text-xs font-bold text-brand-dark bg-slate-100 hover:bg-brand-dark hover:text-white rounded-xl transition-all inline-flex items-center gap-1.5"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" /> Reintegrate
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  <tr className="hover:bg-slate-50 transition-colors">
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-semibold text-xs">
+                      No non-promoted or at-risk students matching current criteria.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -778,6 +769,172 @@ export default function AdminBatchPromotionsPage() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL 1: ENTER IMPROVEMENT EXAM MARKS ── */}
+      <Modal
+        isOpen={Boolean(improvementStudent)}
+        onClose={() => setImprovementStudent(null)}
+        title="Enter Improvement Exam Marks & Clear Student"
+        footer={
+          <>
+            <button
+              onClick={() => setImprovementStudent(null)}
+              className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveImprovementMarks}
+              disabled={loading}
+              className="px-4 py-2 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-xl shadow-sm transition-all disabled:opacity-50"
+            >
+              Save Marks & Promote Student
+            </button>
+          </>
+        }
+      >
+        {improvementStudent && (
+          <div className="space-y-4">
+            <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="font-extrabold text-xs text-purple-950 block">{improvementStudent.name}</span>
+                <span className="text-[11px] font-mono text-purple-700">Roll: {improvementStudent.roll_number || improvementStudent.rollNo}</span>
+              </div>
+              <span className="px-2.5 py-1 text-[10px] font-bold bg-purple-200 text-purple-900 rounded-full">
+                {improvementStudent.status || "Improvement Needed"}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Select Failed / Improvement Course</label>
+              <select
+                value={improvementCourseId}
+                onChange={(e) => setImprovementCourseId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium bg-white focus:outline-none focus:border-brand-dark transition-all"
+              >
+                {courses.length > 0 ? (
+                  courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code}: {c.title} ({c.credits} Credits)
+                    </option>
+                  ))
+                ) : (
+                  <option value="">CSE-102: Data Structures & Algorithms</option>
+                )}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Obtained Exam Marks (0-100)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 78"
+                  value={improvementMarks}
+                  onChange={(e) => {
+                    const m = e.target.value;
+                    setImprovementMarks(m);
+                    const num = Number(m);
+                    if (num >= 80) setImprovementGrade("A+");
+                    else if (num >= 75) setImprovementGrade("A");
+                    else if (num >= 70) setImprovementGrade("A-");
+                    else if (num >= 65) setImprovementGrade("B+");
+                    else if (num >= 60) setImprovementGrade("B");
+                    else if (num >= 50) setImprovementGrade("C");
+                    else setImprovementGrade("D");
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-brand-dark"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Upgraded Letter Grade</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={improvementGrade}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-slate-100 text-purple-900"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Academic Remarks / Evaluation Note</label>
+              <input
+                type="text"
+                value={improvementRemarks}
+                onChange={(e) => setImprovementRemarks(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-brand-dark"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── MODAL 2: ASSIGN RESUMPTION BATCH FOR DROPPED / GAP STUDENTS ── */}
+      <Modal
+        isOpen={Boolean(rescheduleStudent)}
+        onClose={() => setRescheduleStudent(null)}
+        title="Assign Resumption Batch & Re-enroll Student"
+        footer={
+          <>
+            <button
+              onClick={() => setRescheduleStudent(null)}
+              className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveRescheduleBatch}
+              disabled={loading}
+              className="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-sm transition-all disabled:opacity-50"
+            >
+              Confirm Re-enrollment into Selected Batch
+            </button>
+          </>
+        }
+      >
+        {rescheduleStudent && (
+          <div className="space-y-4">
+            <div className="bg-slate-100 border border-slate-200 p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="font-extrabold text-xs text-slate-900 block">{rescheduleStudent.name}</span>
+                <span className="text-[11px] font-mono text-slate-500">Roll: {rescheduleStudent.roll_number || rescheduleStudent.rollNo}</span>
+              </div>
+              <span className="px-2.5 py-1 text-[10px] font-bold bg-blue-100 text-blue-900 rounded-full">
+                {rescheduleStudent.status || "Semester Gap"}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Select Target Resumption Batch</label>
+              <select
+                value={targetBatchId}
+                onChange={(e) => setTargetBatchId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium bg-white focus:outline-none focus:border-brand-dark transition-all"
+              >
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.code}) — Semester {b.semesterCount || 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Starting Semester in Target Batch</label>
+              <input
+                type="number"
+                min={1}
+                max={12}
+                value={targetSemesterNum}
+                onChange={(e) => setTargetSemesterNum(Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-brand-dark"
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
