@@ -150,14 +150,14 @@ export default function AssignmentPdfGradingStudio({
           
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-sans">
                 {view.course.code}
               </span>
-              <span className="text-xs text-slate-400 truncate hidden sm:inline">
+              <span className="text-xs text-slate-400 truncate hidden sm:inline font-sans">
                 {view.course.title}
               </span>
             </div>
-            <h2 className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
+            <h2 className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5 font-sans">
               <FileText className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               {assignment.title}
             </h2>
@@ -165,7 +165,7 @@ export default function AssignmentPdfGradingStudio({
         </div>
 
         {/* Center: Student Switcher */}
-        <div className="flex items-center gap-2 bg-slate-800 px-2 py-1 rounded-xl border border-slate-700">
+        <div className="flex items-center gap-2 bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700 font-sans">
           <button
             onClick={handlePrevStudent}
             disabled={currentIndex === 0}
@@ -178,19 +178,19 @@ export default function AssignmentPdfGradingStudio({
           <select
             value={currentStudent.id}
             onChange={(e) => onSelectStudent(e.target.value)}
-            className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-3"
+            className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-3 font-sans"
           >
             {students.map((s, idx) => {
               const sGraded = !!draft[s.id]?.marks;
               return (
-                <option key={s.id} value={s.id} className="bg-slate-900 text-white">
+                <option key={s.id} value={s.id} className="bg-slate-900 text-white font-sans">
                   {idx + 1}. {s.rollNo} - {s.name} {sGraded ? "✓" : "○"}
                 </option>
               );
             })}
           </select>
 
-          <span className="text-[10px] text-slate-400 font-mono">
+          <span className="text-[10px] text-slate-400 font-sans">
             ({currentIndex + 1}/{students.length})
           </span>
 
@@ -216,7 +216,7 @@ export default function AssignmentPdfGradingStudio({
       </div>
 
       {/* ── MAIN WORKSPACE ───────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden font-sans">
         
         {/* ── LEFT: PURE CLEAN PDF VIEWER (70% width) ────────────── */}
         <div className="flex-1 lg:w-[70%] bg-slate-950 p-2 sm:p-3 overflow-hidden flex flex-col">
@@ -230,20 +230,20 @@ export default function AssignmentPdfGradingStudio({
         </div>
 
         {/* ── RIGHT: MARKING & REMARKS ONLY (30% width) ──────────── */}
-        <div className="w-full lg:w-[30%] bg-slate-900 border-l border-slate-800 flex flex-col justify-between shrink-0">
+        <div className="w-full lg:w-[30%] bg-slate-900 border-l border-slate-800 flex flex-col justify-between shrink-0 font-sans">
           
           <div className="p-5 space-y-6 overflow-y-auto">
             
             {/* Student Info */}
             <div className="pb-4 border-b border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-white font-sans">
                   {currentStudent.name}
                 </h3>
-                <p className="text-xs text-slate-400 font-mono">Roll: {currentStudent.rollNo}</p>
+                <p className="text-xs text-slate-400 font-sans">Roll: {currentStudent.rollNo}</p>
               </div>
 
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-sans ${
                 isGraded ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"
               }`}>
                 {isGraded ? "Graded" : "Pending"}

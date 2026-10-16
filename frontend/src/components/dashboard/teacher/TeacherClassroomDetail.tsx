@@ -7,7 +7,7 @@ import {
   Plus, Edit2, Trash2, FileText, ListTodo, Bell, Download, ChevronRight,
   Sparkles, Award, AlertCircle, X, ExternalLink, Filter,
   Check, Calendar, Megaphone, Share2, Layers, CheckSquare,
-  UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation,
+  UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation, Tv,
   FileCode, Eye, MessageSquare, PlusCircle, ChevronLeft, CornerDownRight,
   ZoomIn, ZoomOut, Maximize2, Tag, ThumbsUp, FileCheck, StickyNote, Highlighter
 } from "lucide-react";
@@ -17,6 +17,7 @@ import { useStore } from "@/lib/store";
 import type { SyllabusTopic, Assignment, Test, Announcement, AttendanceRecord } from "@/lib/types";
 import ModalDialog from "@/components/ui/ModalDialog";
 import { ClassroomDetailSkeleton } from "@/components/ui/Skeleton";
+import SlideDeckPresenterModal, { getSavedSlideState } from "./SlideDeckPresenterModal";
 
 interface TeacherClassroomDetailProps {
   classroomId: string;
@@ -144,6 +145,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   const [showEvaluationPolicyModal, setShowEvaluationPolicyModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showGradebookModal, setShowGradebookModal] = useState(false);
+  const [presenterMaterial, setPresenterMaterial] = useState<any | null>(null);
+  const [isPresenterOpen, setIsPresenterOpen] = useState(false);
   const [evaluatingTarget, setEvaluatingTarget] = useState<{
     type: "assignment" | "test";
     id: string;
@@ -2325,53 +2328,83 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {displayMaterials.map((mat) => (
-                  <div
-                    key={mat.id}
-                    className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-slate-400 hover:shadow-md transition-all flex flex-col justify-between group space-y-4"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 uppercase tracking-wider">
-                          {mat.category}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-medium">{mat.date}</span>
-                      </div>
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-extrabold text-xs shrink-0">
-                          {mat.fileType}
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors line-clamp-2">
-                            {mat.title}
-                          </h4>
-                          <p className="text-[11px] text-slate-500 mt-1 font-medium">{mat.size} • {mat.downloads} downloads</p>
-                        </div>
-                      </div>
-                    </div>
+                {displayMaterials.map((mat) => {
+                  const savedSlide = getSavedSlideState(mat.id);
+                  const isResumable = savedSlide && savedSlide.lastSlide > 1;
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Published to class
-                      </span>
-                      <button
-                        onClick={() => {
-                          const blob = new Blob([`Course Material: ${mat.title}\nCategory: ${mat.category}`], { type: "text/plain" });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${mat.title.replace(/\s+/g, '_')}.txt`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                        title="Download file"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
+                  return (
+                    <div
+                      key={mat.id}
+                      className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-slate-400 hover:shadow-md transition-all flex flex-col justify-between group space-y-4"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 uppercase tracking-wider">
+                            {mat.category}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-medium">{mat.date}</span>
+                        </div>
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-extrabold text-xs shrink-0">
+                            {mat.fileType}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors line-clamp-2">
+                              {mat.title}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mt-1 font-medium">{mat.size} • {mat.downloads} downloads</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Last Slide State Badge */}
+                      {savedSlide && (
+                        <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-100/80 rounded-xl text-[11px]">
+                          <div className="flex items-center gap-1.5 text-blue-800 font-bold">
+                            <Tv className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>Slide {savedSlide.lastSlide} of {savedSlide.totalSlides}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-medium">Memory Saved</span>
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPresenterMaterial(mat);
+                            setIsPresenterOpen(true);
+                          }}
+                          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                            isResumable
+                              ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200"
+                              : "bg-slate-900 hover:bg-slate-800 text-white"
+                          }`}
+                          title="Open in presentation mode"
+                        >
+                          <Presentation className="w-3.5 h-3.5" />
+                          <span>{isResumable ? `Resume (Slide ${savedSlide.lastSlide})` : "Present Deck"}</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([`Course Material: ${mat.title}\nCategory: ${mat.category}`], { type: "text/plain" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${mat.title.replace(/\s+/g, '_')}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                          title="Download file"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })()}
@@ -4170,6 +4203,19 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         confirmLabel="Got it"
         onConfirm={() => setSuccessModal((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {/* Slide Deck In-App Presenter Modal */}
+      {isPresenterOpen && presenterMaterial && (
+        <SlideDeckPresenterModal
+          isOpen={isPresenterOpen}
+          onClose={() => setIsPresenterOpen(false)}
+          material={presenterMaterial}
+          courseTitle={view?.course.title}
+          courseCode={view?.course.code}
+          batchName={view?.batch.name}
+          teacherName={view?.teacher.name}
+        />
+      )}
 
     </div>
   );

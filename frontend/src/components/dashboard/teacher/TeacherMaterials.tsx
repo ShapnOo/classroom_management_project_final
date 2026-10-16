@@ -14,11 +14,14 @@ import {
   X,
   FileDown,
   MonitorPlay,
-  ArrowLeft
+  ArrowLeft,
+  Presentation,
+  Tv
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
+import SlideDeckPresenterModal, { getSavedSlideState } from "./SlideDeckPresenterModal";
 
 interface TeacherMaterialsProps {
   courseId?: string; // classroomId
@@ -52,6 +55,8 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newFileType, setNewFileType] = useState("PDF");
+  const [presenterMaterial, setPresenterMaterial] = useState<any | null>(null);
+  const [isPresenterOpen, setIsPresenterOpen] = useState(false);
 
   const myClassrooms = getMyClassroomViews();
   const view = courseId ? myClassrooms.find(v => v.classroom.id === courseId) : myClassrooms[0];
@@ -210,10 +215,51 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-[11px] font-medium text-slate-500">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-[11px] font-medium text-slate-500 mb-3">
               <span className="text-brand-dark font-medium">{mat.classNo}</span>
               <span>{mat.date}</span>
             </div>
+
+            {/* Slide Memory State & Present Button */}
+            {(() => {
+              const savedSlide = getSavedSlideState(mat.id);
+              const isResumable = savedSlide && savedSlide.lastSlide > 1;
+
+              return (
+                <div className="space-y-2 pt-1">
+                  {savedSlide && (
+                    <div className="flex items-center justify-between px-2.5 py-1.5 bg-blue-50/80 border border-blue-100 rounded-lg text-[10.5px]">
+                      <span className="text-blue-700 font-bold flex items-center gap-1">
+                        <Tv className="w-3 h-3 text-blue-600" />
+                        Slide {savedSlide.lastSlide} / {savedSlide.totalSlides}
+                      </span>
+                      <span className="text-slate-400 font-medium">Memory Saved</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPresenterMaterial({
+                        id: mat.id,
+                        title: mat.name,
+                        fileType: mat.type,
+                        date: mat.date,
+                      });
+                      setIsPresenterOpen(true);
+                    }}
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                      isResumable
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
+                        : "bg-slate-900 hover:bg-slate-800 text-white"
+                    }`}
+                  >
+                    <Presentation className="w-3.5 h-3.5" />
+                    <span>{isResumable ? `Resume from Slide ${savedSlide.lastSlide}` : "Present Deck"}</span>
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
@@ -324,6 +370,18 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
         </div>
       )}
 
+      {/* Slide Deck In-App Presenter Modal */}
+      {isPresenterOpen && presenterMaterial && (
+        <SlideDeckPresenterModal
+          isOpen={isPresenterOpen}
+          onClose={() => setIsPresenterOpen(false)}
+          material={presenterMaterial}
+          courseTitle={courseName}
+          courseCode={code}
+          batchName={batch}
+          teacherName="Course Faculty"
+        />
+      )}
 
     </div>
   );
