@@ -9,11 +9,13 @@ import {
   Check, Calendar, Megaphone, Share2, Layers, CheckSquare,
   UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation, Tv, Database,
   FileCode, Eye, MessageSquare, PlusCircle, ChevronLeft, CornerDownRight,
-  ZoomIn, ZoomOut, Maximize2, Tag, ThumbsUp, FileCheck, StickyNote, Highlighter
+  ZoomIn, ZoomOut, Maximize2, Tag, ThumbsUp, FileCheck, StickyNote, Highlighter,
+  Upload, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
 import type { SyllabusTopic, Assignment, Test, Announcement, AttendanceRecord } from "@/lib/types";
 import ModalDialog from "@/components/ui/ModalDialog";
 import { ClassroomDetailSkeleton } from "@/components/ui/Skeleton";
@@ -258,6 +260,13 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     materialTitle: "",
     materialFileName: "",
   });
+  const [slideUploadFeedback, setSlideUploadFeedback] = useState<{
+    fileName: string;
+    slides: number;
+    size: string;
+    isPdf: boolean;
+  } | null>(null);
+  const [isParsingSlide, setIsParsingSlide] = useState<boolean>(false);
   const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState(false);
 
   // Confirmation & Success Dialog States
@@ -345,12 +354,23 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     },
   ]);
 
-  const [newMaterial, setNewMaterial] = useState({
+  const [newMaterial, setNewMaterial] = useState<{
+    title: string;
+    category: string;
+    fileType: string;
+    fileName: string;
+    size: string;
+    totalSlides: number;
+  }>({
     title: "",
     category: "Slides",
     fileType: "PDF",
+    fileName: "",
     size: "2.5 MB",
+    totalSlides: 20,
   });
+  const [isUploadingMaterialFile, setIsUploadingMaterialFile] = useState(false);
+  const [attachedMaterialFile, setAttachedMaterialFile] = useState<File | null>(null);
 
   // Populate default attendance to "present"
   useEffect(() => {
@@ -593,12 +613,22 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     ) || availableMaterials[0];
 
     const currentSlide = targetTopic?.completedSlides ? targetTopic.completedSlides + 1 : 1;
+    const isMatchedPdf =
+      matched.type === "PDF" ||
+      targetFileName.toLowerCase().endsWith(".pdf") ||
+      (matched.fileName && matched.fileName.toLowerCase().endsWith(".pdf")) ||
+      Boolean(targetTopic?.topic && targetTopic.topic.toLowerCase().includes("uml"));
 
     setPresenterMaterial({
       id: matched.id || targetTopic?.id || "deck_1",
       title: targetTopic?.materialTitle || matched.title || targetTopic?.topic || "Lecture Presentation",
       fileName: targetFileName,
-      fileType: matched.type || "Slides",
+      fileType: isMatchedPdf ? "PDF" : (matched.type || "Slides"),
+      pdfUrl: isMatchedPdf
+        ? (targetFileName.toLowerCase().includes("uml") || (targetTopic?.topic && targetTopic.topic.toLowerCase().includes("uml"))
+            ? "/UML Diagram - Library System.pdf"
+            : `/${targetFileName}`)
+        : undefined,
       lastSlide: currentSlide,
     });
     setIsPresenterOpen(true);
@@ -621,8 +651,14 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
   const activeSlideNum = currentTopic ? Math.min((currentTopic.completedSlides || 0) + 1, currentTopic.totalSlides || 20) : 1;
   const totalSlidesCount = currentTopic?.totalSlides || 20;
-  const isPresentation1 = currentTopic?.materialFileName?.toLowerCase().includes("presentation1") || (!currentTopic?.materialFileName && true);
-  const isInception = currentTopic?.materialFileName?.toLowerCase().includes("inception");
+  const currentFileNameLower = (currentTopic?.materialFileName || "").toLowerCase();
+  const currentTopicLower = (currentTopic?.topic || "").toLowerCase();
+  const isPdfTopic =
+    currentFileNameLower.endsWith(".pdf") ||
+    currentTopicLower.includes("uml") ||
+    currentTopicLower.includes(".pdf");
+  const isInception = !isPdfTopic && (currentFileNameLower.includes("inception") || currentTopicLower.includes("inception") || currentTopicLower.includes("wenp"));
+  const isPresentation1 = !isInception && !isPdfTopic && (currentFileNameLower.includes("presentation1") || (!currentTopic?.materialFileName && true));
 
   // Submit Quick Attendance
   const handleSaveAttendance = (e: React.FormEvent) => {
@@ -681,8 +717,106 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     updateSyllabusTopic(topicId, { teacherStatus: status });
   };
 
+  const handleSyllabusSlideFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingSlide(true);
+    const fileName = file.name;
+    const isPdf = fileName.toLowerCase().endsWith(".pdf");
+    const cleanTitle = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+    const formattedSize =
+      file.size < 1024 * 1024
+        ? `${(file.size / 1024).toFixed(1)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+    let detectedSlides = 20;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+
+      if (isPdf) {
+        try {
+          const pdfjs = await import("pdfjs-dist");
+          pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+          detectedSlides = doc.numPages;
+        } catch {
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = "";
+          const len = Math.min(bytes.byteLength, 500000);
+          for (let i = 0; i < len; i += 8192) {
+            binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+          }
+          const matches = binaryStr.match(/\/Type\s*\/Page[^s]/g);
+          if (matches && matches.length > 0) detectedSlides = matches.length;
+        }
+      } else {
+        // PPTX Slide Count detection from zip manifest
+        const bytes = new Uint8Array(arrayBuffer);
+        let binaryStr = "";
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i += 8192) {
+          binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+        }
+        const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
+        if (slideMatches && slideMatches.length > 0) {
+          detectedSlides = new Set(slideMatches).size;
+        } else {
+          const countTag = binaryStr.match(/<Slides>([0-9]+)<\/Slides>/);
+          if (countTag) detectedSlides = parseInt(countTag[1], 10);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not auto-count slides from file:", err);
+    }
+
+    // Register into Course Materials repository & PostgreSQL database
+    const newMatId = `mat-${Date.now()}`;
+    const newMaterialObj = {
+      id: newMatId,
+      classroomId: view?.classroom?.id || classroomId,
+      courseId: view?.course?.id || course?.id,
+      title: cleanTitle,
+      fileName: fileName,
+      fileType: isPdf ? "PDF" : "Slides",
+      fileSize: formattedSize,
+      size: formattedSize,
+      date: "Just now",
+      downloads: 0,
+      totalSlides: detectedSlides,
+      lastSlide: 1,
+      category: "Slides",
+    };
+
+    addMaterial(newMaterialObj);
+    setMaterials((prev) => [newMaterialObj, ...prev]);
+    api.createMaterial(newMaterialObj).catch(() => {});
+
+    // Auto-update syllabus form state
+    setSyllabusForm((prev) => ({
+      ...prev,
+      topic: prev.topic.trim() ? prev.topic : cleanTitle,
+      materialFileName: fileName,
+      materialTitle: cleanTitle,
+      materialId: newMatId,
+      totalSlides: detectedSlides,
+      completedSlides: 0,
+    }));
+
+    setSlideUploadFeedback({
+      fileName,
+      slides: detectedSlides,
+      size: formattedSize,
+      isPdf,
+    });
+    setIsParsingSlide(false);
+  };
+
   const openAddSyllabus = () => {
     setEditingSyllabus(null);
+    setSlideUploadFeedback(null);
+    setIsParsingSlide(false);
     setSyllabusForm({
       topic: "",
       week: courseSyllabus.length ? Math.max(...courseSyllabus.map((s) => s.week)) + 1 : 1,
@@ -699,6 +833,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
   const openEditSyllabus = (top: SyllabusTopic) => {
     setEditingSyllabus(top);
+    setSlideUploadFeedback(null);
+    setIsParsingSlide(false);
     setSyllabusForm({
       topic: top.topic,
       week: top.week,
@@ -876,40 +1012,120 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     });
   };
 
+  const handleMaterialFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMaterialFile(true);
+    setAttachedMaterialFile(file);
+    const fileName = file.name;
+    const isPdf = fileName.toLowerCase().endsWith(".pdf");
+    const isPptx = fileName.toLowerCase().endsWith(".pptx") || fileName.toLowerCase().endsWith(".ppt");
+    const cleanTitle = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+    const formattedSize =
+      file.size < 1024 * 1024
+        ? `${(file.size / 1024).toFixed(1)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+    let detectedSlides = isPptx ? 20 : isPdf ? 12 : 1;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+
+      if (isPdf) {
+        try {
+          const pdfjs = await import("pdfjs-dist");
+          pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+          detectedSlides = doc.numPages;
+        } catch {
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = "";
+          const len = Math.min(bytes.byteLength, 500000);
+          for (let i = 0; i < len; i += 8192) {
+            binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+          }
+          const matches = binaryStr.match(/\/Type\s*\/Page[^s]/g);
+          if (matches && matches.length > 0) detectedSlides = matches.length;
+        }
+      } else if (isPptx) {
+        const bytes = new Uint8Array(arrayBuffer);
+        let binaryStr = "";
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i += 8192) {
+          binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+        }
+        const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
+        if (slideMatches && slideMatches.length > 0) {
+          detectedSlides = new Set(slideMatches).size;
+        } else {
+          const countTag = binaryStr.match(/<Slides>([0-9]+)<\/Slides>/);
+          if (countTag) detectedSlides = parseInt(countTag[1], 10);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not auto-count slides from file:", err);
+    }
+
+    setNewMaterial((prev) => ({
+      ...prev,
+      title: prev.title.trim() ? prev.title : cleanTitle,
+      fileName: fileName,
+      fileType: isPdf ? "PDF" : isPptx ? "Slides" : fileName.split(".").pop()?.toUpperCase() || "File",
+      category: isPptx || isPdf ? "Slides" : prev.category,
+      size: formattedSize,
+      totalSlides: detectedSlides,
+    }));
+
+    setIsUploadingMaterialFile(false);
+  };
+
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMaterial.title) return;
     setConfirmDialog({
       isOpen: true,
-      title: "Are you sure?",
-      message: `Are you sure you want to upload material "${newMaterial.title}"?`,
+      title: "Confirm Material Upload",
+      message: `Are you sure you want to upload material "${newMaterial.title}" to the classroom repository?`,
       type: "confirm",
       confirmLabel: "Yes, Upload",
       onConfirm: async () => {
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-        setMaterials((prev) => [
-          {
-            id: `mat-${Date.now()}`,
-            title: newMaterial.title,
-            category: newMaterial.category,
-            fileType: newMaterial.fileType,
-            size: newMaterial.size || "2.0 MB",
-            date: "Just now",
-            downloads: 0,
-          },
-          ...prev,
-        ]);
+        const newMatId = `mat-${Date.now()}`;
+        const newMatObj = {
+          id: newMatId,
+          classroomId: view?.classroom?.id || classroomId,
+          courseId: view?.course?.id || course?.id,
+          title: newMaterial.title,
+          fileName: newMaterial.fileName || `${newMaterial.title}.${newMaterial.fileType.toLowerCase()}`,
+          category: newMaterial.category,
+          fileType: newMaterial.fileType,
+          fileSize: newMaterial.size || "2.5 MB",
+          size: newMaterial.size || "2.5 MB",
+          totalSlides: newMaterial.totalSlides || (newMaterial.fileType === "PDF" ? 12 : 20),
+          lastSlide: 1,
+          date: "Just now",
+          downloads: 0,
+        };
+
+        addMaterial(newMatObj);
+        setMaterials((prev) => [newMatObj, ...prev]);
+        api.createMaterial(newMatObj).catch(() => {});
+
         setNewMaterial({
           title: "",
           category: "Slides",
           fileType: "PDF",
+          fileName: "",
           size: "2.5 MB",
+          totalSlides: 20,
         });
+        setAttachedMaterialFile(null);
         setShowMaterialModal(false);
         setSuccessModal({
           isOpen: true,
           title: "Material Uploaded",
-          message: `Material "${newMaterial.title}" has been uploaded successfully.`,
+          message: `Material "${newMatObj.title}" has been uploaded and added to Course Materials successfully.`,
         });
       },
     });
@@ -1354,17 +1570,20 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 <img
                   src={`/Presentation Deck/presentation1_slides/slide_${Math.max(1, Math.min(20, activeSlideNum))}.png`}
                   alt={`Slide ${activeSlideNum}`}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain pointer-events-none"
                 />
               ) : isInception ? (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-center">
-                  <img
-                    src={`/Presentation Deck/inception_media/image${21 + (activeSlideNum % 4)}.png`}
-                    alt="System Architecture Diagram"
-                    className="max-h-[300px] object-contain rounded-xl shadow-2xl border border-indigo-900/60"
-                  />
-                  <h4 className="text-sm font-bold text-white mt-3">Inception & System Architecture — Slide {activeSlideNum}</h4>
-                </div>
+                <iframe
+                  src={`/Presentation Deck/inception_html/slide_${Math.max(1, Math.min(24, activeSlideNum))}.html`}
+                  title={`Slide ${activeSlideNum}`}
+                  className="w-full h-full border-0 bg-transparent"
+                />
+              ) : isPdfTopic ? (
+                <iframe
+                  src={`/UML Diagram - Library System.pdf#page=${activeSlideNum}&view=FitH`}
+                  title="PDF Slide Document"
+                  className="w-full h-full border-0 bg-slate-900"
+                />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-center">
                   <Presentation className="w-16 h-16 text-indigo-400/40 mb-3" />
@@ -1602,87 +1821,101 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 return (
                   <div
                     key={top.id}
-                    className={`p-5 transition-colors ${
+                    className={`p-4 sm:p-5 transition-colors ${
                       isDone ? "bg-emerald-50/15" : isCurrent ? "bg-indigo-50/25" : "hover:bg-slate-50/60"
                     }`}
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Left: Topic Info */}
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md">
-                            WEEK {top.week}
-                          </span>
-                          <span
-                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md ${
-                              isDone
-                                ? "bg-emerald-100 text-emerald-800"
-                                : isCurrent
-                                ? "bg-indigo-100 text-indigo-800"
-                                : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {top.teacherStatus}
-                          </span>
+                      {/* Left: Week Avatar + Topic Title + Tags + Slide Pill */}
+                      <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+                        {/* Week Badge */}
+                        <div
+                          className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border ${
+                            isDone
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : isCurrent
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-200 ring-2 ring-indigo-500/20"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">WK</span>
+                          <span className="text-base font-extrabold leading-none">{top.week}</span>
                         </div>
 
-                        <h4 className={`text-sm font-bold ${isDone ? "text-slate-500 line-through" : "text-slate-900"}`}>
-                          {top.topic}
-                        </h4>
-
-                        {top.subTopics && top.subTopics.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {top.subTopics.map((sub, idx) => (
-                              <span
-                                key={idx}
-                                className="text-[11px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg font-medium"
-                              >
-                                {sub}
-                              </span>
-                            ))}
+                        {/* Details */}
+                        <div className="min-w-0 space-y-1.5 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className={`text-sm font-bold truncate ${isDone ? "text-slate-500 line-through" : "text-slate-900"}`}>
+                              {top.topic}
+                            </h4>
+                            <span
+                              className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                isDone
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : isCurrent
+                                  ? "bg-indigo-100 text-indigo-800"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {top.teacherStatus}
+                            </span>
                           </div>
-                        )}
 
-                        {/* Attached Slide Deck Box (Merged Course Material) */}
-                        <div className="mt-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
-                              <Presentation className="w-4 h-4" />
+                          {/* Subtopics chips */}
+                          {top.subTopics && top.subTopics.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {top.subTopics.map((sub, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium"
+                                >
+                                  {sub}
+                                </span>
+                              ))}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-800">{slideFile}</span>
-                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200/60">
-                                  PPTX
+                          )}
+
+                          {/* Attached Slide Deck Info Row */}
+                          <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-xs text-slate-500">
+                            <div className="inline-flex items-center gap-1.5 text-slate-700 font-medium bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80">
+                              <Presentation className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                              <span className="font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-[260px]">{slideFile}</span>
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/60 font-mono">
+                                {slideFile.toLowerCase().endsWith(".pdf") ? "PDF" : "PPTX"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 font-mono text-[11px] text-slate-600">
+                              <span>
+                                Slide <strong className="text-indigo-600 font-bold">{currentSlideNum}</strong> of {totalSlides}
+                              </span>
+                              <div className="hidden sm:flex items-center gap-1.5">
+                                <div className="w-14 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-indigo-600 rounded-full"
+                                    style={{ width: `${Math.round(((top.completedSlides || 0) / totalSlides) * 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-slate-500 font-bold">
+                                  {Math.round(((top.completedSlides || 0) / totalSlides) * 100)}%
                                 </span>
                               </div>
-                              <p className="text-[11px] text-slate-500">
-                                Slide <strong className="text-indigo-600">{currentSlideNum}</strong> of {totalSlides} • Progress: {Math.round((((top.completedSlides || 0)) / totalSlides) * 100)}%
-                              </p>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenSlidePresenter({ ...top, materialFileName: slideFile })}
-                              className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg text-xs font-extrabold shadow-sm transition-all flex items-center gap-1.5 hover:scale-105 active:scale-95"
-                            >
-                              <Tv className="w-3.5 h-3.5" /> Present Slide ({currentSlideNum})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openEditSyllabus(top)}
-                              className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
-                            >
-                              Attach / Edit
-                            </button>
                           </div>
                         </div>
                       </div>
 
-                      {/* Right: Topic Actions */}
-                      <div className="flex items-center gap-1.5 shrink-0 self-start lg:self-center">
+                      {/* Right: Consolidated Clean Action Bar */}
+                      <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSlidePresenter({ ...top, materialFileName: slideFile })}
+                          className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 hover:scale-[1.02] active:scale-95"
+                          title="Open Slide Presenter Modal"
+                        >
+                          <Tv className="w-3.5 h-3.5" /> Present Slide
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => {
@@ -1690,30 +1923,35 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                             updateSyllabusTopic(top.id, { teacherStatus: "current" });
                             setActiveTab("live");
                           }}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs"
+                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+                          title="Set as Current and Open Live Class"
                         >
                           <Presentation className="w-3.5 h-3.5 text-emerald-400" /> Start Live Class
                         </button>
 
                         {top.teacherStatus !== "done" ? (
                           <button
+                            type="button"
                             onClick={() => handleMarkTopicStatus(top.id, "done")}
-                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors"
+                            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors"
                           >
                             Mark Done
                           </button>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => handleMarkTopicStatus(top.id, "pending")}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                           >
                             Reset
                           </button>
                         )}
 
                         <button
+                          type="button"
                           onClick={() => openEditSyllabus(top)}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
+                          className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors"
+                          title="Edit Topic or Attach Slide Deck"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -1761,17 +1999,24 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   </div>
                   <button
                     onClick={() => {
+                      const isMatPdf =
+                        mat.type === "PDF" ||
+                        Boolean(mat.fileName && mat.fileName.toLowerCase().endsWith(".pdf")) ||
+                        mat.title.toLowerCase().endsWith(".pdf");
                       setPresenterMaterial({
                         id: mat.id,
                         title: mat.title,
                         fileName: mat.fileName,
-                        fileType: mat.type,
+                        fileType: isMatPdf ? "PDF" : mat.type,
+                        pdfUrl: isMatPdf
+                          ? (mat.fileName?.toLowerCase().includes("uml") ? "/UML Diagram - Library System.pdf" : `/${mat.fileName}`)
+                          : undefined,
                       });
                       setIsPresenterOpen(true);
                     }}
                     className="w-full py-2 bg-slate-900 group-hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                   >
-                    <Tv className="w-3.5 h-3.5 text-indigo-300" /> Run Presentation
+                    <Tv className="w-3.5 h-3.5 text-indigo-300" /> Run {mat.type === "PDF" ? "PDF Document" : "Presentation"}
                   </button>
                 </div>
               ))}
@@ -2493,13 +2738,84 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <FolderOpen className="w-5 h-5 text-amber-600" /> Upload Course Material
+                <FolderOpen className="w-5 h-5 text-indigo-600" /> Upload Course Material
               </h3>
-              <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => {
+                  setShowMaterialModal(false);
+                  setAttachedMaterialFile(null);
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             <form onSubmit={handleAddMaterial} className="p-6 space-y-4 text-xs">
+              
+              {/* File Attachment Dropzone / File Picker */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 flex items-center justify-between">
+                  <span>Attachment File (PPTX, PDF, Docs) *</span>
+                  {newMaterial.fileName && (
+                    <span className="text-[10px] font-bold text-emerald-600 font-mono">
+                      ✓ File Attached
+                    </span>
+                  )}
+                </label>
+                
+                <label className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+                  newMaterial.fileName
+                    ? "border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50/60"
+                    : "border-indigo-200 hover:border-indigo-400 bg-indigo-50/30 hover:bg-indigo-50/60"
+                }`}>
+                  <input
+                    type="file"
+                    accept=".pdf,.pptx,.ppt,.docx,.doc,.zip"
+                    onChange={handleMaterialFileSelected}
+                    className="hidden"
+                  />
+                  {isUploadingMaterialFile ? (
+                    <div className="flex flex-col items-center gap-2 text-indigo-600 py-2">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <span className="font-bold text-xs">Analyzing file & counting slides...</span>
+                    </div>
+                  ) : newMaterial.fileName ? (
+                    <div className="w-full flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          {newMaterial.fileType}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 truncate max-w-[280px] sm:max-w-[340px] text-xs">
+                            {newMaterial.fileName}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            {newMaterial.size} • {newMaterial.totalSlides > 0 ? `${newMaterial.totalSlides} Slides/Pages • ` : ""}Click to change file
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Ready ✓
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5 py-2 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Click to browse or drag & drop file here
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        Supports PPTX, PDF, DOCX, ZIP (Auto-detects slide count)
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Material Title */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700">Material Title *</label>
                 <input
@@ -2511,7 +2827,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* Category, File Type, and Detected Slides */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-700">Category</label>
                   <select
@@ -2525,30 +2843,51 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     <option value="Syllabus">Syllabus</option>
                   </select>
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-700">File Type</label>
                   <input
                     type="text"
                     value={newMaterial.fileType}
                     onChange={(e) => setNewMaterial({ ...newMaterial, fileType: e.target.value })}
-                    placeholder="PDF, ZIP, DOCX..."
+                    placeholder="PDF, PPTX..."
                     className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700 flex items-center justify-between">
+                    <span>Total Slides</span>
+                    {newMaterial.totalSlides > 0 && <span className="text-[10px] text-emerald-600 font-mono">Auto</span>}
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newMaterial.totalSlides || ""}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, totalSlides: parseInt(e.target.value) || 0 })}
+                    placeholder="e.g. 20"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono font-bold"
+                  />
+                </div>
               </div>
+
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowMaterialModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
+                  onClick={() => {
+                    setShowMaterialModal(false);
+                    setAttachedMaterialFile(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
+                  disabled={!newMaterial.title || isUploadingMaterialFile}
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs shadow-md transition-colors flex items-center gap-1.5"
                 >
-                  Upload File
+                  <Upload className="w-3.5 h-3.5" /> Upload File
                 </button>
               </div>
             </form>
@@ -2620,7 +2959,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 </select>
               </div>
 
-              <div className="space-y-1.5 bg-indigo-50/70 p-3 rounded-xl border border-indigo-100">
+              <div className="space-y-2 bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-100">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-slate-800 flex items-center gap-1.5">
                     <Presentation className="w-3.5 h-3.5 text-indigo-600" />
@@ -2630,6 +2969,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     Live Class Sync
                   </span>
                 </div>
+
+                {/* Dropdown for selecting existing materials */}
                 <select
                   value={syllabusForm.materialFileName || ""}
                   onChange={(e) => {
@@ -2641,48 +2982,110 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         materialTitle: "",
                         materialFileName: "",
                       });
+                      setSlideUploadFeedback(null);
                       return;
                     }
+                    const matchedMat = availableMaterials.find((m) => m.fileName === sel || m.title === sel);
                     const isPres1 = sel.toLowerCase().includes("presentation1");
                     const isIncep = sel.toLowerCase().includes("inception");
-                    const slides = isPres1 ? 20 : isIncep ? 24 : 12;
+                    const isUml = sel.toLowerCase().includes("uml");
+                    const autoSlides = matchedMat?.totalSlides || (isPres1 ? 20 : isIncep ? 24 : isUml ? 12 : 20);
                     setSyllabusForm({
                       ...syllabusForm,
                       materialFileName: sel,
                       materialTitle: sel.replace(/\.[^/.]+$/, ""),
-                      materialId: isPres1 ? "mat_pres1" : isIncep ? "mat_incep2" : `mat_${Date.now()}`,
-                      totalSlides: syllabusForm.totalSlides > 0 ? syllabusForm.totalSlides : slides,
+                      materialId: matchedMat?.id || (isPres1 ? "mat_pres1" : isIncep ? "mat_incep2" : `mat_${Date.now()}`),
+                      totalSlides: autoSlides,
                     });
+                    setSlideUploadFeedback(null);
                   }}
-                  className="w-full px-3 py-2 text-xs border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-slate-800"
+                  className="w-full px-3 py-2 text-xs border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-slate-800 shadow-2xs"
                 >
-                  <option value="">-- No slide attached (or choose below) --</option>
+                  <option value="">-- Choose from existing materials (or upload new below) --</option>
                   <option value="Presentation1.pptx">Presentation1.pptx (20 Slides • Software Architecture & Modularity)</option>
                   <option value="Inception_v2 copy.pptx">Inception_v2 copy.pptx (24 Slides • Inception & System Design)</option>
                   <option value="UML Diagram - Library System.pdf">UML Diagram - Library System.pdf (System Modelling)</option>
-                  {(storeMaterials || []).filter(m => !["Presentation1.pptx", "Inception_v2 copy.pptx"].includes(m.fileName || "")).map((m: any) => (
-                    <option key={m.id} value={m.fileName || m.title}>
-                      {m.title} ({m.fileName || "Slides"})
-                    </option>
-                  ))}
+                  {(storeMaterials || [])
+                    .filter((m) => !["Presentation1.pptx", "Inception_v2 copy.pptx", "UML Diagram - Library System.pdf"].includes(m.fileName || ""))
+                    .map((m: any) => (
+                      <option key={m.id} value={m.fileName || m.title}>
+                        {m.title} ({m.fileName || "Deck"}) {m.totalSlides ? `• ${m.totalSlides} Slides` : ""}
+                      </option>
+                    ))}
                 </select>
+
+                {/* Direct Upload Option (Auto registers into Course Materials & auto-counts slides) */}
+                <div className="pt-0.5">
+                  <label className="flex items-center justify-center gap-2.5 w-full p-2.5 rounded-xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all text-xs font-bold text-indigo-700 shadow-2xs group">
+                    {isParsingSlide ? (
+                      <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                    )}
+                    <span>
+                      {isParsingSlide ? "Parsing & Counting Slides..." : "Upload New Deck / PDF (Auto-Counts Slides)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pptx,.ppt,.pdf"
+                      disabled={isParsingSlide}
+                      onChange={handleSyllabusSlideFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Real-time Upload & Auto-Detection Feedback */}
+                {slideUploadFeedback && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800 animate-in fade-in duration-200 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="font-bold flex items-center gap-1.5">
+                          <span>{slideUploadFeedback.fileName}</span>
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300/60">
+                            {slideUploadFeedback.isPdf ? "PDF" : "PPTX"}
+                          </span>
+                        </p>
+                        <p className="text-[10px] text-emerald-700">
+                          Saved to Course Materials • Auto-detected{" "}
+                          <strong className="text-emerald-950 font-bold">
+                            {slideUploadFeedback.slides} {slideUploadFeedback.isPdf ? "Pages" : "Slides"}
+                          </strong>{" "}
+                          ({slideUploadFeedback.size})
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900 border border-emerald-300">
+                      Auto-Counted ✓
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-[10px] text-indigo-700 font-medium">
-                  Attached presentation slide will be used directly during Live Class with automatic slide-state memory.
+                  Files uploaded here automatically sync to Course Materials repository and live class slide presenter.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200/60">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 flex items-center gap-1">
-                    <Presentation className="w-3.5 h-3.5 text-indigo-600" /> Total Slides
+                  <label className="font-bold text-slate-700 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Presentation className="w-3.5 h-3.5 text-indigo-600" /> Total Slides
+                    </span>
+                    {slideUploadFeedback && (
+                      <span className="text-[10px] font-bold text-emerald-600 font-mono">Auto-detected ✓</span>
+                    )}
                   </label>
                   <input
                     type="number"
                     min={0}
                     value={syllabusForm.totalSlides}
                     onChange={(e) => setSyllabusForm({ ...syllabusForm, totalSlides: Math.max(0, parseInt(e.target.value) || 0) })}
-                    placeholder="e.g. 45"
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                    placeholder="e.g. 24"
+                    className={`w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white font-mono font-bold ${
+                      slideUploadFeedback ? "border-emerald-400 bg-emerald-50/30 text-emerald-900 ring-2 ring-emerald-500/20" : "border-slate-200 text-slate-800"
+                    }`}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -2693,8 +3096,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     max={syllabusForm.totalSlides || 999}
                     value={syllabusForm.completedSlides}
                     onChange={(e) => setSyllabusForm({ ...syllabusForm, completedSlides: Math.max(0, parseInt(e.target.value) || 0) })}
-                    placeholder="e.g. 18"
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
+                    placeholder="e.g. 0"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white font-mono"
                   />
                 </div>
               </div>

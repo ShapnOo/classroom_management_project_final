@@ -60,6 +60,8 @@ router.get("/results", getResults);
 router.post("/results", saveGradeRecord);
 
 router.get("/materials", getMaterials);
+router.post("/materials", createMaterial);
+router.delete("/materials/:id", deleteMaterial);
 router.get("/materials/slide-states", getAllSlideStates);
 router.get("/materials/slide-state/:materialId", getSlideState);
 router.put("/materials/slide-state/:materialId", saveSlideState);

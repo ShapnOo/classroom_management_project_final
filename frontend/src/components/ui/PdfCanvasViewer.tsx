@@ -214,146 +214,172 @@ export default function PdfCanvasViewer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentPage, numPages]);
 
+  // Auto-fit PDF page on fullscreen toggle
+  useEffect(() => {
+    if (isFullscreen) {
+      const timer = setTimeout(() => {
+        handleFitPage();
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [isFullscreen]);
+
   return (
     <div
       ref={containerRef}
       className={`relative flex flex-col bg-slate-950 text-white overflow-hidden select-none font-sans ${className}`}
     >
-      {/* ── PDF FLOATING / DOCKED CONTROLS BAR ─────────────────────────────────── */}
-      <div className="h-12 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-5 flex items-center justify-between gap-3 shrink-0 z-20 shadow-md">
-        
-        {/* Left: Document Info & Page Stepper */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-800/90 rounded-xl px-2 py-1 border border-slate-700/80">
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage <= 1 || isLoading}
-              className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              title="Previous Page (←)"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+      {/* ── INVISIBLE HOVER TRIGGER TO EXIT FULLSCREEN (Top Right Corner) ─── */}
+      {isFullscreen && onToggleFullscreen && (
+        <div className="fixed top-0 right-0 p-4 z-[100000] group pointer-events-auto">
+          <button
+            onClick={onToggleFullscreen}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3.5 py-2 rounded-full bg-black/85 hover:bg-black text-slate-300 hover:text-white border border-white/20 text-xs font-medium flex items-center gap-2 shadow-2xl backdrop-blur-md cursor-pointer"
+            title="Exit Fullscreen (Esc or F)"
+          >
+            <Minimize2 className="w-4 h-4" />
+            <span>Exit Fullscreen</span>
+          </button>
+        </div>
+      )}
 
-            <div className="flex items-center gap-1.5 px-2 text-xs font-mono font-bold text-white">
-              <span>{currentPage}</span>
-              <span className="text-slate-500">/</span>
-              <span>{numPages || "..."}</span>
+      {/* ── PDF FLOATING / DOCKED CONTROLS BAR (HIDDEN IN FULLSCREEN) ─────────────────── */}
+      {!isFullscreen && (
+        <div className="h-12 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-5 flex items-center justify-between gap-3 shrink-0 z-20 shadow-md">
+          
+          {/* Left: Document Info & Page Stepper */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-800/90 rounded-xl px-2 py-1 border border-slate-700/80">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1 || isLoading}
+                className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                title="Previous Page (←)"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-2 text-xs font-mono font-bold text-white">
+                <span>{currentPage}</span>
+                <span className="text-slate-500">/</span>
+                <span>{numPages || "..."}</span>
+              </div>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage >= numPages || isLoading}
+                className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                title="Next Page (→)"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= numPages || isLoading}
-              className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              title="Next Page (→)"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            {numPages > 1 && (
+              <button
+                onClick={() => setShowThumbnails(!showThumbnails)}
+                className={`p-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                  showThumbnails
+                    ? "bg-indigo-600/30 text-indigo-300 border-indigo-500/50"
+                    : "bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700"
+                }`}
+                title="Toggle Page Thumbnails"
+              >
+                <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="hidden md:inline text-[11px]">Pages</span>
+              </button>
+            )}
+
+            {title && (
+              <span className="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-[320px] ml-2 hidden sm:inline">
+                {title}
+              </span>
+            )}
           </div>
 
-          {numPages > 1 && (
-            <button
-              onClick={() => setShowThumbnails(!showThumbnails)}
-              className={`p-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                showThumbnails
-                  ? "bg-indigo-600/30 text-indigo-300 border-indigo-500/50"
-                  : "bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700"
-              }`}
-              title="Toggle Page Thumbnails"
-            >
-              <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="hidden md:inline text-[11px]">Pages</span>
-            </button>
-          )}
+          {/* Center/Right: Zoom & Viewport Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            
+            <div className="flex items-center gap-1 bg-slate-800/80 rounded-xl px-2 py-1 border border-slate-700/80">
+              <button
+                onClick={handleZoomOut}
+                disabled={scale <= 0.6 || isLoading}
+                className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 transition-colors"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[11px] font-mono font-bold text-slate-300 px-1 min-w-[42px] text-center">
+                {Math.round(scale * 100)}%
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={scale >= 3.0 || isLoading}
+                className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 transition-colors"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
-          {title && (
-            <span className="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-[320px] ml-2 hidden sm:inline">
-              {title}
-            </span>
-          )}
-        </div>
+            {/* Quick Fit Presets */}
+            <button
+              onClick={handleFitPage}
+              className="hidden sm:inline-flex px-2 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Fit to Page Height"
+            >
+              Fit Page
+            </button>
+            <button
+              onClick={handleFitWidth}
+              className="hidden sm:inline-flex px-2 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Fit to Container Width"
+            >
+              Fit Width
+            </button>
 
-        {/* Center/Right: Zoom & Viewport Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          
-          <div className="flex items-center gap-1 bg-slate-800/80 rounded-xl px-2 py-1 border border-slate-700/80">
+            {/* Rotate */}
             <button
-              onClick={handleZoomOut}
-              disabled={scale <= 0.6 || isLoading}
-              className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 transition-colors"
-              title="Zoom Out (-)"
+              onClick={() => setRotation((r) => (r + 90) % 360)}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Rotate 90° Clockwise"
             >
-              <ZoomOut className="w-3.5 h-3.5" />
+              <RotateCw className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[11px] font-mono font-bold text-slate-300 px-1 min-w-[42px] text-center">
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              onClick={handleZoomIn}
-              disabled={scale >= 3.0 || isLoading}
-              className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 transition-colors"
-              title="Zoom In (+)"
+
+            {/* Download */}
+            <a
+              href={url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Download PDF Document"
             >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
+              <Download className="w-3.5 h-3.5" />
+            </a>
+
+            {/* Fullscreen Toggle */}
+            {onToggleFullscreen && (
+              <button
+                onClick={onToggleFullscreen}
+                className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-xs ml-1"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View (F)"}
+              >
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+            )}
+
           </div>
 
-          {/* Quick Fit Presets */}
-          <button
-            onClick={handleFitPage}
-            className="hidden sm:inline-flex px-2 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-            title="Fit to Page Height"
-          >
-            Fit Page
-          </button>
-          <button
-            onClick={handleFitWidth}
-            className="hidden sm:inline-flex px-2 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-            title="Fit to Container Width"
-          >
-            Fit Width
-          </button>
-
-          {/* Rotate */}
-          <button
-            onClick={() => setRotation((r) => (r + 90) % 360)}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-            title="Rotate 90° Clockwise"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Download */}
-          <a
-            href={url}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-            title="Download PDF Document"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </a>
-
-          {/* Fullscreen Toggle */}
-          {onToggleFullscreen && (
-            <button
-              onClick={onToggleFullscreen}
-              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-xs ml-1"
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View (F)"}
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-          )}
-
         </div>
-
-      </div>
+      )}
 
       {/* ── MAIN STAGE & THUMBNAILS DRAWER ───────────────────────────────────── */}
       <div className="flex-1 relative flex overflow-hidden">
         
         {/* Thumbnails Sidebar */}
-        {showThumbnails && numPages > 0 && (
+        {!isFullscreen && showThumbnails && numPages > 0 && (
           <div className="w-48 bg-slate-900 border-r border-slate-800 p-3 overflow-y-auto space-y-2 z-10 shrink-0 animate-in slide-in-from-left-2 duration-150">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-1">
               All Pages ({numPages})
@@ -382,7 +408,22 @@ export default function PdfCanvasViewer({
         )}
 
         {/* Canvas Display Viewport */}
-        <div className="flex-1 relative flex items-center justify-center overflow-auto p-4 sm:p-8 bg-slate-950/90">
+        <div
+          onClick={(e) => {
+            if (isFullscreen) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              if (clickX < rect.width * 0.25) {
+                handlePrevPage();
+              } else {
+                handleNextPage();
+              }
+            }
+          }}
+          className={`flex-1 relative flex items-center justify-center overflow-auto ${
+            isFullscreen ? "p-0 m-0 bg-black cursor-default" : "p-4 sm:p-8 bg-slate-950/90"
+          }`}
+        >
           
           {isLoading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 z-20">
@@ -398,7 +439,13 @@ export default function PdfCanvasViewer({
               className="w-full h-full border-0 rounded-xl shadow-2xl bg-slate-900"
             />
           ) : (
-            <div className="relative inline-block shadow-2xl rounded-lg overflow-hidden border border-slate-800 bg-white">
+            <div
+              className={`relative inline-block ${
+                isFullscreen
+                  ? "border-0 shadow-none rounded-none bg-black"
+                  : "shadow-2xl rounded-lg overflow-hidden border border-slate-800 bg-white"
+              }`}
+            >
               <canvas
                 ref={canvasRef}
                 className="block max-w-none transition-transform duration-75"

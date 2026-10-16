@@ -462,165 +462,177 @@ export default function SlideDeckPresenterModal({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[99999] bg-slate-950 text-white flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans ${
+      className={`fixed inset-0 z-[99999] bg-black text-white flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans ${
         isFullscreen ? "w-screen h-screen p-0 m-0" : ""
       }`}
       onMouseMove={handleMouseMove}
     >
-      {/* ── TOP PRESENTER NAVIGATION BAR ─────────────────────────────────── */}
-      <div
-        className={`bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-md transition-all ${
-          isFullscreen ? "h-12 py-1" : "h-14"
-        }`}
-      >
-        {/* Left: Material & Course Title */}
-        <div className="flex items-center gap-3 min-w-0">
+      {/* ── INVISIBLE HOVER TRIGGER TO EXIT FULLSCREEN (Top Right Corner) ─── */}
+      {isFullscreen && (
+        <div className="fixed top-0 right-0 p-4 z-[100000] group pointer-events-auto">
           <button
-            onClick={() => {
-              saveSlideState(material.id, currentSlide, totalSlides, material.title, classroomId);
-              api
-                .saveSlideState(material.id, {
-                  lastSlide: currentSlide,
-                  totalSlides,
-                  materialTitle: material.title,
-                  classroomId,
-                })
-                .catch(() => {});
-              onClose();
-            }}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700 shrink-0"
-            title="Exit Presentation Mode (Esc)"
+            onClick={exitFullscreen}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3.5 py-2 rounded-full bg-black/85 hover:bg-black text-slate-300 hover:text-white border border-white/20 text-xs font-medium flex items-center gap-2 shadow-2xl backdrop-blur-md cursor-pointer"
+            title="Exit Fullscreen (Esc or F)"
           >
-            <X className="w-4 h-4" />
+            <Minimize2 className="w-4 h-4" />
+            <span>Exit Fullscreen</span>
           </button>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-mono">
-                {courseCode}
-              </span>
-              <span className="text-xs text-slate-400 truncate hidden sm:inline">
-                {courseTitle} ({batchName})
-              </span>
-            </div>
-            <h2 className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
-              <Tv className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-              {material.title}
-            </h2>
-          </div>
         </div>
+      )}
 
-        {/* Center: Slide Switcher, Counter & Database Synced Badge */}
-        {!isPdf && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700">
-              <button
-                onClick={handlePrev}
-                disabled={currentSlide === 1}
-                className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Previous Slide (← / Space)"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setShowThumbnails(!showThumbnails)}
-                className="px-2 text-xs font-mono font-bold text-white hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
-                title="Click to view all slide thumbnails"
-              >
-                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                <span>
-                  Slide {currentSlide} / {totalSlides}
-                </span>
-              </button>
-
-              <button
-                onClick={handleNext}
-                disabled={currentSlide === totalSlides}
-                className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Next Slide (→ / Space)"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* PostgreSQL Persistent DB Badge */}
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
-              <Database className="w-3 h-3 text-emerald-400 animate-pulse" />
-              <span>PostgreSQL Synced</span>
-            </div>
-          </div>
-        )}
-
-        {/* Right: Classroom Presenter Tools */}
-        <div className="flex items-center gap-2">
-          {/* Lecture Timer */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 font-mono text-xs text-slate-300">
-            <Clock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{formatTimer(elapsedSeconds)}</span>
+      {/* ── TOP PRESENTER NAVIGATION BAR (HIDDEN IN FULLSCREEN) ─────────────────── */}
+      {!isFullscreen && (
+        <div className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-md transition-all h-14">
+          {/* Left: Material & Course Title */}
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => setIsTimerRunning(!isTimerRunning)}
-              className="ml-1 text-[10px] text-slate-400 hover:text-white"
-              title={isTimerRunning ? "Pause Timer" : "Resume Timer"}
+              onClick={() => {
+                saveSlideState(material.id, currentSlide, totalSlides, material.title, classroomId);
+                api
+                  .saveSlideState(material.id, {
+                    lastSlide: currentSlide,
+                    totalSlides,
+                    materialTitle: material.title,
+                    classroomId,
+                  })
+                  .catch(() => {});
+                onClose();
+              }}
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700 shrink-0"
+              title="Exit Presentation Mode (Esc)"
             >
-              {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <X className="w-4 h-4" />
             </button>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-mono">
+                  {courseCode}
+                </span>
+                <span className="text-xs text-slate-400 truncate hidden sm:inline">
+                  {courseTitle} ({batchName})
+                </span>
+              </div>
+              <h2 className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
+                <Tv className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                {material.title}
+              </h2>
+            </div>
           </div>
 
-          {/* Slide Zoom Controls (for presentations) */}
+          {/* Center: Slide Switcher, Counter & Database Synced Badge */}
           {!isPdf && (
-            <div className="hidden lg:flex items-center gap-1 bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-700">
-              <button
-                onClick={() => setSlideZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(1)))}
-                className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => setSlideZoom(1.0)}
-                className="text-[10px] font-mono text-slate-300 px-1 hover:text-white"
-                title="Reset Fit"
-              >
-                {Math.round(slideZoom * 100)}%
-              </button>
-              <button
-                onClick={() => setSlideZoom((z) => Math.min(2.0, +(z + 0.1).toFixed(1)))}
-                className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
-                title="Zoom In"
-              >
-                <ZoomIn className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentSlide === 1}
+                  className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="Previous Slide (← / Space)"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setShowThumbnails(!showThumbnails)}
+                  className="px-2 text-xs font-mono font-bold text-white hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+                  title="Click to view all slide thumbnails"
+                >
+                  <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>
+                    Slide {currentSlide} / {totalSlides}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  disabled={currentSlide === totalSlides}
+                  className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="Next Slide (→ / Space)"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* PostgreSQL Persistent DB Badge */}
+              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+                <Database className="w-3 h-3 text-emerald-400 animate-pulse" />
+                <span>PostgreSQL Synced</span>
+              </div>
             </div>
           )}
 
-          {/* Laser Pointer Tool */}
-          <button
-            onClick={() => setIsLaserActive(!isLaserActive)}
-            className={`p-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
-              isLaserActive
-                ? "bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-xs"
-                : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
-            }`}
-            title="Toggle Laser Pointer Mode (L)"
-          >
-            <Radio className="w-3.5 h-3.5 text-rose-500" />
-            <span className="text-[11px] font-bold hidden md:inline">Laser</span>
-          </button>
+          {/* Right: Classroom Presenter Tools */}
+          <div className="flex items-center gap-2">
+            {/* Lecture Timer */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 font-mono text-xs text-slate-300">
+              <Clock className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{formatTimer(elapsedSeconds)}</span>
+              <button
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                className="ml-1 text-[10px] text-slate-400 hover:text-white"
+                title={isTimerRunning ? "Pause Timer" : "Resume Timer"}
+              >
+                {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              </button>
+            </div>
 
-          {/* Toggle Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500 transition-all shadow-sm"
-            title="Projector Fullscreen Mode (F)"
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
+            {/* Slide Zoom Controls (for presentations) */}
+            {!isPdf && (
+              <div className="hidden lg:flex items-center gap-1 bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-700">
+                <button
+                  onClick={() => setSlideZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(1)))}
+                  className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setSlideZoom(1.0)}
+                  className="text-[10px] font-mono text-slate-300 px-1 hover:text-white"
+                  title="Reset Fit"
+                >
+                  {Math.round(slideZoom * 100)}%
+                </button>
+                <button
+                  onClick={() => setSlideZoom((z) => Math.min(2.0, +(z + 0.1).toFixed(1)))}
+                  className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* Laser Pointer Tool */}
+            <button
+              onClick={() => setIsLaserActive(!isLaserActive)}
+              className={`p-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
+                isLaserActive
+                  ? "bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-xs"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
+              }`}
+              title="Toggle Laser Pointer Mode (L)"
+            >
+              <Radio className="w-3.5 h-3.5 text-rose-500" />
+              <span className="text-[11px] font-bold hidden md:inline">Laser</span>
+            </button>
+
+            {/* Toggle Fullscreen */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500 transition-all shadow-sm"
+              title="Projector Fullscreen Mode (F)"
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── RESUMED FROM LAST SLIDE NOTIFICATION BANNER ───────────────────── */}
-      {resumedNotice && (
+      {!isFullscreen && resumedNotice && (
         <div className="bg-indigo-600/90 text-white px-4 py-1.5 text-xs font-semibold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
@@ -662,8 +674,8 @@ export default function SlideDeckPresenterModal({
 
       {/* ── SLIDE STAGE / CANVAS ─────────────────────────────────────────── */}
       <div
-        className={`flex-1 relative flex items-center justify-center bg-slate-950 overflow-hidden ${
-          isFullscreen ? "p-0" : "p-3 sm:p-6"
+        className={`flex-1 relative flex items-center justify-center bg-black overflow-hidden ${
+          isFullscreen ? "w-full h-full p-0 m-0" : "p-3 sm:p-6"
         }`}
       >
         {isPdf ? (
@@ -687,7 +699,7 @@ export default function SlideDeckPresenterModal({
           <div
             className={`relative flex items-center justify-center transition-transform duration-100 ${
               isFullscreen
-                ? "w-full h-full max-w-none max-h-none p-0 bg-black"
+                ? "w-full h-full max-w-none max-h-none p-0 m-0 bg-black"
                 : "w-full max-w-[1400px] aspect-[16/9] bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl"
             }`}
             style={{
@@ -697,17 +709,32 @@ export default function SlideDeckPresenterModal({
           >
             {/* 1. AUTHENTIC IMAGE SLIDE (Presentation1.pptx) */}
             {activeSlideData.type === "image" && activeSlideData.imageUrl ? (
-              <div className="relative w-full h-full flex items-center justify-center bg-black select-none">
+              <div
+                onClick={(e) => {
+                  if (isFullscreen) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    if (clickX < rect.width * 0.25) {
+                      handlePrev();
+                    } else {
+                      handleNext();
+                    }
+                  }
+                }}
+                className="relative w-full h-full flex items-center justify-center bg-black select-none cursor-default"
+              >
                 <img
                   src={activeSlideData.imageUrl}
                   alt={activeSlideData.title || `Slide ${currentSlide}`}
                   className="w-full h-full object-contain pointer-events-none"
                 />
-                <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl">
-                  <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
-                </div>
+                {!isFullscreen && (
+                  <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl">
+                    <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
+                  </div>
+                )}
               </div>
             ) : activeSlideData.type === "html" && activeSlideData.htmlUrl ? (
               /* 2. AUTHENTIC HTML SLIDE (Inception_v2 copy.pptx) */
@@ -717,11 +744,13 @@ export default function SlideDeckPresenterModal({
                   title={`Slide ${currentSlide}`}
                   className="w-full h-full border-0 bg-transparent"
                 />
-                <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl pointer-events-none">
-                  <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
-                </div>
+                {!isFullscreen && (
+                  <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl pointer-events-none">
+                    <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
+                  </div>
+                )}
               </div>
             ) : (
               /* 3. STRUCTURED FALLBACK PRESENTATION DECK */
@@ -855,7 +884,7 @@ export default function SlideDeckPresenterModal({
       </div>
 
       {/* ── BOTTOM PROGRESS BAR & KEYBOARD SHORTCUTS ─────────────────────── */}
-      {!isPdf && (
+      {!isFullscreen && !isPdf && (
         <div className="h-9 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 shrink-0 font-mono">
           <div className="flex items-center gap-3">
             <span>

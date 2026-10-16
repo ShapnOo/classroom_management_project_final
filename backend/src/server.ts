@@ -1,6 +1,9 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
 import { pool } from "./config/db.js";
 import { initDatabase } from "./db/init.js";
@@ -9,9 +12,17 @@ import adminRoutes from "./routes/admin/index.js";
 import teacherRoutes from "./routes/teacher/index.js";
 import studentRoutes from "./routes/student/index.js";
 import authRoutes from "./routes/auth.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 import { sendError, sendSuccess } from "./utils/response.js";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.resolve(__dirname, "../uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -21,8 +32,11 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:3000",
   credentials: true,
 }));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// ── Static File Serving for Uploaded PPTX, PDF, and Media ──────────────────
+app.use("/uploads", express.static(uploadsDir));
 
 // ── Swagger UI Documentation ────────────────────────────────────────────────
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -62,6 +76,9 @@ app.use("/api/teacher", teacherRoutes);
 
 // Dedicated Student Portal API Routes
 app.use("/api/student", studentRoutes);
+
+// File Uploads API (PPTX, PDF, Images saved to backend/uploads)
+app.use("/api/upload", uploadRoutes);
 
 // Root API Welcome & Endpoint Discovery
 app.get("/", (req: Request, res: Response) => {

@@ -430,15 +430,28 @@ export const getMaterials = async (req: Request, res: Response) => {
 
 export const createMaterial = async (req: Request, res: Response) => {
   try {
-    const { classroomId, courseId, title, description, fileName, fileType, fileData, fileSize } = req.body;
+    const { classroomId, courseId, title, description, fileName, fileType, fileData, fileSize, totalSlides, lastSlide } = req.body;
     if (!title || !fileName) {
       return sendError(res, "Title and fileName are required", 400);
     }
-    const id = genId();
+    const id = req.body.id || genId();
+    const totSlides = Math.max(1, Number(totalSlides) || 1);
+    const lstSlide = Math.max(1, Number(lastSlide) || 1);
     const { rows } = await pool.query(`
-      INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_data, file_size)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
-    `, [id, classroomId || null, courseId || null, title, description || "", fileName, fileType || "application/pdf", fileData || "", fileSize || "1.0 MB"]);
+      INSERT INTO course_materials (
+        id, classroom_id, course_id, title, description, file_name, file_type, file_data, file_size, last_slide, total_slides
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        file_name = EXCLUDED.file_name,
+        file_type = EXCLUDED.file_type,
+        file_size = EXCLUDED.file_size,
+        last_slide = EXCLUDED.last_slide,
+        total_slides = EXCLUDED.total_slides
+      RETURNING *
+    `, [id, classroomId || null, courseId || null, title, description || "", fileName, fileType || "application/pdf", fileData || "", fileSize || "1.0 MB", lstSlide, totSlides]);
     sendSuccess(res, rows[0], "Material uploaded successfully", 201);
   } catch (err: any) {
     sendError(res, err.message);
