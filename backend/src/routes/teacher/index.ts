@@ -17,7 +17,8 @@ import {
   getAssignmentSubmissions,
   getTests, createTest, updateTest, deleteTest,
   getResults, saveGradeRecord,
-  getMaterials, createMaterial, deleteMaterial
+  getMaterials, createMaterial, deleteMaterial,
+  getSlideState, saveSlideState, getAllSlideStates
 } from "../../controllers/admin/activities.controller.js";
 
 const router = Router();
@@ -59,6 +60,11 @@ router.get("/results", getResults);
 router.post("/results", saveGradeRecord);
 
 router.get("/materials", getMaterials);
+router.get("/materials/slide-states", getAllSlideStates);
+router.get("/materials/slide-state/:materialId", getSlideState);
+router.put("/materials/slide-state/:materialId", saveSlideState);
+router.post("/materials/slide-state/:materialId", saveSlideState);
+
 import { getReschedules, createReschedule, updateRescheduleStatus } from "../../controllers/teacher/reschedule.controller.js";
 
 // Class Rescheduling & Teacher Slot Exchange

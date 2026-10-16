@@ -283,5 +283,20 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
 CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment ON assignment_submissions(assignment_id);
 CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student ON assignment_submissions(student_id);
 
+-- 14. Course Material Slide States & In-App Presentation Resume
+CREATE TABLE IF NOT EXISTS material_slide_states (
+  id VARCHAR(64) PRIMARY KEY,
+  material_id VARCHAR(64) NOT NULL,
+  classroom_id VARCHAR(64),
+  teacher_id VARCHAR(64),
+  last_slide INT NOT NULL DEFAULT 1,
+  total_slides INT NOT NULL DEFAULT 1,
+  material_title VARCHAR(255),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT unique_material_deck UNIQUE(material_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_slide_states_mat ON material_slide_states(material_id);
+
 
 

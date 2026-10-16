@@ -121,6 +121,21 @@ export async function initDatabase() {
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
+      ALTER TABLE course_materials ADD COLUMN IF NOT EXISTS last_slide INT DEFAULT 1;
+      ALTER TABLE course_materials ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 1;
+
+      CREATE TABLE IF NOT EXISTS material_slide_states (
+        id VARCHAR(64) PRIMARY KEY,
+        material_id VARCHAR(64) NOT NULL,
+        classroom_id VARCHAR(64),
+        teacher_id VARCHAR(64),
+        last_slide INT NOT NULL DEFAULT 1,
+        total_slides INT NOT NULL DEFAULT 1,
+        material_title VARCHAR(255),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT unique_material_deck UNIQUE(material_id)
+      );
+
       CREATE TABLE IF NOT EXISTS batch_promotion_logs (
         id VARCHAR(64) PRIMARY KEY,
         batch_id VARCHAR(64) REFERENCES batches(id) ON DELETE CASCADE,
@@ -137,6 +152,7 @@ export async function initDatabase() {
         executed_by VARCHAR(255) DEFAULT 'System Admin',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE INDEX IF NOT EXISTS idx_material_slide_states_mat ON material_slide_states(material_id);
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_student ON student_transcripts(student_id);
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_course ON student_transcripts(course_id);
       CREATE INDEX IF NOT EXISTS idx_student_transcripts_semester ON student_transcripts(semester);
@@ -584,9 +600,11 @@ export async function resetAndSeedInitialData() {
     await client.query(`
       INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_size) VALUES
       ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', 'Lecture 1: ER Modeling & Relational Diagrams', 'Comprehensive slide deck introducing ER entity types, weak entities, and cardinality constraints.', 'ER_Modeling_Lecture1.pdf', 'application/pdf', '2.4 MB'),
-      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', 'SQL Lab Exercises & Sample Dataset', 'Hands-on practice script for inner/outer joins, grouping, and subqueries.', 'SQL_Lab_Practice_Spring2026.sql', 'text/plain', '180 KB'),
-      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', 'Agile & Scrum Process Guide', 'Overview of sprint planning, backlog grooming, daily standups, and retrospective templates.', 'Scrum_Guide_2026.pdf', 'application/pdf', '1.8 MB'),
-      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_4}', '${SEED_IDS.COURSE_425}', 'A* Search Algorithm Python Notebook', 'Interactive Python code implementing A* search with heuristic visualization.', 'A_Star_Search_Implementation.ipynb', 'application/json', '520 KB')
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_1}', '${SEED_IDS.COURSE_305}', 'SQL Lab Exercises & Sample Dataset', 'Hands-on practice script for inner/outer joins, grouping, and subqueries.', 'SQL_Lab_Practice_Spring2026.sql', 'text/plain', '180 KB', 1, 1),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', 'Agile & Scrum Process Guide', 'Overview of sprint planning, backlog grooming, daily standups, and retrospective templates.', 'Scrum_Guide_2026.pdf', 'application/pdf', '1.8 MB', 1, 8),
+      ('a1b2c3d4-0001-4000-8000-000000000001', '${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', 'Higher Education Digital Suite (Architecture & Platform Vision)', 'Executive presentation deck covering 5 flagship platforms, 18 university modules, and UGC-ERP digital transformation.', 'Presentation1.pptx', 'Slides', '6.2 MB', 1, 20),
+      ('a1b2c3d4-0002-4000-8000-000000000002', '${SEED_IDS.CLS_2}', '${SEED_IDS.COURSE_412}', 'WENP 3.0 Platform Inception & Multi-Tier SDLC Architecture', 'Inception report presentation on multi-tier architecture, SDLC iterations, functional matrix, and Gantt project timelines.', 'Inception_v2 copy.pptx', 'Slides', '9.3 MB', 1, 24),
+      ('${crypto.randomUUID()}', '${SEED_IDS.CLS_4}', '${SEED_IDS.COURSE_425}', 'A* Search Algorithm Python Notebook', 'Interactive Python code implementing A* search with heuristic visualization.', 'A_Star_Search_Implementation.ipynb', 'application/json', '520 KB', 1, 1)
       ON CONFLICT (id) DO NOTHING;
     `);
 

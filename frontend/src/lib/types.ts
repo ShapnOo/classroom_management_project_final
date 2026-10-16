@@ -105,6 +105,9 @@ export type SyllabusTopic = {
   adminStatus: "Published" | "Draft" | "Archived"; // admin controls visibility
   totalSlides?: number;
   completedSlides?: number;
+  materialId?: string;
+  materialTitle?: string;
+  materialFileName?: string;
 };
 
 /**

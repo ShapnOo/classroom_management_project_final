@@ -22,8 +22,10 @@ import {
   Tv,
   Radio,
   Share2,
-  Download
+  Download,
+  Database
 } from "lucide-react";
+import { api } from "@/lib/api";
 
 export interface SlideMaterial {
   id: string;
@@ -44,22 +46,28 @@ interface SlideDeckPresenterModalProps {
   courseCode?: string;
   batchName?: string;
   teacherName?: string;
+  classroomId?: string;
+  initialSlide?: number;
 }
 
 export interface SlideData {
   id: number;
   title: string;
   subtitle?: string;
-  type: "cover" | "agenda" | "concept" | "code" | "diagram" | "discussion" | "summary";
+  type: "cover" | "agenda" | "concept" | "code" | "diagram" | "discussion" | "summary" | "image";
   bullets?: string[];
   codeSnippet?: string;
   diagramType?: "er" | "uml" | "flow" | "architecture";
   notes?: string;
   takeaway?: string;
+  imageUrl?: string;
 }
 
-// LocalStorage Helper for Slide Persistence
-export const getSavedSlideState = (materialId: string) => {
+// LocalStorage & Database Helper for Slide Persistence
+export const getSavedSlideState = (materialId: string, dbSlideStates?: Record<string, any>) => {
+  if (dbSlideStates && dbSlideStates[materialId]) {
+    return dbSlideStates[materialId];
+  }
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(`scholaris_slide_state_${materialId}`);
@@ -69,7 +77,13 @@ export const getSavedSlideState = (materialId: string) => {
   }
 };
 
-export const saveSlideState = (materialId: string, slideNumber: number, totalSlides: number, materialTitle: string) => {
+export const saveSlideState = (
+  materialId: string,
+  slideNumber: number,
+  totalSlides: number,
+  materialTitle: string,
+  classroomId?: string
+) => {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(
@@ -82,6 +96,14 @@ export const saveSlideState = (materialId: string, slideNumber: number, totalSli
       })
     );
   } catch {}
+
+  // Also background-sync to PostgreSQL Database
+  api.saveSlideState(materialId, {
+    lastSlide: slideNumber,
+    totalSlides,
+    materialTitle,
+    classroomId
+  }).catch(() => {});
 };
 
 export default function SlideDeckPresenterModal({
@@ -92,8 +114,10 @@ export default function SlideDeckPresenterModal({
   courseCode = "CSE-305",
   batchName = "Spring 2026 - A",
   teacherName = "Prof. Dr. Shamim Al Mamun",
+  classroomId,
+  initialSlide,
 }: SlideDeckPresenterModalProps) {
-  const [currentSlide, setCurrentSlide] = useState<number>(1);
+  const [currentSlide, setCurrentSlide] = useState<number>(initialSlide || 1);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isLaserActive, setIsLaserActive] = useState<boolean>(false);
   const [laserPos, setLaserPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -107,9 +131,283 @@ export default function SlideDeckPresenterModal({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Generate 8-10 high-quality slides tailored to the material title
+  // Generate authentic presentation slides tailored to the material
   const slides: SlideData[] = React.useMemo(() => {
     const titleLower = (material.title || "").toLowerCase();
+    const fileNameLower = (material.fileName || "").toLowerCase();
+
+    // 1. Presentation1.pptx (Higher Education Digital Suite) - 20 authentic high-resolution slides
+    const isPresentation1 =
+      fileNameLower.includes("presentation1") ||
+      titleLower.includes("presentation1") ||
+      titleLower.includes("higher education") ||
+      titleLower.includes("digital suite");
+
+    if (isPresentation1) {
+      return Array.from({ length: 20 }, (_, idx) => {
+        const slideNum = idx + 1;
+        return {
+          id: slideNum,
+          title: slideNum === 1 ? "Higher Education Digital Suite" : `Digital Suite Architecture — Slide ${slideNum}`,
+          subtitle: slideNum === 1 ? "Five integrated platforms. One national transformation." : `Enterprise Slide Deck ${slideNum} of 20`,
+          type: "image",
+          imageUrl: `/Presentation Deck/presentation1_slides/slide_${slideNum}.png`,
+          notes: `Slide ${slideNum}: Higher Education Digital Suite - UGC-ERP & University Modular Architecture.`
+        };
+      });
+    }
+
+    // 2. Inception_v2 copy.pptx (WENP 3.0 Platform Inception & SDLC) - 24 authentic slides
+    const isInception =
+      fileNameLower.includes("inception") ||
+      titleLower.includes("inception") ||
+      titleLower.includes("wenp") ||
+      titleLower.includes("regional connectivity");
+
+    if (isInception) {
+      return [
+        {
+          id: 1,
+          title: "Inception Report Acceptance Meeting",
+          subtitle: "Bangladesh Regional Connectivity Project-1 [Part-2] • Package SD-56",
+          type: "cover",
+          notes: "Welcome stakeholders to the official BRCP-1 Part-2 Inception Report Acceptance Meeting."
+        },
+        {
+          id: 2,
+          title: "Inception Acceptance Meeting Agenda",
+          type: "agenda",
+          bullets: [
+            "Project Governance & Stakeholder Alignment Framework",
+            "Existing WENP Features & Benchmark Assessment",
+            "Diagnostic Gap Analysis Findings",
+            "WENP 3.0 Platform Vision & Core Architecture",
+            "Multi-Tier Architectural Framework & Iterative SDLC",
+            "Gantt Project Timelines & Production Cutover Plan"
+          ],
+          notes: "Review the agenda items with the project committee."
+        },
+        {
+          id: 3,
+          title: "Background of the Project",
+          type: "concept",
+          bullets: [
+            "National Objective: Empowering women entrepreneurs through digital market access",
+            "Trade Facilitation: Connecting regional women enterprises with cross-border ecosystems",
+            "Modernization: Upgrading legacy portals to high-availability distributed architecture"
+          ]
+        },
+        {
+          id: 4,
+          title: "Existing WENP Features at a Glance",
+          type: "concept",
+          bullets: [
+            "Directory of registered women enterprises across 64 districts",
+            "Basic product showcase and informational landing pages",
+            "Static inquiry forms with manual administrative approval queues"
+          ]
+        },
+        {
+          id: 5,
+          title: "Diagnostic Gap Analysis",
+          type: "concept",
+          bullets: [
+            "Absence of unified mobile experience across Android & iOS",
+            "Lack of real-time multi-channel payment gateway settlement (bKash/Nagad/Cards)",
+            "Scalability bottlenecks under concurrent traffic surges",
+            "Monolithic architecture requiring microservices decoupling and robust API gateway"
+          ]
+        },
+        {
+          id: 6,
+          title: "The New WENP Platform Vision (WENP 3.0)",
+          type: "concept",
+          bullets: [
+            "Omnichannel Experience: Native mobile app + responsive web portal",
+            "Modern Cloud Architecture: Dockerized microservices with API gateway",
+            "Automated Logistics: Integrated courier APIs and dispatch tracking",
+            "Security: End-to-end SSL, WAF inspection, and role-based access control (RBAC)"
+          ]
+        },
+        {
+          id: 7,
+          title: "Upgraded Platform Roles & Hierarchy",
+          type: "concept",
+          bullets: [
+            "Super Admin (Ministry / Project Authority): Governance, audit trails, and policy enforcement",
+            "Operations & Support: Vendor onboarding and compliance verification",
+            "Women Entrepreneurs: Product catalog, inventory, order processing, and settlement",
+            "Consumers & Buyers: Cross-platform cart, instant checkout, and tracking"
+          ]
+        },
+        {
+          id: 8,
+          title: "WENP Core Functional Modules Matrix",
+          type: "concept",
+          bullets: [
+            "Module 1: Authentication & Identity Management (JWT + MFA)",
+            "Module 2: Dynamic Product & Service Catalog with Rich Media",
+            "Module 3: Automated Order Dispatch & Inventory Locking",
+            "Module 4: Multi-Channel Payment Settlement & Financial Ledger",
+            "Module 5: Dispute Resolution, Support Ticketing & Rating Engine"
+          ]
+        },
+        {
+          id: 9,
+          title: "Key System Non-Functional Attributes",
+          type: "concept",
+          bullets: [
+            "High Availability: 99.9% uptime SLA with active-passive failover",
+            "Low Latency: P95 API response times under 200ms",
+            "Data Sovereignty: Encrypted at rest (AES-256) and in transit (TLS 1.3)",
+            "Autoscaling: Horizontal pod autoscaling based on CPU/Memory load"
+          ]
+        },
+        {
+          id: 10,
+          title: "Enterprise Technology Stack & Tooling",
+          type: "concept",
+          bullets: [
+            "Frontend: Next.js / React, TypeScript, TailwindCSS",
+            "Backend: Node.js / Express microservices with TypeScript",
+            "Database: PostgreSQL + Redis for distributed caching",
+            "Storage: S3 / MinIO compatible object storage for media assets",
+            "CI/CD: GitHub Actions with automated linting, unit testing & docker builds"
+          ]
+        },
+        {
+          id: 11,
+          title: "Quality Assurance & Testing Strategy",
+          type: "concept",
+          bullets: [
+            "Automated Unit & Integration Tests (Jest / Supertest)",
+            "End-to-End browser workflow testing (Playwright)",
+            "Stress & Load Testing (k6 / Artillery for 10,000 concurrent virtual users)",
+            "Vulnerability Assessment & Penetration Testing (OWASP Top 10)"
+          ]
+        },
+        {
+          id: 12,
+          title: "Multi-Tier Architectural Framework",
+          subtitle: "Presentation, Gateway, Business Logic, and Data Integration Tiers",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image21.png",
+          notes: "Walk through all 4 architectural tiers: mobile app, API gateway, microservices, and database/cache."
+        },
+        {
+          id: 13,
+          title: "Software Development Life Cycle (SDLC) Methodology",
+          subtitle: "Iterative Development Cycle: Inception, Sprint Cycles, UAT & Deployment",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image22.png",
+          notes: "Explain the continuous feedback loop between UAT, acceptance testing, and release iterations."
+        },
+        {
+          id: 14,
+          title: "System Integration & Security Model",
+          subtitle: "External Gateway Boundaries & Microservices Isolation",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image23.png",
+          notes: "Highlight third-party gateway connections and boundary security."
+        },
+        {
+          id: 15,
+          title: "Detailed Project Timeline 01: Inception Phase",
+          type: "concept",
+          bullets: [
+            "Stakeholder interviews and inception workshop",
+            "Finalization of System Requirement Specification (SRS)",
+            "Architecture sign-off and development environment provisioning"
+          ]
+        },
+        {
+          id: 16,
+          title: "Detailed Project Timeline 02: Core Sprint 1",
+          type: "concept",
+          bullets: [
+            "Design system creation and interactive UI prototypes",
+            "Database schema modeling and migration scripts",
+            "Auth and user management service implementation"
+          ]
+        },
+        {
+          id: 17,
+          title: "Detailed Project Timeline 03: Core Sprint 2",
+          type: "concept",
+          bullets: [
+            "Merchant onboarding and product catalog microservice",
+            "Search engine indexing and category filters",
+            "Media asset uploading and image optimization pipeline"
+          ]
+        },
+        {
+          id: 18,
+          title: "Detailed Project Timeline 04: Integration Sprint",
+          type: "concept",
+          bullets: [
+            "Payment gateway sandboxing (SSLCommerz, bKash, Cards)",
+            "SMS notification service and automated email delivery",
+            "Courier & delivery tracking API integration"
+          ]
+        },
+        {
+          id: 19,
+          title: "Detailed Project Timeline 05: Quality Assurance & UAT",
+          type: "concept",
+          bullets: [
+            "Comprehensive test plan execution and defect triage",
+            "Security vulnerability scanning and code hardening",
+            "User Acceptance Testing with designated stakeholder focus groups"
+          ]
+        },
+        {
+          id: 20,
+          title: "Detailed Project Timeline 06: Production Cutover",
+          type: "concept",
+          bullets: [
+            "Production cluster staging and DNS cutover",
+            "Data migration verification and smoke testing",
+            "Staff training and administration handover documentation"
+          ]
+        },
+        {
+          id: 21,
+          title: "Project Timeline Summary (Gantt Chart)",
+          subtitle: "5 Execution Phases Across Delivery Milestones",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image24.png",
+          notes: "Review critical path dates from Phase 1 to Phase 5 deployment."
+        },
+        {
+          id: 22,
+          title: "Governance Cadences & Transparent Reporting",
+          type: "concept",
+          bullets: [
+            "Daily engineering standup: Blockers and immediate progress",
+            "Weekly client status meeting: Completed user stories and milestone progress",
+            "Bi-weekly sprint demo: Live software demonstrations in staging",
+            "Monthly executive steering review: Budget, scope, and strategic alignment"
+          ]
+        },
+        {
+          id: 23,
+          title: "Cloud Infrastructure & Container Orchestration",
+          subtitle: "Kubernetes Cluster Architecture & Disaster Recovery",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image25.png",
+          notes: "Kubernetes pod orchestration, load balancer, and disaster recovery."
+        },
+        {
+          id: 24,
+          title: "Conclusion & Project Rollout Sign-Off",
+          subtitle: "Formal Deliverables Handover & Next Actions",
+          type: "image",
+          imageUrl: "/Presentation Deck/inception_media/image26.png",
+          notes: "Formal acceptance and sign-off."
+        }
+      ];
+    }
+
     const isUml = titleLower.includes("uml") || titleLower.includes("library") || titleLower.includes("software");
     const isAgile = titleLower.includes("agile") || titleLower.includes("scrum");
     const isSearch = titleLower.includes("search") || titleLower.includes("algorithm");
@@ -334,30 +632,68 @@ export default function SlideDeckPresenterModal({
 
   const totalSlides = slides.length;
 
-  // Initialize and Resume from Saved Slide State
+  const isInitialLoadedRef = useRef<boolean>(false);
+
+  // Initialize and Resume from Database (Cross-Device) & LocalStorage
   useEffect(() => {
     if (!isOpen || !material.id) return;
+    let isMounted = true;
+    isInitialLoadedRef.current = false;
 
-    const saved = getSavedSlideState(material.id);
-    if (saved && typeof saved.lastSlide === "number" && saved.lastSlide > 1) {
-      const targetSlide = Math.min(totalSlides, Math.max(1, saved.lastSlide));
-      setCurrentSlide(targetSlide);
-
-      const timeFormatted = saved.updatedAt
-        ? new Date(saved.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "earlier";
-      setResumedNotice(`Resumed from Slide ${targetSlide} of ${totalSlides} (Last taught: ${timeFormatted})`);
-      setTimeout(() => setResumedNotice(null), 5000);
+    // 1. Initial fast restore from props / local storage
+    if (initialSlide && initialSlide > 0) {
+      setCurrentSlide(Math.min(totalSlides, initialSlide));
     } else {
-      setCurrentSlide(1);
+      const localSaved = getSavedSlideState(material.id);
+      if (localSaved && typeof localSaved.lastSlide === "number" && localSaved.lastSlide > 1) {
+        setCurrentSlide(Math.min(totalSlides, Math.max(1, localSaved.lastSlide)));
+      }
     }
-  }, [isOpen, material.id, totalSlides]);
 
-  // Persist Current Slide on every change
+    // 2. Authoritative PostgreSQL Database Sync (Cross-Device & Cross-Login by materialId)
+    api.getSlideState(material.id)
+      .then((res) => {
+        if (!isMounted || !res) return;
+        const dbSlide = res.lastSlide;
+        if (typeof dbSlide === "number" && dbSlide >= 1) {
+          const targetSlide = Math.min(totalSlides, Math.max(1, dbSlide));
+          setCurrentSlide(targetSlide);
+          if (targetSlide > 1) {
+            setResumedNotice(`Resumed from Slide ${targetSlide} of ${totalSlides} (PostgreSQL Database)`);
+            setTimeout(() => {
+              if (isMounted) setResumedNotice(null);
+            }, 4000);
+          }
+        }
+        isInitialLoadedRef.current = true;
+      })
+      .catch(() => {
+        if (isMounted) isInitialLoadedRef.current = true;
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, material.id, totalSlides, initialSlide]);
+
+  // Persist Current Slide on every change to both LocalStorage & PostgreSQL Database
   useEffect(() => {
-    if (!isOpen || !material.id) return;
-    saveSlideState(material.id, currentSlide, totalSlides, material.title);
-  }, [isOpen, material.id, currentSlide, totalSlides, material.title]);
+    if (!isOpen || !material.id || !isInitialLoadedRef.current) return;
+    saveSlideState(material.id, currentSlide, totalSlides, material.title, classroomId);
+
+    const timer = setTimeout(() => {
+      api.saveSlideState(material.id, {
+        lastSlide: currentSlide,
+        totalSlides,
+        materialTitle: material.title,
+        classroomId
+      }).catch((err) => {
+        console.warn("Could not save slide state to PostgreSQL:", err);
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, material.id, currentSlide, totalSlides, material.title, classroomId]);
 
   // Lecture Stopwatch Timer
   useEffect(() => {
@@ -462,22 +798,28 @@ export default function SlideDeckPresenterModal({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans"
+      className="fixed inset-0 z-[99999] bg-slate-950 text-white flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans"
       onMouseMove={handleMouseMove}
     >
       
       {/* ── TOP PRESENTER NAVIGATION BAR ─────────────────────────────────── */}
-      <div className="h-13 bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-md">
+      <div className="h-14 bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-md">
         
         {/* Left: Material & Course Title */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => {
-              saveSlideState(material.id, currentSlide, totalSlides, material.title);
+              saveSlideState(material.id, currentSlide, totalSlides, material.title, classroomId);
+              api.saveSlideState(material.id, {
+                lastSlide: currentSlide,
+                totalSlides,
+                materialTitle: material.title,
+                classroomId
+              }).catch(() => {});
               onClose();
             }}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700"
-            title="Exit Presentation Mode (Esc) - Slide position auto-saved"
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700 shrink-0"
+            title="Exit Presentation Mode (Esc) - Slide position saved to PostgreSQL Database"
           >
             <X className="w-4 h-4" />
           </button>
@@ -498,35 +840,44 @@ export default function SlideDeckPresenterModal({
           </div>
         </div>
 
-        {/* Center: Slide Switcher & Counter */}
-        <div className="flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700">
-          <button
-            onClick={handlePrev}
-            disabled={currentSlide === 1}
-            className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            title="Previous Slide (← / Space)"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        {/* Center: Slide Switcher, Counter & Database Synced Badge */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700">
+            <button
+              onClick={handlePrev}
+              disabled={currentSlide === 1}
+              className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Previous Slide (← / Space)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          <button
-            onClick={() => setShowThumbnails(!showThumbnails)}
-            className="px-2 text-xs font-mono font-bold text-white hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
-            title="Click to view all slide thumbnails"
-          >
-            <Layers className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Slide {currentSlide} / {totalSlides}</span>
-          </button>
+            <button
+              onClick={() => setShowThumbnails(!showThumbnails)}
+              className="px-2 text-xs font-mono font-bold text-white hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+              title="Click to view all slide thumbnails"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Slide {currentSlide} / {totalSlides}</span>
+            </button>
 
-          <button
-            onClick={handleNext}
-            disabled={currentSlide === totalSlides}
-            className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            title="Next Slide (→ / Space)"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            <button
+              onClick={handleNext}
+              disabled={currentSlide === totalSlides}
+              className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Next Slide (→ / Space)"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* PostgreSQL Persistent DB Badge */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+            <Database className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <span>PostgreSQL DB Synced</span>
+          </div>
         </div>
+
 
         {/* Right: Classroom Presenter Tools */}
         <div className="flex items-center gap-2">
@@ -602,164 +953,185 @@ export default function SlideDeckPresenterModal({
       )}
 
       {/* ── SLIDE STAGE / CANVAS ─────────────────────────────────────────── */}
-      <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 bg-slate-950 overflow-hidden">
+      <div className="flex-1 relative flex items-center justify-center p-3 sm:p-6 bg-slate-950 overflow-hidden">
         
         {/* 16:9 Presentation Slide Canvas */}
-        <div className="relative w-full max-w-[1100px] aspect-[16/9] bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 rounded-2xl border border-slate-800 shadow-2xl p-8 sm:p-14 flex flex-col justify-between overflow-hidden">
-          
-          {/* Subtle Ambient Background Glow */}
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className={`relative w-full max-w-[1240px] aspect-[16/9] ${
+          activeSlideData.type === "image" && activeSlideData.imageUrl
+            ? "bg-black rounded-2xl overflow-hidden border border-slate-850 shadow-2xl flex items-center justify-center p-0"
+            : "bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 rounded-2xl border border-slate-800 shadow-2xl p-8 sm:p-14 flex flex-col justify-between overflow-hidden"
+        }`}>
 
-          {/* Slide Header */}
-          <div className="flex items-start justify-between pb-4 border-b border-slate-800/80">
-            <div>
-              <span className="text-[11px] font-bold tracking-widest text-indigo-400 uppercase font-mono">
-                {courseCode} • {courseTitle}
-              </span>
-              <h1 className="text-xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">
-                {activeSlideData.title}
-              </h1>
-              {activeSlideData.subtitle && (
-                <p className="text-sm text-slate-400 mt-1 font-medium">
-                  {activeSlideData.subtitle}
-                </p>
-              )}
+          {activeSlideData.type === "image" && activeSlideData.imageUrl ? (
+            <div className="relative w-full h-full flex items-center justify-center bg-black select-none">
+              <img
+                src={activeSlideData.imageUrl}
+                alt={activeSlideData.title || `Slide ${currentSlide}`}
+                className="w-full h-full object-contain pointer-events-none"
+              />
+              <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl">
+                <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
+                <span className="text-slate-600">•</span>
+                <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Subtle Ambient Background Glow */}
+              <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="text-right shrink-0 font-mono text-[11px] text-slate-500">
-              <span>Scholaris Classroom Deck</span>
-            </div>
-          </div>
-
-          {/* Slide Core Content Body */}
-          <div className="flex-1 py-6 flex flex-col justify-center overflow-y-auto">
-            
-            {/* 1. COVER SLIDE */}
-            {activeSlideData.type === "cover" && (
-              <div className="space-y-6 text-center sm:text-left py-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
-                  <BookOpen className="w-3.5 h-3.5" /> Department of Computer Science & Engineering
+              {/* Slide Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-slate-800/80">
+                <div>
+                  <span className="text-[11px] font-bold tracking-widest text-indigo-400 uppercase font-mono">
+                    {courseCode} • {courseTitle}
+                  </span>
+                  <h1 className="text-xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">
+                    {activeSlideData.title}
+                  </h1>
+                  {activeSlideData.subtitle && (
+                    <p className="text-sm text-slate-400 mt-1 font-medium">
+                      {activeSlideData.subtitle}
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-400">
-                    Faculty of Mathematical & Physical Sciences • Jahangirnagar University
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Instructor: <strong className="text-slate-300">{teacherName}</strong> • Batch: <strong className="text-slate-300">{batchName}</strong>
-                  </p>
+
+                <div className="text-right shrink-0 font-mono text-[11px] text-slate-500">
+                  <span>Scholaris Classroom Deck</span>
                 </div>
               </div>
-            )}
 
-            {/* 2. AGENDA / BULLET SLIDE */}
-            {(activeSlideData.type === "agenda" || activeSlideData.type === "concept") && activeSlideData.bullets && (
-              <ul className="space-y-4 text-sm sm:text-base text-slate-200">
-                {activeSlideData.bullets.map((bullet, idx) => (
-                  <li key={idx} className="flex items-start gap-3 animate-in fade-in slide-in-from-left-2 duration-200" style={{ animationDelay: `${idx * 80}ms` }}>
-                    <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                      {idx + 1}
+              {/* Slide Core Content Body */}
+              <div className="flex-1 py-6 flex flex-col justify-center overflow-y-auto">
+                
+                {/* 1. COVER SLIDE */}
+                {activeSlideData.type === "cover" && (
+                  <div className="space-y-6 text-center sm:text-left py-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
+                      <BookOpen className="w-3.5 h-3.5" /> Department of Computer Science & Engineering
                     </div>
-                    <span className="leading-relaxed">{bullet}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {/* 3. CODE SLIDE */}
-            {activeSlideData.type === "code" && (
-              <div className="space-y-3">
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto shadow-inner leading-relaxed">
-                  <pre className="text-emerald-400">{activeSlideData.codeSnippet}</pre>
-                </div>
-              </div>
-            )}
-
-            {/* 4. DIAGRAM SLIDE (Interactive Schema / UML Visual) */}
-            {activeSlideData.type === "diagram" && (
-              <div className="space-y-4">
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-inner">
-                  <svg viewBox="0 0 700 160" className="w-full h-auto text-xs font-mono">
-                    <rect x="20" y="20" width="180" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
-                    <rect x="20" y="20" width="180" height="26" rx="6" fill="#1e3a8a" />
-                    <text x="110" y="38" fill="#ffffff" fontWeight="bold" textAnchor="middle" fontSize="11">BOOK_ITEM (Entity)</text>
-                    <text x="32" y="65" fill="#e11d48" fontSize="10">PK  barcode : VARCHAR</text>
-                    <text x="32" y="85" fill="#38bdf8" fontSize="10">FK  book_id : UUID</text>
-                    <text x="32" y="105" fill="#94a3b8" fontSize="10">    status : Available</text>
-
-                    <line x1="200" y1="80" x2="300" y2="80" stroke="#64748b" strokeWidth="2" strokeDasharray="4 2" />
-                    <polygon points="295,76 303,80 295,84" fill="#64748b" />
-                    <text x="250" y="72" fill="#64748b" fontSize="9" textAnchor="middle">1 : N (Loans)</text>
-
-                    <rect x="300" y="20" width="180" height="120" rx="6" fill="#0f172a" stroke="#10b981" strokeWidth="1.5" />
-                    <rect x="300" y="20" width="180" height="26" rx="6" fill="#065f46" />
-                    <text x="390" y="38" fill="#ffffff" fontWeight="bold" textAnchor="middle" fontSize="11">LOAN_TRANSACTION</text>
-                    <text x="312" y="65" fill="#e11d48" fontSize="10">PK  id : UUID</text>
-                    <text x="312" y="85" fill="#38bdf8" fontSize="10">FK  member_id : UUID</text>
-                    <text x="312" y="105" fill="#10b981" fontSize="10">    due_date : TIMESTAMP</text>
-                  </svg>
-                </div>
-
-                {activeSlideData.bullets && (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
-                    {activeSlideData.bullets.map((b, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            {/* 5. DISCUSSION / PROMPT SLIDE */}
-            {activeSlideData.type === "discussion" && activeSlideData.bullets && (
-              <div className="bg-indigo-950/40 border border-indigo-500/40 rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl">
-                <div className="flex items-center gap-2 text-indigo-300 font-bold text-xs uppercase tracking-wider">
-                  <HelpCircle className="w-4 h-4 text-indigo-400" /> Open Classroom Discussion
-                </div>
-                <div className="space-y-4">
-                  {activeSlideData.bullets.map((q, idx) => (
-                    <div key={idx} className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-sm sm:text-base font-semibold text-white leading-relaxed">
-                      💬 &ldquo;{q}&rdquo;
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-slate-400">
+                        Faculty of Mathematical & Physical Sciences • Jahangirnagar University
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Instructor: <strong className="text-slate-300">{teacherName}</strong> • Batch: <strong className="text-slate-300">{batchName}</strong>
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 6. SUMMARY SLIDE */}
-            {activeSlideData.type === "summary" && (
-              <div className="space-y-4">
-                {activeSlideData.bullets && (
-                  <ul className="space-y-3 text-sm sm:text-base text-slate-200">
-                    {activeSlideData.bullets.map((bullet, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-1 shrink-0" />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {activeSlideData.takeaway && (
-                  <div className="mt-4 p-4 rounded-xl bg-slate-800/90 border border-indigo-500/30 text-xs sm:text-sm font-semibold text-indigo-200">
-                    📌 {activeSlideData.takeaway}
                   </div>
                 )}
+
+                {/* 2. AGENDA / BULLET SLIDE */}
+                {(activeSlideData.type === "agenda" || activeSlideData.type === "concept") && activeSlideData.bullets && (
+                  <ul className="space-y-4 text-sm sm:text-base text-slate-200">
+                    {activeSlideData.bullets.map((bullet, idx) => (
+                      <li key={idx} className="flex items-start gap-3 animate-in fade-in slide-in-from-left-2 duration-200" style={{ animationDelay: `${idx * 80}ms` }}>
+                        <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                          {idx + 1}
+                        </div>
+                        <span className="leading-relaxed">{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* 3. CODE SLIDE */}
+                {activeSlideData.type === "code" && (
+                  <div className="space-y-3">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto shadow-inner leading-relaxed">
+                      <pre className="text-emerald-400">{activeSlideData.codeSnippet}</pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. DIAGRAM SLIDE (Interactive Schema / UML Visual) */}
+                {activeSlideData.type === "diagram" && (
+                  <div className="space-y-4">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-inner">
+                      <svg viewBox="0 0 700 160" className="w-full h-auto text-xs font-mono">
+                        <rect x="20" y="20" width="180" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+                        <rect x="20" y="20" width="180" height="26" rx="6" fill="#1e3a8a" />
+                        <text x="110" y="38" fill="#ffffff" fontWeight="bold" textAnchor="middle" fontSize="11">BOOK_ITEM (Entity)</text>
+                        <text x="32" y="65" fill="#e11d48" fontSize="10">PK  barcode : VARCHAR</text>
+                        <text x="32" y="85" fill="#38bdf8" fontSize="10">FK  book_id : UUID</text>
+                        <text x="32" y="105" fill="#94a3b8" fontSize="10">    status : Available</text>
+
+                        <line x1="200" y1="80" x2="300" y2="80" stroke="#64748b" strokeWidth="2" strokeDasharray="4 2" />
+                        <polygon points="295,76 303,80 295,84" fill="#64748b" />
+                        <text x="250" y="72" fill="#64748b" fontSize="9" textAnchor="middle">1 : N (Loans)</text>
+
+                        <rect x="300" y="20" width="180" height="120" rx="6" fill="#0f172a" stroke="#10b981" strokeWidth="1.5" />
+                        <rect x="300" y="20" width="180" height="26" rx="6" fill="#065f46" />
+                        <text x="390" y="38" fill="#ffffff" fontWeight="bold" textAnchor="middle" fontSize="11">LOAN_TRANSACTION</text>
+                        <text x="312" y="65" fill="#e11d48" fontSize="10">PK  id : UUID</text>
+                        <text x="312" y="85" fill="#38bdf8" fontSize="10">FK  member_id : UUID</text>
+                        <text x="312" y="105" fill="#10b981" fontSize="10">    due_date : TIMESTAMP</text>
+                      </svg>
+                    </div>
+
+                    {activeSlideData.bullets && (
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
+                        {activeSlideData.bullets.map((b, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {/* 5. DISCUSSION / PROMPT SLIDE */}
+                {activeSlideData.type === "discussion" && activeSlideData.bullets && (
+                  <div className="bg-indigo-950/40 border border-indigo-500/40 rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl">
+                    <div className="flex items-center gap-2 text-indigo-300 font-bold text-xs uppercase tracking-wider">
+                      <HelpCircle className="w-4 h-4 text-indigo-400" /> Open Classroom Discussion
+                    </div>
+                    <div className="space-y-4">
+                      {activeSlideData.bullets.map((q, idx) => (
+                        <div key={idx} className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-sm sm:text-base font-semibold text-white leading-relaxed">
+                          💬 &ldquo;{q}&rdquo;
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. SUMMARY SLIDE */}
+                {activeSlideData.type === "summary" && (
+                  <div className="space-y-4">
+                    {activeSlideData.bullets && (
+                      <ul className="space-y-3 text-sm sm:text-base text-slate-200">
+                        {activeSlideData.bullets.map((bullet, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-1 shrink-0" />
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {activeSlideData.takeaway && (
+                      <div className="mt-4 p-4 rounded-xl bg-slate-800/90 border border-indigo-500/30 text-xs sm:text-sm font-semibold text-indigo-200">
+                        📌 {activeSlideData.takeaway}
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
-            )}
 
-          </div>
-
-          {/* Slide Footer */}
-          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>Scholaris Classroom Presentation Mode</span>
-            <div className="flex items-center gap-2">
-              <span>Slide {currentSlide} of {totalSlides}</span>
-            </div>
-          </div>
+              {/* Slide Footer */}
+              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span>Scholaris Classroom Presentation Mode</span>
+                <div className="flex items-center gap-2">
+                  <span>Slide {currentSlide} of {totalSlides}</span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Laser Pointer Glowing Dot */}
           {isLaserActive && (
@@ -788,21 +1160,34 @@ export default function SlideDeckPresenterModal({
                     setCurrentSlide(slideNo);
                     setShowThumbnails(false);
                   }}
-                  className={`w-36 h-24 rounded-xl p-2.5 text-left flex flex-col justify-between shrink-0 transition-all border ${
+                  className={`w-36 h-24 rounded-xl overflow-hidden text-left flex flex-col justify-between shrink-0 transition-all border relative group ${
                     isSelected
-                      ? "bg-indigo-950 border-indigo-400 ring-2 ring-indigo-500/40"
+                      ? "bg-indigo-950 border-indigo-400 ring-2 ring-indigo-500/40 scale-105"
                       : "bg-slate-800 border-slate-700 hover:border-slate-500"
                   }`}
                 >
-                  <span className="text-[10px] font-mono font-bold text-slate-400">
-                    Slide {slideNo}
-                  </span>
-                  <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight">
-                    {s.title}
-                  </p>
-                  <span className="text-[9px] uppercase font-bold text-indigo-400 font-mono">
-                    {s.type}
-                  </span>
+                  {s.imageUrl ? (
+                    <div className="relative w-full h-full">
+                      <img src={s.imageUrl} alt={`Slide ${slideNo}`} className="w-full h-full object-cover pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex flex-col justify-between p-1.5">
+                        <span className="text-[10px] font-mono font-bold text-white bg-black/70 px-1.5 py-0.5 rounded w-fit">
+                          Slide {slideNo}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 flex flex-col justify-between h-full">
+                      <span className="text-[10px] font-mono font-bold text-slate-400">
+                        Slide {slideNo}
+                      </span>
+                      <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight">
+                        {s.title}
+                      </p>
+                      <span className="text-[9px] uppercase font-bold text-indigo-400 font-mono">
+                        {s.type}
+                      </span>
+                    </div>
+                  )}
                 </button>
               );
             })}

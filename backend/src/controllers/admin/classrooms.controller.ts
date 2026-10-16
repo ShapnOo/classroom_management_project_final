@@ -109,6 +109,9 @@ export const getClassroomById = async (req: Request, res: Response) => {
       adminStatus: r.admin_status || "Published",
       totalSlides: Number(r.total_slides) || 0,
       completedSlides: Number(r.completed_slides) || 0,
+      materialId: r.material_id || undefined,
+      materialTitle: r.material_title || undefined,
+      materialFileName: r.material_file_name || undefined,
     }));
     const { rows: students } = await pool.query("SELECT * FROM students WHERE batch_id = $1 ORDER BY roll_no ASC", [classroom.batch_id]);
     const { rows: sessions } = await pool.query("SELECT * FROM class_sessions WHERE classroom_id = $1 ORDER BY conducted_at DESC", [id]);

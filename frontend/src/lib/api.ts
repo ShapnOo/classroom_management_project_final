@@ -274,6 +274,9 @@ export const api = {
       adminStatus: r.admin_status || "Published",
       totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
       completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
+      materialId: r.material_id || r.materialId || undefined,
+      materialTitle: r.material_title || r.materialTitle || undefined,
+      materialFileName: r.material_file_name || r.materialFileName || undefined,
     }));
   },
   createSyllabusTopic: async (data: Omit<SyllabusTopic, "id">): Promise<SyllabusTopic> => {
@@ -288,6 +291,9 @@ export const api = {
       adminStatus: r.admin_status || r.adminStatus || "Published",
       totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
       completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
+      materialId: r.material_id || r.materialId || undefined,
+      materialTitle: r.material_title || r.materialTitle || undefined,
+      materialFileName: r.material_file_name || r.materialFileName || undefined,
     };
   },
   updateSyllabusTopic: async (id: string, data: Partial<SyllabusTopic>): Promise<SyllabusTopic> => {
@@ -302,6 +308,9 @@ export const api = {
       adminStatus: r.admin_status || r.adminStatus || "Published",
       totalSlides: Number(r.total_slides ?? r.totalSlides) || 0,
       completedSlides: Number(r.completed_slides ?? r.completedSlides) || 0,
+      materialId: r.material_id || r.materialId || undefined,
+      materialTitle: r.material_title || r.materialTitle || undefined,
+      materialFileName: r.material_file_name || r.materialFileName || undefined,
     };
   },
   deleteSyllabusTopic: (id: string) =>
@@ -606,12 +615,22 @@ export const api = {
       fileData: r.file_data,
       fileSize: r.file_size,
       uploadedAt: r.uploaded_at,
+      lastSlide: r.last_slide || 1,
+      totalSlides: r.total_slides || 1,
     }));
   },
   createMaterial: (data: any) =>
     request<any>("/admin/activities/materials", { method: "POST", body: JSON.stringify(data) }),
   deleteMaterial: (id: string) =>
     request<{ message: string }>(`/admin/activities/materials/${id}`, { method: "DELETE" }),
+
+  // ── Persistent Slide Deck Presentation State (PostgreSQL) ──
+  getSlideStates: () =>
+    request<Record<string, { lastSlide: number; totalSlides: number; materialTitle: string; updatedAt: string }>>("/admin/activities/materials/slide-states"),
+  getSlideState: (materialId: string) =>
+    request<{ materialId: string; lastSlide: number; totalSlides: number; materialTitle: string; updatedAt: string }>(`/admin/activities/materials/slide-state/${materialId}`),
+  saveSlideState: (materialId: string, data: { lastSlide: number; totalSlides: number; classroomId?: string; teacherId?: string; materialTitle?: string }) =>
+    request<any>(`/admin/activities/materials/slide-state/${materialId}`, { method: "PUT", body: JSON.stringify(data) }),
 
   // ── Class Rescheduling & Teacher Slot Exchange ──
   getReschedules: () => request<ClassReschedule[]>("/teacher/reschedules"),

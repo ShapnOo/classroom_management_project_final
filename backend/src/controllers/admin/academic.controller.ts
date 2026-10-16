@@ -339,15 +339,15 @@ export const getSyllabusTopics = async (req: Request, res: Response) => {
 
 export const createSyllabusTopic = async (req: Request, res: Response) => {
   try {
-    const { courseId, topic, week, subTopics, adminStatus, totalSlides, completedSlides } = req.body;
+    const { courseId, topic, week, subTopics, adminStatus, totalSlides, completedSlides, materialId, materialTitle, materialFileName } = req.body;
     if (!courseId || !topic) {
       return sendError(res, "Course and topic title are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(`
-      INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status, total_slides, completed_slides)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
-    `, [id, courseId, topic, week || 1, subTopics || [], "pending", adminStatus || "Published", Number(totalSlides) || 0, Number(completedSlides) || 0]);
+      INSERT INTO syllabus_topics (id, course_id, topic, week, sub_topics, teacher_status, admin_status, total_slides, completed_slides, material_id, material_title, material_file_name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
+    `, [id, courseId, topic, week || 1, subTopics || [], "pending", adminStatus || "Published", Number(totalSlides) || 0, Number(completedSlides) || 0, materialId || null, materialTitle || null, materialFileName || null]);
     sendSuccess(res, rows[0], "Syllabus topic created successfully", 201);
   } catch (err: any) {
     sendError(res, err.message);
@@ -357,7 +357,7 @@ export const createSyllabusTopic = async (req: Request, res: Response) => {
 export const updateSyllabusTopic = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { topic, week, subTopics, adminStatus, teacherStatus, totalSlides, completedSlides } = req.body;
+    const { topic, week, subTopics, adminStatus, teacherStatus, totalSlides, completedSlides, materialId, materialTitle, materialFileName } = req.body;
     
     // Auto sync teacherStatus if completedSlides equals totalSlides and totalSlides > 0
     let autoTeacherStatus = teacherStatus;
@@ -377,8 +377,11 @@ export const updateSyllabusTopic = async (req: Request, res: Response) => {
           admin_status = COALESCE($4, admin_status),
           teacher_status = COALESCE($5, teacher_status),
           total_slides = COALESCE($6, total_slides),
-          completed_slides = COALESCE($7, completed_slides)
-      WHERE id = $8 RETURNING *
+          completed_slides = COALESCE($7, completed_slides),
+          material_id = COALESCE($8, material_id),
+          material_title = COALESCE($9, material_title),
+          material_file_name = COALESCE($10, material_file_name)
+      WHERE id = $11 RETURNING *
     `, [
       topic, 
       week, 
@@ -387,6 +390,9 @@ export const updateSyllabusTopic = async (req: Request, res: Response) => {
       autoTeacherStatus, 
       totalSlides !== undefined ? Number(totalSlides) : null, 
       completedSlides !== undefined ? Number(completedSlides) : null, 
+      materialId !== undefined ? materialId : null,
+      materialTitle !== undefined ? materialTitle : null,
+      materialFileName !== undefined ? materialFileName : null,
       id
     ]);
     if (rows.length === 0) return sendError(res, "Syllabus topic not found", 404);

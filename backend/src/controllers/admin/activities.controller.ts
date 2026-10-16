@@ -455,3 +455,99 @@ export const deleteMaterial = async (req: Request, res: Response) => {
   }
 };
 
+// ── SLIDE DECK PERSISTENT STATE (DATABASE STORED) ───────────────────────────
+export const getSlideState = async (req: Request, res: Response) => {
+  try {
+    const { materialId } = req.params;
+    const { rows } = await pool.query(
+      "SELECT * FROM material_slide_states WHERE material_id = $1",
+      [materialId]
+    );
+
+    if (rows.length > 0) {
+      const row = rows[0];
+      return sendSuccess(res, {
+        materialId: row.material_id,
+        lastSlide: Number(row.last_slide) || 1,
+        totalSlides: Number(row.total_slides) || 1,
+        materialTitle: row.material_title || "",
+        updatedAt: row.updated_at,
+        classroomId: row.classroom_id,
+        teacherId: row.teacher_id,
+      }, "Slide state retrieved from database");
+    }
+
+    // Default if not saved yet
+    sendSuccess(res, {
+      materialId,
+      lastSlide: 1,
+      totalSlides: 8,
+      materialTitle: "",
+      updatedAt: null,
+    }, "Default initial slide state");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const saveSlideState = async (req: Request, res: Response) => {
+  try {
+    const { materialId } = req.params;
+    const { lastSlide, totalSlides, classroomId, teacherId, materialTitle } = req.body;
+
+    const slideNum = Math.max(1, Number(lastSlide) || 1);
+    const totalNum = Math.max(slideNum, Number(totalSlides) || 8);
+    const id = genId();
+
+    const { rows } = await pool.query(`
+      INSERT INTO material_slide_states (
+        id, material_id, classroom_id, teacher_id, last_slide, total_slides, material_title, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      ON CONFLICT (material_id) DO UPDATE SET
+        last_slide = EXCLUDED.last_slide,
+        total_slides = EXCLUDED.total_slides,
+        classroom_id = COALESCE(EXCLUDED.classroom_id, material_slide_states.classroom_id),
+        teacher_id = COALESCE(EXCLUDED.teacher_id, material_slide_states.teacher_id),
+        material_title = COALESCE(EXCLUDED.material_title, material_slide_states.material_title),
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *;
+    `, [id, materialId, classroomId || null, teacherId || null, slideNum, totalNum, materialTitle || ""]);
+
+    // Also sync to course_materials table if material exists
+    await pool.query(
+      "UPDATE course_materials SET last_slide = $1, total_slides = $2 WHERE id = $3",
+      [slideNum, totalNum, materialId]
+    ).catch(() => {});
+
+    const saved = rows[0];
+    sendSuccess(res, {
+      materialId: saved.material_id,
+      lastSlide: Number(saved.last_slide),
+      totalSlides: Number(saved.total_slides),
+      materialTitle: saved.material_title,
+      updatedAt: saved.updated_at,
+    }, "Slide state stored permanently in PostgreSQL database");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const getAllSlideStates = async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM material_slide_states");
+    const statesMap: Record<string, { lastSlide: number; totalSlides: number; materialTitle: string; updatedAt: string }> = {};
+    rows.forEach((r: any) => {
+      statesMap[r.material_id] = {
+        lastSlide: Number(r.last_slide) || 1,
+        totalSlides: Number(r.total_slides) || 1,
+        materialTitle: r.material_title || "",
+        updatedAt: r.updated_at,
+      };
+    });
+    sendSuccess(res, statesMap, "All slide states retrieved from database");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+

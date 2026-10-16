@@ -16,7 +16,8 @@ import {
   MonitorPlay,
   ArrowLeft,
   Presentation,
-  Tv
+  Tv,
+  Database
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -34,7 +35,8 @@ import { TableSkeleton } from "@/components/ui/Skeleton";
 export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
   const {
     getMyClassroomViews, materials, isLoading, addMaterial, deleteMaterial,
-    fetchClassrooms, fetchCourses, fetchBatches, fetchMaterials
+    fetchClassrooms, fetchCourses, fetchBatches, fetchMaterials,
+    slideStates, fetchSlideStates
   } = useStore();
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
     fetchCourses();
     fetchBatches();
     fetchMaterials(courseId);
+    fetchSlideStates();
   }, [courseId]);
 
   if (isLoading && materials.length === 0) {
@@ -75,6 +78,8 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
     classNo: m.description ? m.description.slice(0, 12) : "Class Resource",
     date: m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Recent",
     size: m.fileSize || "1.5 MB",
+    lastSlide: m.lastSlide || 1,
+    totalSlides: m.totalSlides || 1,
   }));
 
   // Helper for file icons based on type
@@ -222,18 +227,21 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
 
             {/* Slide Memory State & Present Button */}
             {(() => {
-              const savedSlide = getSavedSlideState(mat.id);
-              const isResumable = savedSlide && savedSlide.lastSlide > 1;
+              const dbSaved = slideStates[mat.id];
+              const localSaved = getSavedSlideState(mat.id);
+              const lastSlide = dbSaved?.lastSlide ?? (mat as any).lastSlide ?? localSaved?.lastSlide ?? 1;
+              const totalSlides = dbSaved?.totalSlides ?? (mat as any).totalSlides ?? localSaved?.totalSlides ?? 8;
+              const isResumable = lastSlide > 1;
 
               return (
                 <div className="space-y-2 pt-1">
-                  {savedSlide && (
-                    <div className="flex items-center justify-between px-2.5 py-1.5 bg-blue-50/80 border border-blue-100 rounded-lg text-[10.5px]">
-                      <span className="text-blue-700 font-bold flex items-center gap-1">
-                        <Tv className="w-3 h-3 text-blue-600" />
-                        Slide {savedSlide.lastSlide} / {savedSlide.totalSlides}
+                  {isResumable && (
+                    <div className="flex items-center justify-between px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[10.5px]">
+                      <span className="text-emerald-800 font-bold flex items-center gap-1">
+                        <Database className="w-3 h-3 text-emerald-600" />
+                        Slide {lastSlide} / {totalSlides}
                       </span>
-                      <span className="text-slate-400 font-medium">Memory Saved</span>
+                      <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-[9.5px]">PostgreSQL Synced</span>
                     </div>
                   )}
 
@@ -245,6 +253,8 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                         title: mat.name,
                         fileType: mat.type,
                         date: mat.date,
+                        lastSlide,
+                        totalSlides,
                       });
                       setIsPresenterOpen(true);
                     }}
@@ -255,7 +265,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                     }`}
                   >
                     <Presentation className="w-3.5 h-3.5" />
-                    <span>{isResumable ? `Resume from Slide ${savedSlide.lastSlide}` : "Present Deck"}</span>
+                    <span>{isResumable ? `Resume from Slide ${lastSlide}` : "Present Deck"}</span>
                   </button>
                 </div>
               );
@@ -374,8 +384,13 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
       {isPresenterOpen && presenterMaterial && (
         <SlideDeckPresenterModal
           isOpen={isPresenterOpen}
-          onClose={() => setIsPresenterOpen(false)}
+          onClose={() => {
+            setIsPresenterOpen(false);
+            fetchSlideStates(true);
+          }}
           material={presenterMaterial}
+          classroomId={courseId}
+          initialSlide={slideStates[presenterMaterial.id]?.lastSlide || (presenterMaterial as any).lastSlide}
           courseTitle={courseName}
           courseCode={code}
           batchName={batch}

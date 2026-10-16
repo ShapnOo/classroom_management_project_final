@@ -7,7 +7,7 @@ import {
   Plus, Edit2, Trash2, FileText, ListTodo, Bell, Download, ChevronRight,
   Sparkles, Award, AlertCircle, X, ExternalLink, Filter,
   Check, Calendar, Megaphone, Share2, Layers, CheckSquare,
-  UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation, Tv,
+  UserCheck, UserX, Clock3, RotateCcw, Sliders, Presentation, Tv, Database,
   FileCode, Eye, MessageSquare, PlusCircle, ChevronLeft, CornerDownRight,
   ZoomIn, ZoomOut, Maximize2, Tag, ThumbsUp, FileCheck, StickyNote, Highlighter
 } from "lucide-react";
@@ -108,6 +108,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     fetchMaterials,
     materials: storeMaterials,
     addMaterial,
+    slideStates,
+    fetchSlideStates,
   } = useStore();
 
   useEffect(() => {
@@ -122,13 +124,14 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     fetchTests();
     fetchAnnouncements();
     fetchMaterials(classroomId);
+    fetchSlideStates();
   }, [classroomId]);
 
   const view = getClassroomView(classroomId);
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "live" | "syllabus" | "sessions" | "students" | "materials" | "assessments" | "announcements" | "grades"
-  >("overview");
+    "live" | "outline" | "attendance" | "assignments" | "tests"
+  >("live");
 
   // Filter & Search states
   const [studentSearch, setStudentSearch] = useState("");
@@ -249,8 +252,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     week: 1,
     subTopics: ["", ""],
     teacherStatus: "pending" as SyllabusTopic["teacherStatus"],
-    totalSlides: 0,
+    totalSlides: 20,
     completedSlides: 0,
+    materialId: "",
+    materialTitle: "",
+    materialFileName: "",
   });
   const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState(false);
 
@@ -565,6 +571,59 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     setAttendanceMap(next);
   };
 
+  const availableMaterials = [
+    { id: "mat_pres1", title: "Presentation1.pptx", fileName: "Presentation1.pptx", type: "Slides", totalSlides: 20 },
+    { id: "mat_incep2", title: "Inception_v2 copy.pptx", fileName: "Inception_v2 copy.pptx", type: "Slides", totalSlides: 24 },
+    { id: "mat_uml", title: "UML Diagram - Library System.pdf", fileName: "UML Diagram - Library System.pdf", type: "PDF", totalSlides: 12 },
+    ...(storeMaterials.length > 0 ? storeMaterials : (materials || [])).map((m: any) => ({
+      id: m.id,
+      title: m.title,
+      fileName: m.fileName || m.title,
+      type: m.type || "Slides",
+      totalSlides: m.totalSlides || 15,
+    })),
+  ];
+
+  const handleOpenSlidePresenter = (topic?: SyllabusTopic) => {
+    const targetTopic = topic || currentTopic;
+    const targetFileName = targetTopic?.materialFileName || "Presentation1.pptx";
+    const matched = availableMaterials.find(
+      (m) => (m.fileName && m.fileName.toLowerCase() === targetFileName.toLowerCase()) ||
+             (targetTopic?.materialId && m.id === targetTopic.materialId)
+    ) || availableMaterials[0];
+
+    const currentSlide = targetTopic?.completedSlides ? targetTopic.completedSlides + 1 : 1;
+
+    setPresenterMaterial({
+      id: matched.id || targetTopic?.id || "deck_1",
+      title: targetTopic?.materialTitle || matched.title || targetTopic?.topic || "Lecture Presentation",
+      fileName: targetFileName,
+      fileType: matched.type || "Slides",
+      lastSlide: currentSlide,
+    });
+    setIsPresenterOpen(true);
+  };
+
+  const handleStepSlide = (delta: number) => {
+    if (!currentTopic) return;
+    const maxSlides = currentTopic.totalSlides || 20;
+    const currentCompleted = currentTopic.completedSlides || 0;
+    const newCompleted = Math.max(0, Math.min(maxSlides, currentCompleted + delta));
+    updateSyllabusTopic(currentTopic.id, { completedSlides: newCompleted });
+  };
+
+  const handleJumpToSlide = (slideNum: number) => {
+    if (!currentTopic) return;
+    const maxSlides = currentTopic.totalSlides || 20;
+    const newCompleted = Math.max(0, Math.min(maxSlides, slideNum - 1));
+    updateSyllabusTopic(currentTopic.id, { completedSlides: newCompleted });
+  };
+
+  const activeSlideNum = currentTopic ? Math.min((currentTopic.completedSlides || 0) + 1, currentTopic.totalSlides || 20) : 1;
+  const totalSlidesCount = currentTopic?.totalSlides || 20;
+  const isPresentation1 = currentTopic?.materialFileName?.toLowerCase().includes("presentation1") || (!currentTopic?.materialFileName && true);
+  const isInception = currentTopic?.materialFileName?.toLowerCase().includes("inception");
+
   // Submit Quick Attendance
   const handleSaveAttendance = (e: React.FormEvent) => {
     e.preventDefault();
@@ -629,8 +688,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       week: courseSyllabus.length ? Math.max(...courseSyllabus.map((s) => s.week)) + 1 : 1,
       subTopics: ["", ""],
       teacherStatus: "pending",
-      totalSlides: 0,
+      totalSlides: 20,
       completedSlides: 0,
+      materialId: "mat_pres1",
+      materialTitle: "Presentation1.pptx",
+      materialFileName: "Presentation1.pptx",
     });
     setShowSyllabusModal(true);
   };
@@ -642,8 +704,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       week: top.week,
       subTopics: top.subTopics ? [...top.subTopics] : ["", ""],
       teacherStatus: top.teacherStatus,
-      totalSlides: top.totalSlides || 0,
+      totalSlides: top.totalSlides || 20,
       completedSlides: top.completedSlides || 0,
+      materialId: top.materialId || "",
+      materialTitle: top.materialTitle || "",
+      materialFileName: top.materialFileName || "",
     });
     setShowSyllabusModal(true);
   };
@@ -669,6 +734,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             teacherStatus: syllabusForm.teacherStatus,
             totalSlides: Number(syllabusForm.totalSlides) || 0,
             completedSlides: Number(syllabusForm.completedSlides) || 0,
+            materialId: syllabusForm.materialId || undefined,
+            materialTitle: syllabusForm.materialTitle || undefined,
+            materialFileName: syllabusForm.materialFileName || undefined,
           });
         } else {
           await addSyllabusTopic({
@@ -680,6 +748,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             adminStatus: "Published",
             totalSlides: Number(syllabusForm.totalSlides) || 0,
             completedSlides: Number(syllabusForm.completedSlides) || 0,
+            materialId: syllabusForm.materialId || undefined,
+            materialTitle: syllabusForm.materialTitle || undefined,
+            materialFileName: syllabusForm.materialFileName || undefined,
           });
         }
         setShowSyllabusModal(false);
@@ -994,7 +1065,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           {/* Key Metrics Strip (4 Sleek Cards) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4 border-t border-slate-100">
             <button
-              onClick={() => setActiveTab("overview")}
+              onClick={() => setActiveTab("outline")}
               className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
             >
               <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
@@ -1012,7 +1083,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </button>
 
             <button
-              onClick={() => setActiveTab("students")}
+              onClick={() => setActiveTab("attendance")}
               className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
             >
               <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
@@ -1022,11 +1093,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 <span className="text-base font-extrabold text-slate-900">{students.length}</span>
                 <span className="text-[11px] text-slate-500 font-medium">{batch.code}</span>
               </div>
-              <p className="text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors mt-1">View Student Roster →</p>
+              <p className="text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors mt-1">View Attendance Roster →</p>
             </button>
 
             <button
-              onClick={() => setActiveTab("sessions")}
+              onClick={() => setActiveTab("attendance")}
               className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
             >
               <span className="text-[10px] font-bold text-slate-500 group-hover:text-emerald-700 uppercase tracking-wider transition-colors">
@@ -1040,11 +1111,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </button>
 
             <button
-              onClick={() => setActiveTab("syllabus")}
+              onClick={() => setActiveTab("outline")}
               className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
             >
               <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
-                Syllabus Topics
+                Outline & Slide Decks
               </span>
               <div className="flex items-baseline justify-between mt-2">
                 <span className="text-base font-extrabold text-slate-900">
@@ -1061,18 +1132,14 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       </div>
 
-      {/* ── Standalone Navigation Pill Bar ── */}
+      {/* ── Standalone Navigation Pill Bar (5 Streamlined Tabs) ── */}
       <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         {[
-          { id: "overview", label: "Overview", icon: LayoutGrid },
-          { id: "live", label: "Live Class", icon: Presentation, badge: "ACTIVE" },
-          { id: "syllabus", label: "Course Outline", icon: BookOpen, count: courseSyllabus.length },
-          { id: "sessions", label: "Class Sessions", icon: CalendarDays, count: classroomSessions.length },
-          { id: "students", label: "Enrolled Students", icon: Users, count: students.length },
-          { id: "assessments", label: "Assignments & Tests", icon: ListTodo, count: assignments.length + tests.length },
-          { id: "materials", label: "Course Materials", icon: FolderOpen, count: materials.length },
-          { id: "announcements", label: "Notices & Announcements", icon: Bell, count: classAnnouncements.length },
-          { id: "grades", label: "Grades & Evaluation", icon: Award },
+          { id: "live", label: "Live Class", icon: Presentation, badge: "LIVE" },
+          { id: "outline", label: "Course Outline & Slides", icon: BookOpen, count: courseSyllabus.length },
+          { id: "attendance", label: "Attendance", icon: ClipboardCheck, count: classroomSessions.length },
+          { id: "assignments", label: "Assignments", icon: ListTodo, count: assignments.length },
+          { id: "tests", label: "Class Tests (CT)", icon: FileText, count: tests.length },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1080,7 +1147,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
                 isActive
                   ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-extrabold"
                   : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
@@ -1109,249 +1176,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         })}
       </div>
 
-      {/* ── TAB CONTENT ── */}
+      {/* ── TAB CONTENT (5 Streamlined Tabs) ── */}
 
-      {/* TAB 1: OVERVIEW */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Columns */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Quick Live Class Launcher Banner */}
-            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-5 border border-slate-800">
-              <div className="space-y-1 text-center sm:text-left">
-                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
-                  Live Class Quick Access
-                </span>
-                <h3 className="text-base font-extrabold text-white mt-1.5">Conducting today's lecture?</h3>
-                <p className="text-xs text-slate-300 max-w-md">
-                  Jump to the dedicated Live Class tab for slide progression and rapid attendance logging.
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveTab("live")}
-                className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 shrink-0 hover:scale-105 active:scale-95"
-              >
-                <Presentation className="w-4 h-4 text-slate-950" /> Go to Live Class Tab →
-              </button>
-            </div>
-
-            {/* Recent Conducted Sessions Log */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                    <CalendarDays className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                      RECENT CLASS SESSIONS ({classroomSessions.length})
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-medium">Logged lecture history and student attendance summary</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab("sessions")}
-                  className="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1"
-                >
-                  Full Session Log <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {classroomSessions.length === 0 ? (
-                <div className="py-10 text-center text-xs text-slate-500 space-y-3">
-                  <p>No class sessions recorded yet.</p>
-                  <button
-                    onClick={() => setShowAttendanceModal(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm"
-                  >
-                    <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Record First Class
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {classroomSessions.slice(0, 4).map((sess, idx) => {
-                    const sessAttendance = attendanceRecords.filter((r) => r.sessionId === sess.id);
-                    const present = sessAttendance.filter((r) => r.status === "present").length;
-                    const absent = sessAttendance.filter((r) => r.status === "absent").length;
-                    return (
-                      <div key={sess.id} className="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3.5">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center shrink-0">
-                              <span className="text-xs font-extrabold text-slate-800">#{classroomSessions.length - idx}</span>
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="text-xs font-bold text-slate-900">{sess.topicCovered}</h4>
-                              <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                  {new Date(sess.date).toLocaleDateString("en-GB", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-slate-400" /> {sess.duration || "1h 30m"}
-                                </span>
-                              </div>
-                              {sess.notes && (
-                                <p className="text-xs text-slate-600 italic bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-                                  "{sess.notes}"
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                              {present > 0 ? `${present} Present` : "Attended"}
-                            </span>
-                            {absent > 0 && (
-                              <span className="text-[11px] text-red-600 font-semibold">
-                                {absent} absent
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Right Column (1 Col) */}
-          <div className="space-y-6">
-
-            {/* Weekly Routine & Schedule Card */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                    CLASS ROUTINE & SCHEDULE
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Assigned weekly timetable</p>
-                </div>
-              </div>
-
-              {schedules.length === 0 ? (
-                <p className="text-xs text-slate-400 py-2">No weekly routine assigned by admin.</p>
-              ) : (
-                <div className="space-y-2">
-                  {schedules.map((sch) => (
-                    <div
-                      key={sch.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs"
-                    >
-                      <span className="font-bold text-slate-900">{sch.day}</span>
-                      <span className="text-slate-600 font-medium">
-                        {sch.startTime} - {sch.endTime}
-                      </span>
-                      <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-700 font-semibold text-[11px]">
-                        {sch.room || cls.room}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Class Notices Board */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
-                    <Bell className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                      CLASS NOTICE BOARD
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-medium">Announcements & updates</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowAnnouncementModal(true)}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
-                >
-                  + Post Notice
-                </button>
-              </div>
-              <div className="p-4 space-y-3">
-                {classAnnouncements.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-4">No active notices for this class.</p>
-                ) : (
-                  classAnnouncements.slice(0, 3).map((anc) => (
-                    <div
-                      key={anc.id}
-                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-slate-900 line-clamp-1">
-                          {anc.title}
-                        </span>
-                        {anc.priority === "High" && (
-                          <span className="text-[10px] font-extrabold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md uppercase">
-                            Urgent
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-600 line-clamp-2">{anc.content}</p>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                        <span>By {anc.authorName}</span>
-                        <span>{new Date(anc.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Administrative Context Box */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-slate-200/80 text-slate-700 border border-slate-300/60">
-                  <Info className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                    INSTITUTIONAL METADATA
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Batch & room allocation details</p>
-                </div>
-              </div>
-              <div className="text-xs text-slate-600 space-y-2 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Batch:</span>
-                  <span className="font-bold text-slate-800">{batch.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Program:</span>
-                  <span className="font-bold text-slate-800">{program.code}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Academic Term:</span>
-                  <span className="font-bold text-slate-800">{session.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Room Allocated:</span>
-                  <span className="font-bold text-slate-800">{cls.room}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* TAB 2: LIVE CLASS HUB (DEDICATED LIVE CLASS TAB) */}
+      {/* ── TAB 1: LIVE CLASS (Slide View + Memory + Live Attendance) ── */}
       {activeTab === "live" && (
         <div className="space-y-6">
           {/* Active Topic Switcher & Semester Roadmap Pill Bar */}
@@ -1359,10 +1186,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <Presentation className="w-4 h-4 text-indigo-600" /> Live Lecture & Multi-Session Runner
+                  <Presentation className="w-4 h-4 text-indigo-600" /> Live Class & Lecture Room
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Select any semester topic to teach. Multiple class sessions can be conducted over several days for the same topic.
+                  Conduct interactive lectures with native PPTX/PDF slide view, slide position memory, and rapid attendance logging.
                 </p>
               </div>
 
@@ -1421,9 +1248,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </div>
           </div>
 
-          {/* Active Running Topic & Slide Tracker Hero Card */}
-          {currentTopic ? (
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-indigo-900/60 relative overflow-hidden space-y-5">
+          {/* Active Running Topic Hero Banner */}
+          {currentTopic && (
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-indigo-900/60 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -1451,19 +1278,15 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => {
-                      setSessionTopic(currentTopic.topic);
-                      setShowAttendanceModal(true);
-                    }}
-                    className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs shadow-sm transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
+                    onClick={() => handleOpenSlidePresenter(currentTopic)}
+                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
                   >
-                    <ClipboardCheck className="w-4 h-4 text-slate-950" /> Conduct Lecture & Log Attendance
+                    <Tv className="w-4 h-4 text-white" /> Open Fullscreen Presenter
                   </button>
                   {currentTopic.teacherStatus !== "done" ? (
                     <button
                       onClick={() => {
                         handleMarkTopicStatus(currentTopic.id, "done");
-                        // Automatically select next pending topic
                         const nextPending = courseSyllabus.find((t) => t.id !== currentTopic.id && t.teacherStatus !== "done");
                         if (nextPending) {
                           setSelectedTopicId(nextPending.id);
@@ -1472,7 +1295,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         setSuccessModal({
                           isOpen: true,
                           title: "Topic Completed!",
-                          message: `Topic "${currentTopic.topic}" is marked complete. Advanced to next syllabus topic.`,
+                          message: `Topic "${currentTopic.topic}" is marked complete. Advanced to next topic.`,
                         });
                       }}
                       className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-white/20"
@@ -1486,217 +1309,227 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   )}
                 </div>
               </div>
-
-              {/* Live Slide Stepper / Highlight Track */}
-              <div className="bg-slate-950/60 p-4 rounded-xl border border-indigo-900/40 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 font-bold text-slate-200">
-                    <Presentation className="w-4 h-4 text-indigo-400" />
-                    <span>Active Slide: <strong className="text-indigo-300 font-black">Slide {Math.min((currentTopic.completedSlides || 0) + 1, currentTopic.totalSlides || 12)}</strong> of {currentTopic.totalSlides || 12}</span>
-                  </div>
-                  <div className="text-xs font-extrabold text-indigo-300 bg-indigo-950 border border-indigo-800 px-2.5 py-0.5 rounded-lg">
-                    {Math.round((((currentTopic.completedSlides || 0)) / (currentTopic.totalSlides || 12)) * 100)}% Slide Progress
-                  </div>
-                </div>
-
-                {/* Visual Slide Stepper Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
-                  {Array.from({ length: currentTopic.totalSlides || 12 }, (_, i) => i + 1).map((slideNum) => {
-                    const isCompleted = slideNum <= (currentTopic.completedSlides || 0);
-                    const isActive = slideNum === (currentTopic.completedSlides || 0) + 1;
-                    return (
-                      <button
-                        key={slideNum}
-                        type="button"
-                        onClick={() => {
-                          updateSyllabusTopic(currentTopic.id, {
-                            completedSlides: slideNum - 1,
-                          });
-                        }}
-                        title={`Jump to Slide ${slideNum}`}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
-                          isActive
-                            ? "bg-indigo-600 text-white font-extrabold shadow-md ring-2 ring-indigo-400 animate-pulse scale-105"
-                            : isCompleted
-                            ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 font-semibold"
-                            : "bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700/60"
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <span>Slide {slideNum}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Slide Navigation Controls */}
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <button
-                    type="button"
-                    disabled={(currentTopic.completedSlides || 0) <= 0}
-                    onClick={() =>
-                      updateSyllabusTopic(currentTopic.id, {
-                        completedSlides: Math.max(0, (currentTopic.completedSlides || 0) - 1),
-                      })
-                    }
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 rounded-lg font-semibold transition-colors flex items-center gap-1"
-                  >
-                    ← Previous Slide
-                  </button>
-                  <div className="text-[11px] text-slate-400 hidden sm:block">
-                    Click any slide pill above to jump directly
-                  </div>
-                  <button
-                    type="button"
-                    disabled={(currentTopic.completedSlides || 0) >= (currentTopic.totalSlides || 12)}
-                    onClick={() =>
-                      updateSyllabusTopic(currentTopic.id, {
-                        completedSlides: Math.min(currentTopic.totalSlides || 12, (currentTopic.completedSlides || 0) + 1),
-                      })
-                    }
-                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white rounded-lg font-bold transition-colors flex items-center gap-1 shadow-sm"
-                  >
-                    Next Slide (+1) →
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 text-center space-y-2">
-              <p className="text-xs text-slate-500">No active syllabus topic set currently.</p>
-              <button
-                onClick={() => setActiveTab("syllabus")}
-                className="text-xs font-bold text-indigo-600 hover:underline"
-              >
-                Go to Course Outline to set current topic →
-              </button>
             </div>
           )}
 
-          {/* Conducted Sessions specifically for this Active Topic */}
-          {currentTopic && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                    <CalendarDays className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                      LECTURE HISTORY FOR "{currentTopic.topic}" ({topicSessions.length})
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-medium">Lectures conducted for this specific syllabus module</p>
-                  </div>
+          {/* ── In-Page Native Slide Deck Presenter Viewer ── */}
+          <div className="bg-slate-950 text-white rounded-2xl border border-indigo-950/80 shadow-xl overflow-hidden space-y-0">
+            {/* Presenter Screen Topbar */}
+            <div className="px-5 py-3.5 bg-slate-900/90 border-b border-indigo-950/60 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                  <Presentation className="w-4 h-4" />
                 </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-white uppercase tracking-wider">
+                      {currentTopic?.materialFileName || "Presentation1.pptx"}
+                    </span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded-full">
+                      Native In-App Slide Runner
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Active Module: <span className="text-indigo-300 font-semibold">{currentTopic?.topic}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-mono font-bold text-indigo-300 bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-800">
+                  Slide {activeSlideNum} of {totalSlidesCount}
+                </span>
                 <button
-                  onClick={() => {
-                    setSessionTopic(currentTopic.topic);
-                    setShowAttendanceModal(true);
-                  }}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                  onClick={() => handleOpenSlidePresenter(currentTopic)}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold rounded-xl shadow-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
                 >
-                  <ClipboardCheck className="w-3.5 h-3.5" /> + Conduct Next Lecture
+                  <Maximize2 className="w-3.5 h-3.5" /> Full Screen
                 </button>
               </div>
+            </div>
 
-              {topicSessions.length === 0 ? (
-                <div className="py-10 text-center text-xs text-slate-500 space-y-3">
-                  <p>No class sessions recorded for this topic yet.</p>
-                  <button
-                    onClick={() => {
-                      setSessionTopic(currentTopic.topic);
-                      setShowAttendanceModal(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm"
-                  >
-                    <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Conduct First Lecture for this Topic
-                  </button>
+            {/* Slide Presentation Screen Viewport (16:9) */}
+            <div className="relative aspect-video max-h-[460px] w-full bg-slate-900 flex items-center justify-center overflow-hidden group select-none">
+              {isPresentation1 ? (
+                <img
+                  src={`/Presentation Deck/presentation1_slides/slide_${Math.max(1, Math.min(20, activeSlideNum))}.png`}
+                  alt={`Slide ${activeSlideNum}`}
+                  className="w-full h-full object-contain"
+                />
+              ) : isInception ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-center">
+                  <img
+                    src={`/Presentation Deck/inception_media/image${21 + (activeSlideNum % 4)}.png`}
+                    alt="System Architecture Diagram"
+                    className="max-h-[300px] object-contain rounded-xl shadow-2xl border border-indigo-900/60"
+                  />
+                  <h4 className="text-sm font-bold text-white mt-3">Inception & System Architecture — Slide {activeSlideNum}</h4>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
-                  {topicSessions.map((sess, idx) => {
-                    const sessAttendance = attendanceRecords.filter((r) => r.sessionId === sess.id);
-                    const present = sessAttendance.filter((r) => r.status === "present").length;
-                    const absent = sessAttendance.filter((r) => r.status === "absent").length;
-                    return (
-                      <div key={sess.id} className="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3.5">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex flex-col items-center justify-center shrink-0">
-                              <span className="text-xs font-extrabold text-indigo-700">L#{topicSessions.length - idx}</span>
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="text-xs font-bold text-slate-900">{sess.topicCovered}</h4>
-                              <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span className="flex items-center gap-1 font-semibold text-slate-700">
-                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                  {new Date(sess.date).toLocaleDateString("en-GB", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-slate-400" /> {sess.duration || "1h 30m"}
-                                </span>
-                              </div>
-                              {sess.notes && (
-                                <p className="text-xs text-slate-600 italic bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-                                  "{sess.notes}"
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                              {present > 0 ? `${present} Present` : "Attended"}
-                            </span>
-                            {absent > 0 && (
-                              <span className="text-[11px] text-red-600 font-semibold">
-                                {absent} absent
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-center">
+                  <Presentation className="w-16 h-16 text-indigo-400/40 mb-3" />
+                  <h3 className="text-lg font-black text-white">{currentTopic?.topic}</h3>
+                  <p className="text-xs text-indigo-300 mt-1">Slide {activeSlideNum} / {totalSlidesCount}</p>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* All Classroom Sessions Summary */}
+              {/* Prev / Next Click Overlays */}
+              <button
+                type="button"
+                onClick={() => handleStepSlide(-1)}
+                disabled={activeSlideNum <= 1}
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-white disabled:opacity-20 border border-white/10 backdrop-blur-xs transition-all shadow-lg"
+                title="Previous Slide"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStepSlide(1)}
+                disabled={activeSlideNum >= totalSlidesCount}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-950 text-white disabled:opacity-20 border border-white/10 backdrop-blur-xs transition-all shadow-lg"
+                title="Next Slide"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              {/* State Memory Indicator */}
+              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-md bg-slate-950/80 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 flex items-center gap-1.5 backdrop-blur-xs">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" /> PostgreSQL DB Synced • Resumes on any device
+              </div>
+            </div>
+
+            {/* Bottom Slide Navigator & Quick Stepper */}
+            <div className="px-5 py-3 bg-slate-900/90 border-t border-indigo-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                {Array.from({ length: Math.min(20, totalSlidesCount) }, (_, i) => i + 1).map((sNum) => (
+                  <button
+                    key={sNum}
+                    type="button"
+                    onClick={() => handleJumpToSlide(sNum)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all shrink-0 ${
+                      sNum === activeSlideNum
+                        ? "bg-indigo-600 text-white ring-2 ring-indigo-400 shadow-md scale-105"
+                        : sNum < activeSlideNum
+                        ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    {sNum}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleStepSlide(-1)}
+                  disabled={activeSlideNum <= 1}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-xs font-bold text-slate-200 transition-colors"
+                >
+                  ← Prev
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStepSlide(1)}
+                  disabled={activeSlideNum >= totalSlidesCount}
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-xs font-extrabold text-white transition-colors shadow-sm"
+                >
+                  Next (+1) →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Today's Live Attendance Quick Box ── */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/60">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200">
-                  <CalendarDays className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                  <ClipboardCheck className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                    ALL SEMESTER CLASS SESSIONS ({classroomSessions.length})
+                    TODAY'S CLASS ATTENDANCE ({presentCount}/{students.length} PRESENT)
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium font-mono">Complete log across all syllabus modules</p>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Topic: {sessionTopic || currentTopic?.topic || "Current Lecture"}
+                  </p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAllAttendance("present")}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                >
+                  Mark All Present
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAttendanceModal(true)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                >
+                  <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Save & Finalize Attendance
+                </button>
+              </div>
             </div>
-            {classroomSessions.length === 0 ? (
-              <div className="py-10 text-center text-xs text-slate-500">No sessions recorded yet.</div>
-            ) : (
-              <div className="divide-y divide-slate-100 divide-y">
-                {classroomSessions.map((sess, idx) => {
+
+            {/* Quick Student Attendance Roster Grid */}
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto">
+              {students.map((student) => {
+                const status = attendanceMap[student.id] || "present";
+                return (
+                  <div
+                    key={student.id}
+                    onClick={() => toggleStudentAttendance(student.id)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between select-none ${
+                      status === "present"
+                        ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                        : status === "late"
+                        ? "bg-amber-50/60 border-amber-200 text-amber-950"
+                        : "bg-red-50/60 border-red-200 text-red-950"
+                    }`}
+                  >
+                    <div className="truncate pr-2">
+                      <p className="text-xs font-bold truncate">{student.name}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">{student.rollNo}</p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                        status === "present"
+                          ? "bg-emerald-200 text-emerald-900"
+                          : status === "late"
+                          ? "bg-amber-200 text-amber-900"
+                          : "bg-red-200 text-red-900"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Topic Lecture History */}
+          {currentTopic && topicSessions.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-indigo-600" /> Past Sessions for "{currentTopic.topic}" ({topicSessions.length})
+                </h4>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {topicSessions.map((sess, idx) => {
                   const sessAttendance = attendanceRecords.filter((r) => r.sessionId === sess.id);
                   const present = sessAttendance.filter((r) => r.status === "present").length;
                   return (
                     <div key={sess.id} className="p-4 flex items-center justify-between text-xs hover:bg-slate-50">
                       <div>
-                        <span className="font-bold text-slate-900">Session #{classroomSessions.length - idx}: {sess.topicCovered}</span>
-                        <p className="text-slate-500 text-[11px]">{new Date(sess.date).toLocaleDateString()} • {sess.duration}</p>
+                        <span className="font-bold text-slate-900">Session #{topicSessions.length - idx}: {sess.topicCovered}</span>
+                        <p className="text-slate-500 text-[11px]">{new Date(sess.date).toLocaleDateString()} • {sess.duration || "1h 30m"}</p>
                       </div>
                       <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-lg text-xs">
                         {present} Present
@@ -1705,24 +1538,25 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* TAB 2: SYLLABUS OUTLINE */}
-      {activeTab === "syllabus" && (
-        <div className="space-y-5">
+      {/* ── TAB 2: COURSE OUTLINE & SLIDES (Course Materials Merged Inside!) ── */}
+      {activeTab === "outline" && (
+        <div className="space-y-6">
+          {/* Header & Filter bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900">Course Outline & Syllabus</h3>
-                <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200/60">
-                  Official Curriculum
+                <h3 className="text-sm font-extrabold text-slate-900">Course Outline & Attached Slide Decks</h3>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md border border-indigo-200/60">
+                  Materials Integrated
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Update status as you progress through topics during the semester.
+                Attach presentation slides to each topic. Present directly or resume from your last saved slide position.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1733,7 +1567,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     onClick={() => setSyllabusFilter(mode)}
                     className={`px-3 py-1.5 rounded-lg capitalize font-semibold transition-all ${
                       syllabusFilter === mode
-                        ? "bg-white text-slate-900 shadow-xs"
+                        ? "bg-white text-slate-900 shadow-xs font-bold"
                         : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
@@ -1746,11 +1580,12 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 onClick={openAddSyllabus}
                 className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Topic
+                <Plus className="w-3.5 h-3.5" /> Add Topic & Slide
               </button>
             </div>
           </div>
 
+          {/* Topics List with Embedded Slides */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden divide-y divide-slate-100">
             {filteredSyllabus.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-500">
@@ -1760,208 +1595,127 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               filteredSyllabus.map((top) => {
                 const isDone = top.teacherStatus === "done";
                 const isCurrent = top.teacherStatus === "current";
+                const slideFile = top.materialFileName || (top.week === 1 ? "Presentation1.pptx" : top.week === 2 ? "Inception_v2 copy.pptx" : "Presentation1.pptx");
+                const currentSlideNum = (top.completedSlides || 0) + 1;
+                const totalSlides = top.totalSlides || 20;
+
                 return (
                   <div
                     key={top.id}
                     className={`p-5 transition-colors ${
-                      isDone ? "bg-emerald-50/20" : isCurrent ? "bg-blue-50/30" : "hover:bg-slate-50/60"
+                      isDone ? "bg-emerald-50/15" : isCurrent ? "bg-indigo-50/25" : "hover:bg-slate-50/60"
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5">
-                          {isDone ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                          ) : isCurrent ? (
-                            <div className="w-5 h-5 rounded-full border-2 border-blue-600 flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-blue-600" />
-                            </div>
-                          ) : (
-                            <Circle className="w-5 h-5 text-slate-300" />
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                              Week {top.week}
-                            </span>
-                            <span
-                              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
-                                isDone
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : isCurrent
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {top.teacherStatus}
-                            </span>
-                          </div>
-                          <h4
-                            className={`text-sm font-bold ${
-                              isDone ? "text-slate-500 line-through" : "text-slate-900"
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      {/* Left: Topic Info */}
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                            WEEK {top.week}
+                          </span>
+                          <span
+                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md ${
+                              isDone
+                                ? "bg-emerald-100 text-emerald-800"
+                                : isCurrent
+                                ? "bg-indigo-100 text-indigo-800"
+                                : "bg-slate-100 text-slate-600"
                             }`}
                           >
-                            {top.topic}
-                          </h4>
-                          {top.subTopics && top.subTopics.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {top.subTopics.map((sub, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-[11px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg font-medium"
-                                >
-                                  {sub}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                            {top.teacherStatus}
+                          </span>
+                        </div>
 
-                          {/* Slide Progress Badge & Tracker */}
-                          {top.totalSlides && top.totalSlides > 0 ? (
-                            <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex flex-wrap items-center gap-3 text-xs">
-                              <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                                <Presentation className="w-4 h-4 text-indigo-600" />
-                                <span>
-                                  Slide <strong className="text-indigo-600 font-extrabold">{top.completedSlides || 0}</strong> / {top.totalSlides}
-                                </span>
-                                <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                                  {Math.round(((top.completedSlides || 0) / top.totalSlides) * 100)}%
-                                </span>
-                              </div>
+                        <h4 className={`text-sm font-bold ${isDone ? "text-slate-500 line-through" : "text-slate-900"}`}>
+                          {top.topic}
+                        </h4>
 
-                              {/* Mini Slide Progress Bar */}
-                              <div className="flex-1 min-w-[100px] max-w-[180px] h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
-                                <div
-                                  className="h-full bg-indigo-600 rounded-full transition-all duration-300"
-                                  style={{
-                                    width: `${Math.min(100, Math.round(((top.completedSlides || 0) / top.totalSlides) * 100))}%`,
-                                  }}
-                                />
-                              </div>
-
-                              {/* Quick Slide Update Controls */}
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  title="Decrease Slide"
-                                  disabled={(top.completedSlides || 0) <= 0}
-                                  onClick={() =>
-                                    updateSyllabusTopic(top.id, {
-                                      completedSlides: Math.max(0, (top.completedSlides || 0) - 1),
-                                    })
-                                  }
-                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
-                                >
-                                  -
-                                </button>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={top.totalSlides}
-                                  value={top.completedSlides || 0}
-                                  onChange={(e) => {
-                                    const val = Math.min(top.totalSlides!, Math.max(0, parseInt(e.target.value) || 0));
-                                    updateSyllabusTopic(top.id, { completedSlides: val });
-                                  }}
-                                  className="w-12 px-1 py-0.5 text-center text-xs font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
-                                />
-                                <button
-                                  type="button"
-                                  title="Increase Slide"
-                                  disabled={(top.completedSlides || 0) >= top.totalSlides}
-                                  onClick={() =>
-                                    updateSyllabusTopic(top.id, {
-                                      completedSlides: Math.min(top.totalSlides!, (top.completedSlides || 0) + 1),
-                                    })
-                                  }
-                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5">
-                              <Presentation className="w-3.5 h-3.5 text-slate-400" />
-                              <span>No slide count set for this topic.</span>
-                              <button
-                                type="button"
-                                onClick={() => openEditSyllabus(top)}
-                                className="text-indigo-600 font-bold hover:underline"
+                        {top.subTopics && top.subTopics.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {top.subTopics.map((sub, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[11px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg font-medium"
                               >
-                                Set slides
-                              </button>
+                                {sub}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Attached Slide Deck Box (Merged Course Material) */}
+                        <div className="mt-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
+                              <Presentation className="w-4 h-4" />
                             </div>
-                          )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-800">{slideFile}</span>
+                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200/60">
+                                  PPTX
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Slide <strong className="text-indigo-600">{currentSlideNum}</strong> of {totalSlides} • Progress: {Math.round((((top.completedSlides || 0)) / totalSlides) * 100)}%
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSlidePresenter({ ...top, materialFileName: slideFile })}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg text-xs font-extrabold shadow-sm transition-all flex items-center gap-1.5 hover:scale-105 active:scale-95"
+                            >
+                              <Tv className="w-3.5 h-3.5" /> Present Slide ({currentSlideNum})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openEditSyllabus(top)}
+                              className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
+                            >
+                              Attach / Edit
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-1.5 sm:self-center shrink-0">
-                        {top.teacherStatus !== "done" && (
+                      {/* Right: Topic Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0 self-start lg:self-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTopicId(top.id);
+                            updateSyllabusTopic(top.id, { teacherStatus: "current" });
+                            setActiveTab("live");
+                          }}
+                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs"
+                        >
+                          <Presentation className="w-3.5 h-3.5 text-emerald-400" /> Start Live Class
+                        </button>
+
+                        {top.teacherStatus !== "done" ? (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "done")}
                             className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors"
                           >
                             Mark Done
                           </button>
-                        )}
-                        {top.teacherStatus !== "current" && top.teacherStatus !== "done" && (
-                          <button
-                            onClick={() => handleMarkTopicStatus(top.id, "current")}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors"
-                          >
-                            Set Current
-                          </button>
-                        )}
-                        {top.teacherStatus === "done" && (
+                        ) : (
                           <button
                             onClick={() => handleMarkTopicStatus(top.id, "pending")}
                             className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                           >
-                            Re-open
+                            Reset
                           </button>
                         )}
-                        <button
-                          onClick={() => {
-                            setSessionTopic(top.topic);
-                            setShowAttendanceModal(true);
-                          }}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
-                        >
-                          <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Conduct Class
-                        </button>
+
                         <button
                           onClick={() => openEditSyllabus(top)}
-                          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
-                          title="Edit Topic"
+                          className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
                         >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setConfirmDialog({
-                              isOpen: true,
-                              title: "Are you sure?",
-                              message: `Are you sure you want to delete topic "${top.topic}"? This action cannot be undone.`,
-                              type: "danger",
-                              confirmLabel: "Yes, Delete Topic",
-                              onConfirm: async () => {
-                                setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-                                await deleteSyllabusTopic(top.id);
-                                setSuccessModal({
-                                  isOpen: true,
-                                  title: "Topic Deleted",
-                                  message: `Topic "${top.topic}" has been removed from the course outline.`,
-                                });
-                              },
-                            });
-                          }}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                          title="Delete Topic"
-                        >
-                          <Trash2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1970,39 +1724,93 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               })
             )}
           </div>
+
+          {/* Course Materials & Slide Repository Section (Inside Outline) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
+              <div>
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-indigo-600" /> Course Materials & Presentation Decks Repository
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Directly run or attach any course presentation deck. All slides run in-app with database memory.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMaterialModal(true)}
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> Upload Material
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {availableMaterials.map((mat) => (
+                <div key={mat.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 transition-all space-y-3 group shadow-2xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                      <Presentation className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
+                      {mat.type}
+                    </span>
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900 truncate" title={mat.title}>{mat.title}</h5>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">{mat.fileName || "Presentation File"}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setPresenterMaterial({
+                        id: mat.id,
+                        title: mat.title,
+                        fileName: mat.fileName,
+                        fileType: mat.type,
+                      });
+                      setIsPresenterOpen(true);
+                    }}
+                    className="w-full py-2 bg-slate-900 group-hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+                  >
+                    <Tv className="w-3.5 h-3.5 text-indigo-300" /> Run Presentation
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* TAB 3: CLASS SESSIONS LOG */}
-      {activeTab === "sessions" && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+      {/* ── TAB 3: ATTENDANCE (Attendance Log & Student Roster) ── */}
+      {activeTab === "attendance" && (
+        <div className="space-y-6">
+          {/* Header Stats */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Conducted Class Sessions</h3>
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-emerald-600" /> Attendance Management & Logs
+              </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Complete log of lecture sessions and attendance summaries.
+                Conducted {classroomSessions.length} total lecture sessions with {avgAttendanceRate}% overall attendance rate.
               </p>
             </div>
             <button
               onClick={() => setShowAttendanceModal(true)}
               className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
             >
-              <ClipboardCheck className="w-4 h-4" /> Record New Session
+              <ClipboardCheck className="w-4 h-4" /> Record New Attendance
             </button>
           </div>
 
+          {/* Past Conducted Sessions History */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+              <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-emerald-600" /> Conducted Class Sessions ({classroomSessions.length})
+              </h4>
+            </div>
+
             {classroomSessions.length === 0 ? (
-              <div className="py-16 text-center text-xs text-slate-500 space-y-3">
-                <CalendarDays className="w-10 h-10 mx-auto text-slate-300" />
-                <p className="font-semibold text-slate-700">No class sessions conducted yet.</p>
-                <button
-                  onClick={() => setShowAttendanceModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-sm hover:bg-emerald-700 transition-colors"
-                >
-                  <ClipboardCheck className="w-4 h-4" /> Start First Class & Mark Attendance
-                </button>
-              </div>
+              <div className="py-12 text-center text-xs text-slate-400">No sessions recorded yet.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
@@ -2071,109 +1879,67 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* TAB 4: ENROLLED STUDENTS */}
-      {activeTab === "students" && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900">
-                  Enrolled Students ({students.length})
-                </h3>
-                <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md font-semibold">
-                  Batch: {batch.name}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Enrolled roster for this course and batch.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          {/* Enrolled Students Attendance Roster */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-600" /> Student Attendance Roster ({students.length})
+              </h4>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search student or roll no..."
+                  placeholder="Filter student..."
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                  className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                 />
               </div>
-              <button
-                onClick={() => setShowAttendanceModal(true)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0 flex items-center gap-2 shadow-sm"
-              >
-                <ClipboardCheck className="w-4 h-4" /> Take Attendance
-              </button>
             </div>
-          </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                    <th className="px-6 py-4">#</th>
-                    <th className="px-6 py-4">Student Name</th>
-                    <th className="px-6 py-4">Roll No</th>
-                    <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Attendance Rate</th>
-                    <th className="px-6 py-4 text-right">Status</th>
+                    <th className="px-6 py-3.5">Roll No</th>
+                    <th className="px-6 py-3.5">Student Name</th>
+                    <th className="px-6 py-3.5">Contact</th>
+                    <th className="px-6 py-3.5">Attended Sessions</th>
+                    <th className="px-6 py-3.5">Attendance Rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-10 text-slate-400 text-xs">
-                        No students found matching search.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStudents.map((stud, idx) => {
-                      const studentRecords = attendanceRecords.filter(
-                        (r) => r.classroomId === cls.id && r.studentId === stud.id
-                      );
-                      const attended = studentRecords.filter((r) => r.status === "present" || r.status === "late").length;
-                      const rate = studentRecords.length > 0 ? Math.round((attended / studentRecords.length) * 100) : 95;
+                  {filteredStudents.map((st) => {
+                    const studentRecords = attendanceRecords.filter((r) => r.studentId === st.id && r.classroomId === cls.id);
+                    const attended = studentRecords.filter((r) => r.status === "present" || r.status === "late").length;
+                    const totalSess = classroomSessions.length || 1;
+                    const rate = Math.min(100, Math.round((attended / totalSess) * 100));
 
-                      return (
-                        <tr key={stud.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-6 py-4 text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-800">
-                                {stud.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <span className="font-bold text-slate-900">{stud.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 font-semibold text-slate-700">{stud.rollNo}</td>
-                          <td className="px-6 py-4 text-slate-500 font-medium">{stud.email}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3 w-36">
-                              <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    rate >= 80 ? "bg-emerald-500" : rate >= 60 ? "bg-amber-500" : "bg-red-500"
-                                  }`}
-                                  style={{ width: `${rate}%` }}
-                                />
-                              </div>
-                              <span className="font-bold text-slate-800 text-xs">{rate}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Active Enrolled
+                    return (
+                      <tr key={st.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-6 py-3.5 font-mono text-slate-600 font-bold">{st.rollNo}</td>
+                        <td className="px-6 py-3.5 font-bold text-slate-900">{st.name}</td>
+                        <td className="px-6 py-3.5 text-slate-500">{st.email}</td>
+                        <td className="px-6 py-3.5 font-semibold text-slate-700">
+                          {attended} / {classroomSessions.length}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold text-xs ${rate >= 75 ? "text-emerald-600" : "text-amber-600"}`}>
+                              {rate}%
                             </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
+                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${rate >= 75 ? "bg-emerald-500" : "bg-amber-500"}`}
+                                style={{ width: `${rate}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2181,295 +1947,59 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* TAB 5: ASSESSMENTS (ASSIGNMENTS & TESTS) */}
-      {activeTab === "assessments" && (
-        <div className="space-y-5">
+      {/* ── TAB 4: ASSIGNMENTS (Dedicated Assignment Management) ── */}
+      {activeTab === "assignments" && (
+        <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Assignments & Class Tests</h3>
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <ListTodo className="w-4 h-4 text-indigo-600" /> Coursework Assignments ({assignments.length})
+              </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Manage coursework deadlines, class quizzes, and evaluation records.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowAssignmentModal(true)}
-                className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <Plus className="w-4 h-4" /> Create Assignment
-              </button>
-              <button
-                onClick={() => setShowTestModal(true)}
-                className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm"
-              >
-                <Plus className="w-4 h-4" /> Schedule Test
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Assignments List */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <ListTodo className="w-4 h-4 text-blue-600" /> Course Assignments ({assignments.length})
-                </h4>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {assignments.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-slate-400">No assignments created yet.</div>
-                ) : (
-                  assignments.map((asg) => (
-                    <div key={asg.id} className="p-5 hover:bg-slate-50/60 transition-colors space-y-2.5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-blue-50 text-blue-700 border border-blue-200/60">
-                            {asg.status}
-                          </span>
-                          <h5 className="text-sm font-bold text-slate-900 mt-1.5">{asg.title}</h5>
-                          {asg.description && (
-                            <p className="text-xs text-slate-500 line-clamp-1">{asg.description}</p>
-                          )}
-                        </div>
-                        <span className="text-xs font-extrabold text-slate-900 shrink-0">{asg.totalMarks} Marks</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                        <span className="flex items-center gap-1 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" /> Due: {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                        <button
-                          onClick={() => openEvaluationModal("assignment", asg)}
-                          className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          Evaluate <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Class Tests List */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-600" /> Class Tests & Quizzes ({tests.length})
-                </h4>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {tests.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-slate-400">No class tests scheduled yet.</div>
-                ) : (
-                  tests.map((t) => (
-                    <div key={t.id} className="p-5 hover:bg-slate-50/60 transition-colors space-y-2.5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase bg-purple-50 text-purple-700 border border-purple-200/60">
-                            {t.status}
-                          </span>
-                          <h5 className="text-sm font-bold text-slate-900 mt-1.5">{t.title}</h5>
-                          {t.duration && (
-                            <span className="text-xs text-slate-500 font-medium">Duration: {t.duration}</span>
-                          )}
-                        </div>
-                        <span className="text-xs font-extrabold text-slate-900 shrink-0">{t.totalMarks} Marks</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                        <span className="flex items-center gap-1 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" /> Test Date: {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                        <button
-                          onClick={() => openEvaluationModal("test", t)}
-                          className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          Manage Marks <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: MATERIALS */}
-      {activeTab === "materials" && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Lecture Slides & Learning Materials</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Share slides, lab worksheets, and reference readings with students.
+                Manage assignment prompts, deadlines, and grade student submissions in 1 click.
               </p>
             </div>
             <button
-              onClick={() => setShowMaterialModal(true)}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
+              onClick={() => setShowAssignmentModal(true)}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> Upload Material
+              <Plus className="w-4 h-4" /> Create Assignment
             </button>
           </div>
 
-          {(() => {
-            const displayMaterials = storeMaterials.length > 0
-              ? storeMaterials.map(m => ({
-                  id: m.id,
-                  title: m.title,
-                  category: m.type || "Slides",
-                  fileType: "PDF",
-                  size: "2.5 MB",
-                  date: m.created_at ? new Date(m.created_at).toLocaleDateString() : "Recent",
-                  downloads: 24,
-                }))
-              : materials;
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {displayMaterials.map((mat) => {
-                  const savedSlide = getSavedSlideState(mat.id);
-                  const isResumable = savedSlide && savedSlide.lastSlide > 1;
-
-                  return (
-                    <div
-                      key={mat.id}
-                      className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-slate-400 hover:shadow-md transition-all flex flex-col justify-between group space-y-4"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 uppercase tracking-wider">
-                            {mat.category}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-medium">{mat.date}</span>
-                        </div>
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-extrabold text-xs shrink-0">
-                            {mat.fileType}
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors line-clamp-2">
-                              {mat.title}
-                            </h4>
-                            <p className="text-[11px] text-slate-500 mt-1 font-medium">{mat.size} • {mat.downloads} downloads</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Last Slide State Badge */}
-                      {savedSlide && (
-                        <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-100/80 rounded-xl text-[11px]">
-                          <div className="flex items-center gap-1.5 text-blue-800 font-bold">
-                            <Tv className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span>Slide {savedSlide.lastSlide} of {savedSlide.totalSlides}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-medium">Memory Saved</span>
-                        </div>
-                      )}
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPresenterMaterial(mat);
-                            setIsPresenterOpen(true);
-                          }}
-                          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                            isResumable
-                              ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200"
-                              : "bg-slate-900 hover:bg-slate-800 text-white"
-                          }`}
-                          title="Open in presentation mode"
-                        >
-                          <Presentation className="w-3.5 h-3.5" />
-                          <span>{isResumable ? `Resume (Slide ${savedSlide.lastSlide})` : "Present Deck"}</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            const blob = new Blob([`Course Material: ${mat.title}\nCategory: ${mat.category}`], { type: "text/plain" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `${mat.title.replace(/\s+/g, '_')}.txt`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                          title="Download file"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* TAB 7: ANNOUNCEMENTS */}
-      {activeTab === "announcements" && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Class Notices & Announcements</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Broadcast notices directly to students in {course.title} ({batch.name}).
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAnnouncementModal(true)}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <Megaphone className="w-4 h-4" /> Post Announcement
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {classAnnouncements.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
-                No announcements published for this class yet.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {assignments.length === 0 ? (
+              <div className="col-span-2 py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                No assignments created yet.
               </div>
             ) : (
-              classAnnouncements.map((anc) => (
-                <div
-                  key={anc.id}
-                  className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        {anc.priority === "High" && (
-                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-red-100 text-red-700 uppercase">
-                            Urgent Notice
-                          </span>
-                        )}
-                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
-                          Audience: {anc.audienceType}
-                        </span>
-                      </div>
-                      <h4 className="text-base font-bold text-slate-900">{anc.title}</h4>
+              assignments.map((asg) => (
+                <div key={asg.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-sm transition-all space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                        {asg.status}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 mt-1.5">{asg.title}</h4>
+                      {asg.description && (
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{asg.description}</p>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-400 font-medium shrink-0">
-                      {new Date(anc.date).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                    <span className="text-xs font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg shrink-0">
+                      {asg.totalMarks} Marks
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed">
-                    {anc.content}
-                  </p>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>Published by <strong>{anc.authorName}</strong> ({anc.authorRole})</span>
-                    <span className="text-emerald-600 font-semibold">Enrolled Class Visibility</span>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Due: {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <Link
+                      href={`/dashboard/teacher/assignments/${classroomId}/evaluate/${asg.id}`}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-2xs"
+                    >
+                      Evaluate Submissions <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
               ))
@@ -2478,80 +2008,63 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* ── TAB 8: GRADES & CONTINUOUS EVALUATION ── */}
-      {activeTab === "grades" && (
+      {/* ── TAB 5: CLASS TESTS (CT) (Dedicated CT Section) ── */}
+      {activeTab === "tests" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
-                    Continuous Evaluation Ledger
-                  </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-purple-600" /> Class Tests & Quizzes ({tests.length})
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Schedule class tests, define syllabus topics, and manage continuous evaluation CT marks.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowTestModal(true)}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" /> Schedule Class Test
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tests.length === 0 ? (
+              <div className="col-span-2 py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+                No class tests scheduled yet.
+              </div>
+            ) : (
+              tests.map((t) => (
+                <div key={t.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-sm transition-all space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-purple-50 text-purple-700 border border-purple-200/60">
+                        {t.status}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 mt-1.5">{t.title}</h4>
+                      {t.duration && (
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">Duration: {t.duration}</p>
+                      )}
+                    </div>
+                    <span className="text-xs font-black text-purple-900 bg-purple-50 px-2.5 py-1 rounded-lg shrink-0 border border-purple-200/60">
+                      {t.totalMarks} Marks
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Date: {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <button
+                      onClick={() => openEvaluationModal("test", t)}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-2xs"
+                    >
+                      Enter / Manage CT Marks <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900 mt-1">Student Final Grades & Score Summary</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Consolidated mark sheet calculating CT marks, Assignment marks, Midterm, and Final grades for {students.length} enrolled students in {course.code}.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={openGradebookModal}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
-                >
-                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Full Gradebook Editor</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Students Grades Table */}
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                    <th className="px-4 py-3">Roll No</th>
-                    <th className="px-4 py-3">Student Name</th>
-                    <th className="px-4 py-3">CT Mark (20)</th>
-                    <th className="px-4 py-3">Assignment (20)</th>
-                    <th className="px-4 py-3">Midterm (30)</th>
-                    <th className="px-4 py-3">Final (50)</th>
-                    <th className="px-4 py-3">Total (100)</th>
-                    <th className="px-4 py-3 text-right">Grade Point</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {students.map((student, idx) => {
-                    const ctScore = Math.min(20, Math.round(15 + (idx % 5)));
-                    const assnScore = Math.min(20, Math.round(16 + ((idx * 2) % 4)));
-                    const midtermScore = Math.min(30, Math.round(22 + ((idx * 3) % 7)));
-                    const finalScore = Math.min(50, Math.round(38 + ((idx * 4) % 11)));
-                    const totalScore = ctScore + assnScore + midtermScore + finalScore;
-                    const letter = totalScore >= 90 ? "A+" : totalScore >= 80 ? "A" : totalScore >= 70 ? "B" : "C";
-                    const gpa = totalScore >= 90 ? "4.00" : totalScore >= 80 ? "3.75" : totalScore >= 70 ? "3.25" : "2.75";
-
-                    return (
-                      <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-4 py-3 font-mono text-slate-500 font-medium">{student.rollNo}</td>
-                        <td className="px-4 py-3 font-bold text-slate-900">{student.name}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">{ctScore}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">{assnScore}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">{midtermScore}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-700">{finalScore}</td>
-                        <td className="px-4 py-3 font-bold text-brand-dark">{totalScore} / 100</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold ${
-                            letter === "A+" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
-                          }`}>
-                            {letter} ({gpa})
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -3105,6 +2618,57 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   <option value="current">In Progress (Current)</option>
                   <option value="done">Completed</option>
                 </select>
+              </div>
+
+              <div className="space-y-1.5 bg-indigo-50/70 p-3 rounded-xl border border-indigo-100">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <Presentation className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Attach Presentation Slide (PPTX / PDF)</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">
+                    Live Class Sync
+                  </span>
+                </div>
+                <select
+                  value={syllabusForm.materialFileName || ""}
+                  onChange={(e) => {
+                    const sel = e.target.value;
+                    if (!sel) {
+                      setSyllabusForm({
+                        ...syllabusForm,
+                        materialId: "",
+                        materialTitle: "",
+                        materialFileName: "",
+                      });
+                      return;
+                    }
+                    const isPres1 = sel.toLowerCase().includes("presentation1");
+                    const isIncep = sel.toLowerCase().includes("inception");
+                    const slides = isPres1 ? 20 : isIncep ? 24 : 12;
+                    setSyllabusForm({
+                      ...syllabusForm,
+                      materialFileName: sel,
+                      materialTitle: sel.replace(/\.[^/.]+$/, ""),
+                      materialId: isPres1 ? "mat_pres1" : isIncep ? "mat_incep2" : `mat_${Date.now()}`,
+                      totalSlides: syllabusForm.totalSlides > 0 ? syllabusForm.totalSlides : slides,
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-xs border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-slate-800"
+                >
+                  <option value="">-- No slide attached (or choose below) --</option>
+                  <option value="Presentation1.pptx">Presentation1.pptx (20 Slides • Software Architecture & Modularity)</option>
+                  <option value="Inception_v2 copy.pptx">Inception_v2 copy.pptx (24 Slides • Inception & System Design)</option>
+                  <option value="UML Diagram - Library System.pdf">UML Diagram - Library System.pdf (System Modelling)</option>
+                  {(storeMaterials || []).filter(m => !["Presentation1.pptx", "Inception_v2 copy.pptx"].includes(m.fileName || "")).map((m: any) => (
+                    <option key={m.id} value={m.fileName || m.title}>
+                      {m.title} ({m.fileName || "Slides"})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-indigo-700 font-medium">
+                  Attached presentation slide will be used directly during Live Class with automatic slide-state memory.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200/60">
@@ -4208,8 +3772,13 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       {isPresenterOpen && presenterMaterial && (
         <SlideDeckPresenterModal
           isOpen={isPresenterOpen}
-          onClose={() => setIsPresenterOpen(false)}
+          onClose={() => {
+            setIsPresenterOpen(false);
+            fetchSlideStates(true);
+          }}
           material={presenterMaterial}
+          classroomId={classroomId}
+          initialSlide={slideStates[presenterMaterial.id]?.lastSlide || (presenterMaterial as any).lastSlide}
           courseTitle={view?.course.title}
           courseCode={view?.course.code}
           batchName={view?.batch.name}

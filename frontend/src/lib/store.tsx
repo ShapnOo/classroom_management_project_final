@@ -41,6 +41,7 @@ type AppState = {
   admins: AdminUser[];
   settings: AppSettings;
   reschedules: ClassReschedule[];
+  slideStates: Record<string, { lastSlide: number; totalSlides: number; materialTitle?: string; updatedAt?: string }>;
   isLoading: boolean;
   isBackendConnected: boolean;
 };
@@ -142,6 +143,9 @@ type AppActions = {
   deleteAnnouncement: (id: string) => Promise<void>;
   // Settings
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
+  // Slide Deck Persistence (PostgreSQL Database)
+  fetchSlideStates: (force?: boolean) => Promise<Record<string, { lastSlide: number; totalSlides: number; materialTitle?: string; updatedAt?: string }>>;
+  saveSlideState: (materialId: string, slideNumber: number, totalSlides: number, materialTitle?: string, classroomId?: string) => Promise<void>;
   // Derived helpers
   getClassroomView: (classroomId: string) => ClassroomView | null;
   getMyClassroomViews: () => ClassroomView[];
@@ -179,6 +183,7 @@ const initialState: AppState = {
   admins: seedAdmins,
   settings: seedSettings,
   reschedules: [],
+  slideStates: {},
   isLoading: false,
   isBackendConnected: false,
 };
@@ -209,7 +214,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const cachedFetch = useCallback(async <T,>(
     key: string,
     stateKey: keyof AppState,
-    fetcher: () => Promise<T[] | T>,
+    fetcher: () => Promise<any>,
     onSuccess: (data: any) => void,
     fallbackData: any = [],
     force: boolean = false
@@ -368,6 +373,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState(prev => ({ ...prev, reschedules: data, isBackendConnected: true }));
     }, [], force);
   }, [cachedFetch]);
+
+  const fetchSlideStates = useCallback(async (force = false) => {
+    return cachedFetch('slide_states', 'slideStates', () => api.getSlideStates(), data => {
+      setState(prev => ({ ...prev, slideStates: data || {}, isBackendConnected: true }));
+    }, {}, force);
+  }, [cachedFetch]);
+
+  const saveSlideState = useCallback(async (materialId: string, slideNumber: number, totalSlides: number, materialTitle = "", classroomId = "") => {
+    setState(prev => ({
+      ...prev,
+      slideStates: {
+        ...prev.slideStates,
+        [materialId]: {
+          lastSlide: slideNumber,
+          totalSlides,
+          materialTitle,
+          updatedAt: new Date().toISOString(),
+        }
+      }
+    }));
+    try {
+      localStorage.setItem(`scholaris_slide_state_${materialId}`, JSON.stringify({
+        lastSlide: slideNumber,
+        totalSlides,
+        materialTitle,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch {}
+
+    try {
+      await api.saveSlideState(materialId, {
+        lastSlide: slideNumber,
+        totalSlides,
+        materialTitle,
+        classroomId
+      });
+      invalidateCache('slide_states');
+    } catch (e) {
+      console.warn("saveSlideState DB sync error:", e);
+    }
+  }, [invalidateCache]);
 
   const createRescheduleRequest = useCallback(async (r: Partial<ClassReschedule>) => {
     try {
@@ -946,6 +992,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addGradeRecord, updateGradeRecord, upsertGradeRecord,
     addAnnouncement, updateAnnouncement, deleteAnnouncement,
     addMaterial, deleteMaterial,
+    fetchSlideStates, saveSlideState,
     updateSettings,
     // helpers
     getClassroomView,

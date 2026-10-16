@@ -6,7 +6,8 @@ import {
   getAssignmentSubmissions,
   getTests, createTest, updateTest, deleteTest,
   getResults, saveGradeRecord,
-  getMaterials, createMaterial, deleteMaterial
+  getMaterials, createMaterial, deleteMaterial,
+  getSlideState, saveSlideState, getAllSlideStates
 } from "../../controllers/admin/activities.controller.js";
 
 const router = Router();
@@ -34,10 +35,14 @@ router.delete("/tests/:id", deleteTest);
 router.get("/results", getResults);
 router.post("/results", saveGradeRecord);
 
-// Materials
+// Materials & Slide States
 router.get("/materials", getMaterials);
 router.post("/materials", createMaterial);
 router.delete("/materials/:id", deleteMaterial);
+router.get("/materials/slide-states", getAllSlideStates);
+router.get("/materials/slide-state/:materialId", getSlideState);
+router.put("/materials/slide-state/:materialId", saveSlideState);
+router.post("/materials/slide-state/:materialId", saveSlideState);
 
 export default router;
 
