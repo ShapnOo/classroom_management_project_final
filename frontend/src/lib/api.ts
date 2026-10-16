@@ -452,6 +452,14 @@ export const api = {
   },
   deleteAssignment: (id: string) =>
     request<{ message: string }>(`/admin/activities/assignments/${id}`, { method: "DELETE" }),
+  getAssignmentSubmissions: async (assignmentId: string): Promise<any[]> => {
+    try {
+      const rows = await request<any[]>(`/admin/activities/assignments/${assignmentId}/submissions`);
+      return Array.isArray(rows) ? rows : [];
+    } catch {
+      return [];
+    }
+  },
 
   // ── Tests ──
   getTests: async (): Promise<Test[]> => {

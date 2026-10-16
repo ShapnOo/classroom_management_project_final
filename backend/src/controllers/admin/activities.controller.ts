@@ -188,6 +188,23 @@ export const deleteAssignment = async (req: Request, res: Response) => {
   }
 };
 
+export const getAssignmentSubmissions = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(`
+      SELECT sub.*, s.name as student_name, s.roll_no as student_roll_no, s.email as student_email
+      FROM assignment_submissions sub
+      JOIN students s ON sub.student_id = s.id
+      WHERE sub.assignment_id = $1
+      ORDER BY sub.submitted_at DESC
+    `, [id]);
+    sendSuccess(res, rows, "Assignment submissions retrieved successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+
 // ── TESTS ─────────────────────────────────────────────────────────────────────
 export const getTests = async (req: Request, res: Response) => {
   try {

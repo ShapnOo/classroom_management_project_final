@@ -83,6 +83,33 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
     setDraft(d => ({ ...d, [studentId]: { marks: d[studentId]?.marks || "", remarks } }));
 
   const [saving, setSaving] = useState(false);
+  const [savingStudentId, setSavingStudentId] = useState<string | null>(null);
+
+  const saveStudent = async (studentId: string, customMarks?: string, customRemarks?: string) => {
+    const entry = draft[studentId];
+    const marksVal = customMarks !== undefined ? customMarks : entry?.marks;
+    const remarksVal = customRemarks !== undefined ? customRemarks : (entry?.remarks || "");
+    if (marksVal === undefined || marksVal === "") return false;
+
+    const targetClassroomId = resolvedClassroomId || view?.classroom.id || "";
+    if (!targetClassroomId) return false;
+
+    setSavingStudentId(studentId);
+    try {
+      await upsertGradeRecord({
+        classroomId: targetClassroomId,
+        studentId,
+        ...target,
+        obtainedMarks: Number(marksVal),
+        totalMarks,
+        remarks: remarksVal,
+      });
+      await fetchGradeRecords(true);
+      return true;
+    } finally {
+      setSavingStudentId(null);
+    }
+  };
 
   const save = async () => {
     const entries = Object.entries(draft).filter(([, v]) => v.marks !== "");
@@ -112,7 +139,7 @@ export function useGradingData(classroomId: string, target: GradeTarget, totalMa
 
   const gradedCount = roster.filter(s => draft[s.id]?.marks).length;
 
-  return { view, roster, draft, setMarks, setRemarks, save, saving, gradedCount };
+  return { view, roster, draft, setMarks, setRemarks, save, saving, gradedCount, saveStudent, savingStudentId };
 }
 
 export const initials = (name: string) =>

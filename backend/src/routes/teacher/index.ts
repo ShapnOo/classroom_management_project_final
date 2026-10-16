@@ -14,6 +14,7 @@ import {
   getClassSessions, createClassSession,
   getAttendanceLogs, saveAttendance,
   getAssignments, createAssignment, updateAssignment, deleteAssignment,
+  getAssignmentSubmissions,
   getTests, createTest, updateTest, deleteTest,
   getResults, saveGradeRecord,
   getMaterials, createMaterial, deleteMaterial
@@ -45,6 +46,7 @@ router.post("/attendance", saveAttendance);
 
 router.get("/assignments", getAssignments);
 router.post("/assignments", createAssignment);
+router.get("/assignments/:id/submissions", getAssignmentSubmissions);
 router.put("/assignments/:id", updateAssignment);
 router.delete("/assignments/:id", deleteAssignment);
 
