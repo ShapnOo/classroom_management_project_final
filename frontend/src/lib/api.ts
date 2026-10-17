@@ -58,8 +58,9 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const token = authStorage.getToken();
 
+  const isFormData = typeof FormData !== "undefined" && options?.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options?.headers as Record<string, string>),
   };
@@ -618,6 +619,23 @@ export const api = {
       lastSlide: r.last_slide || 1,
       totalSlides: r.total_slides || 1,
     }));
+  },
+  uploadFile: async (file: File): Promise<{
+    fileName: string;
+    originalName: string;
+    fileUrl: string;
+    relativeUrl: string;
+    fileSize: string;
+    fileType: string;
+    category: string;
+    sizeBytes: number;
+  }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<any>("/upload", {
+      method: "POST",
+      body: formData,
+    });
   },
   createMaterial: (data: any) =>
     request<any>("/admin/activities/materials", { method: "POST", body: JSON.stringify(data) }),

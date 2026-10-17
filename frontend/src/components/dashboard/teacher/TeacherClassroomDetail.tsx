@@ -771,7 +771,20 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       console.warn("Could not auto-count slides from file:", err);
     }
 
-    // Register into Course Materials repository & PostgreSQL database
+    // 1. Physically upload file to backend/uploads directory
+    let serverFileUrl = "";
+    let serverFileName = fileName;
+    try {
+      const uploadRes = await api.uploadFile(file);
+      if (uploadRes && uploadRes.fileUrl) {
+        serverFileUrl = uploadRes.fileUrl;
+        serverFileName = uploadRes.fileName || fileName;
+      }
+    } catch (uploadErr) {
+      console.warn("Upload to backend /uploads notice:", uploadErr);
+    }
+
+    // 2. Register into Course Materials repository & PostgreSQL database
     const newMatId = `mat-${Date.now()}`;
     const newMaterialObj = {
       id: newMatId,
@@ -779,6 +792,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       courseId: view?.course?.id || course?.id,
       title: cleanTitle,
       fileName: fileName,
+      fileUrl: serverFileUrl || undefined,
+      fileData: serverFileUrl || undefined,
       fileType: isPdf ? "PDF" : "Slides",
       fileSize: formattedSize,
       size: formattedSize,
@@ -793,7 +808,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     setMaterials((prev) => [newMaterialObj, ...prev]);
     api.createMaterial(newMaterialObj).catch(() => {});
 
-    // Auto-update syllabus form state
+    // 3. Auto-update syllabus form state
     setSyllabusForm((prev) => ({
       ...prev,
       topic: prev.topic.trim() ? prev.topic : cleanTitle,
@@ -835,16 +850,53 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     setEditingSyllabus(top);
     setSlideUploadFeedback(null);
     setIsParsingSlide(false);
+
+    // Resolve material attachment: lookup from available materials or fallback to week defaults
+    const matchedMat = availableMaterials.find(
+      (m) =>
+        (top.materialId && m.id === top.materialId) ||
+        (top.materialFileName && m.fileName && m.fileName.toLowerCase() === top.materialFileName.toLowerCase()) ||
+        (m.title && top.materialTitle && m.title.toLowerCase() === top.materialTitle.toLowerCase())
+    );
+
+    const resolvedFileName =
+      top.materialFileName ||
+      matchedMat?.fileName ||
+      (top.week === 1 ? "Presentation1.pptx" : top.week === 2 ? "Inception_v2 copy.pptx" : "Presentation1.pptx");
+
+    const resolvedTitle =
+      top.materialTitle ||
+      matchedMat?.title ||
+      resolvedFileName.replace(/\.[^/.]+$/, "");
+
+    const resolvedId =
+      top.materialId ||
+      matchedMat?.id ||
+      (resolvedFileName.toLowerCase().includes("presentation1")
+        ? "mat_pres1"
+        : resolvedFileName.toLowerCase().includes("inception")
+        ? "mat_incep2"
+        : `mat_${Date.now()}`);
+
+    const resolvedSlides =
+      top.totalSlides && top.totalSlides > 0
+        ? top.totalSlides
+        : matchedMat?.totalSlides && matchedMat.totalSlides > 0
+        ? matchedMat.totalSlides
+        : resolvedFileName.toLowerCase().includes("inception")
+        ? 24
+        : 20;
+
     setSyllabusForm({
       topic: top.topic,
       week: top.week,
-      subTopics: top.subTopics ? [...top.subTopics] : ["", ""],
-      teacherStatus: top.teacherStatus,
-      totalSlides: top.totalSlides || 20,
+      subTopics: top.subTopics && top.subTopics.length ? [...top.subTopics] : ["", ""],
+      teacherStatus: top.teacherStatus || "pending",
+      totalSlides: resolvedSlides,
       completedSlides: top.completedSlides || 0,
-      materialId: top.materialId || "",
-      materialTitle: top.materialTitle || "",
-      materialFileName: top.materialFileName || "",
+      materialId: resolvedId,
+      materialTitle: resolvedTitle,
+      materialFileName: resolvedFileName,
     });
     setShowSyllabusModal(true);
   };
@@ -1091,13 +1143,31 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       confirmLabel: "Yes, Upload",
       onConfirm: async () => {
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+
+        // 1. Physically upload to backend/uploads directory if file attached
+        let serverFileUrl = "";
+        let serverFileName = newMaterial.fileName || `${newMaterial.title}.${newMaterial.fileType.toLowerCase()}`;
+        if (attachedMaterialFile) {
+          try {
+            const upRes = await api.uploadFile(attachedMaterialFile);
+            if (upRes && upRes.fileUrl) {
+              serverFileUrl = upRes.fileUrl;
+              serverFileName = upRes.fileName || serverFileName;
+            }
+          } catch (uploadErr) {
+            console.warn("Upload to backend /uploads notice:", uploadErr);
+          }
+        }
+
         const newMatId = `mat-${Date.now()}`;
         const newMatObj = {
           id: newMatId,
           classroomId: view?.classroom?.id || classroomId,
           courseId: view?.course?.id || course?.id,
           title: newMaterial.title,
-          fileName: newMaterial.fileName || `${newMaterial.title}.${newMaterial.fileType.toLowerCase()}`,
+          fileName: serverFileName,
+          fileUrl: serverFileUrl || undefined,
+          fileData: serverFileUrl || undefined,
           category: newMaterial.category,
           fileType: newMaterial.fileType,
           fileSize: newMaterial.size || "2.5 MB",
@@ -2897,8 +2967,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
       {/* Syllabus Topic Modal (Add / Edit) */}
       {showSyllabusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-slate-900">
                 <BookOpen className="w-5 h-5 text-indigo-600" />
@@ -2920,8 +2990,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               }}
               className="space-y-4 text-xs"
             >
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                <div className="sm:col-span-3 space-y-1.5">
                   <label className="font-bold text-slate-700">Topic Title *</label>
                   <input
                     type="text"
@@ -2941,7 +3011,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                     required
                     value={syllabusForm.week}
                     onChange={(e) => setSyllabusForm({ ...syllabusForm, week: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono"
                   />
                 </div>
               </div>
@@ -3005,14 +3075,51 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   <option value="Presentation1.pptx">Presentation1.pptx (20 Slides • Software Architecture & Modularity)</option>
                   <option value="Inception_v2 copy.pptx">Inception_v2 copy.pptx (24 Slides • Inception & System Design)</option>
                   <option value="UML Diagram - Library System.pdf">UML Diagram - Library System.pdf (System Modelling)</option>
-                  {(storeMaterials || [])
-                    .filter((m) => !["Presentation1.pptx", "Inception_v2 copy.pptx", "UML Diagram - Library System.pdf"].includes(m.fileName || ""))
+                  {(availableMaterials || [])
+                    .filter((m) => m.fileName && !["Presentation1.pptx", "Inception_v2 copy.pptx", "UML Diagram - Library System.pdf"].includes(m.fileName))
                     .map((m: any) => (
                       <option key={m.id} value={m.fileName || m.title}>
                         {m.title} ({m.fileName || "Deck"}) {m.totalSlides ? `• ${m.totalSlides} Slides` : ""}
                       </option>
                     ))}
+                  {syllabusForm.materialFileName &&
+                    !["Presentation1.pptx", "Inception_v2 copy.pptx", "UML Diagram - Library System.pdf", ...(availableMaterials || []).map(m => m.fileName)].includes(syllabusForm.materialFileName) && (
+                      <option value={syllabusForm.materialFileName}>
+                        {syllabusForm.materialFileName} (Attached Deck)
+                      </option>
+                    )}
                 </select>
+
+                {/* Currently Attached Deck Status Badge */}
+                {syllabusForm.materialFileName && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-100/70 border border-indigo-200/80 text-indigo-950 text-xs shadow-2xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Presentation className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-bold truncate block">{syllabusForm.materialFileName}</span>
+                        <span className="text-[10px] text-indigo-700 font-mono">
+                          {syllabusForm.totalSlides || 20} Slides Attached • Synced to Live Class
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSyllabusForm({
+                          ...syllabusForm,
+                          materialId: "",
+                          materialTitle: "",
+                          materialFileName: "",
+                        });
+                        setSlideUploadFeedback(null);
+                      }}
+                      className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md transition-colors shrink-0 ml-2"
+                      title="Detach this presentation slide"
+                    >
+                      Detach
+                    </button>
+                  </div>
+                )}
 
                 {/* Direct Upload Option (Auto registers into Course Materials & auto-counts slides) */}
                 <div className="pt-0.5">
