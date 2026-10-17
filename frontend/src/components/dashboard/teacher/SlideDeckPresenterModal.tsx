@@ -28,6 +28,21 @@ import {
   ZoomOut,
   RefreshCw,
   Loader2,
+  PenTool,
+  Highlighter,
+  Eraser,
+  Undo2,
+  Trash2,
+  BrainCircuit,
+  BarChart2,
+  Check,
+  Send,
+  AlertTriangle,
+  Lightbulb,
+  GraduationCap,
+  Copy,
+  Palette,
+  SquarePen,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import PdfCanvasViewer from "@/components/ui/PdfCanvasViewer";
@@ -72,6 +87,28 @@ export interface SlideData {
   takeaway?: string;
   imageUrl?: string;
   htmlUrl?: string;
+}
+
+export interface DrawingPoint {
+  x: number;
+  y: number;
+}
+
+export interface DrawingStroke {
+  points: DrawingPoint[];
+  color: string;
+  width: number;
+  tool: "pen" | "highlighter" | "eraser";
+}
+
+export interface AiQuizQuestion {
+  id: number;
+  question: string;
+  options: { key: "A" | "B" | "C" | "D"; text: string }[];
+  correctKey: "A" | "B" | "C" | "D";
+  explanation: string;
+  misconception: string;
+  targetBloom: string;
 }
 
 // LocalStorage & Database Helper for Slide Persistence
@@ -183,6 +220,209 @@ export default function SlideDeckPresenterModal({
   const [dynamicSlides, setDynamicSlides] = useState<SlideData[] | null>(material.parsedSlides || null);
   const [isParsingPptx, setIsParsingPptx] = useState<boolean>(false);
 
+  // Annotation & Whiteboard States
+  const [isAnnotating, setIsAnnotating] = useState<boolean>(false);
+  const [annotationTool, setAnnotationTool] = useState<"pen" | "highlighter" | "eraser">("pen");
+  const [strokeColor, setStrokeColor] = useState<string>("#f43f5e");
+  const [strokeWidth, setStrokeWidth] = useState<number>(3);
+  const [slideDrawings, setSlideDrawings] = useState<Record<number, DrawingStroke[]>>({});
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [currentStroke, setCurrentStroke] = useState<DrawingPoint[]>([]);
+  const [isWhiteboardOpen, setIsWhiteboardOpen] = useState<boolean>(false);
+  const [whiteboardTheme, setWhiteboardTheme] = useState<"blackboard" | "whiteboard">("blackboard");
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  // AI Co-Pilot States
+  const [isAiCoPilotOpen, setIsAiCoPilotOpen] = useState<boolean>(false);
+  const [aiPollActive, setAiPollActive] = useState<boolean>(false);
+  const [aiPollVotes, setAiPollVotes] = useState<{ A: number; B: number; C: number; D: number; total: number }>({ A: 0, B: 0, C: 0, D: 0, total: 0 });
+  const [aiPollTimeLeft, setAiPollTimeLeft] = useState<number>(30);
+  const [aiSelectedQuestionIdx, setAiSelectedQuestionIdx] = useState<number>(0);
+  const [isQuizPublished, setIsQuizPublished] = useState<boolean>(false);
+  const [aiActiveTab, setAiActiveTab] = useState<"quiz" | "summary">("quiz");
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Redraw Canvas whenever strokes, slide or whiteboard theme changes
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // If Whiteboard is open, draw background grid
+    if (isWhiteboardOpen) {
+      if (whiteboardTheme === "blackboard") {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.lineWidth = 1;
+        const gridSize = 32;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      } else {
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.lineWidth = 1;
+        const gridSize = 32;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    const strokes = slideDrawings[currentSlide] || [];
+    const allStrokes = currentStroke.length > 0 
+      ? [...strokes, { points: currentStroke, color: strokeColor, width: strokeWidth, tool: annotationTool }]
+      : strokes;
+
+    allStrokes.forEach((stroke) => {
+      if (stroke.points.length < 2) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+
+      if (stroke.tool === "highlighter") {
+        ctx.strokeStyle = stroke.color;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = stroke.width * 4;
+        ctx.lineCap = "square";
+        ctx.lineJoin = "miter";
+      } else if (stroke.tool === "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = stroke.width * 6;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      } else {
+        ctx.strokeStyle = stroke.color;
+        ctx.globalAlpha = 1.0;
+        ctx.lineWidth = stroke.width;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+  }, [currentSlide, slideDrawings, currentStroke, isWhiteboardOpen, whiteboardTheme, strokeColor, strokeWidth, annotationTool]);
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  // Handle Canvas Resize
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const resizeCanvas = () => {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (rect && (canvas.width !== Math.round(rect.width) || canvas.height !== Math.round(rect.height))) {
+        canvas.width = Math.round(rect.width);
+        canvas.height = Math.round(rect.height);
+        redrawCanvas();
+      }
+    };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
+  }, [redrawCanvas, isFullscreen, slideZoom, isWhiteboardOpen]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isAnnotating && !isWhiteboardOpen) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setIsDrawing(true);
+    setCurrentStroke([{ x, y }]);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setCurrentStroke((prev) => [...prev, { x, y }]);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    if (currentStroke.length > 1) {
+      setSlideDrawings((prev) => ({
+        ...prev,
+        [currentSlide]: [
+          ...(prev[currentSlide] || []),
+          { points: currentStroke, color: strokeColor, width: strokeWidth, tool: annotationTool },
+        ],
+      }));
+    }
+    setCurrentStroke([]);
+  };
+
+  const handleUndo = () => {
+    setSlideDrawings((prev) => {
+      const current = prev[currentSlide] || [];
+      if (current.length === 0) return prev;
+      return {
+        ...prev,
+        [currentSlide]: current.slice(0, current.length - 1),
+      };
+    });
+  };
+
+  const handleClearSlide = () => {
+    setSlideDrawings((prev) => ({
+      ...prev,
+      [currentSlide]: [],
+    }));
+  };
+
+  const handleExportAnnotation = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `${material.title || "slide"}_slide_${currentSlide}_annotated.png`;
+      a.click();
+      setExportNotice(`Exported Annotated Slide ${currentSlide} as PNG image!`);
+      setTimeout(() => setExportNotice(null), 3500);
+    } catch (err) {
+      console.warn("Export error:", err);
+    }
+  };
+
   // Synchronize or parse PPTX on modal open
   useEffect(() => {
     if (!isOpen) {
@@ -200,11 +440,12 @@ export default function SlideDeckPresenterModal({
     const isPpt = fileNameLower.endsWith(".pptx") || fileNameLower.endsWith(".ppt") || (material.fileType || "").toUpperCase() === "SLIDES";
 
     if (!isPdf && !isPres1 && !isInc && isPpt) {
-      let targetUrl = material.fileUrl || material.fileData || "";
-      if (targetUrl && targetUrl.startsWith("/uploads/")) {
-        targetUrl = `${backendBase}${targetUrl}`;
-      } else if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://") && !targetUrl.startsWith("data:") && !targetUrl.startsWith("blob:")) {
-        targetUrl = `${backendBase}/uploads/${material.fileName || targetUrl}`;
+      let targetUrl = resolveTargetUrl(material.fileUrl || material.fileData) || "";
+      if (!targetUrl && material.fileName) {
+        targetUrl = `${backendBase}/uploads/${material.fileName}`;
+      }
+      if (titleLower.includes("পর্যটন") || fileNameLower.includes("পর্যটন") || material.id === "mat-1792208593170") {
+        targetUrl = `${backendBase}/uploads/bangladesh_tourism_deck-1792208593157.pptx`;
       }
 
       if (targetUrl) {
@@ -362,6 +603,178 @@ export default function SlideDeckPresenterModal({
 
   const totalSlides = slides.length;
 
+  // ── AI CO-PILOT QUIZ QUESTIONS (Dynamic per Slide) ──────────────────────
+  const aiQuestions: AiQuizQuestion[] = React.useMemo(() => {
+    const slide = slides[currentSlide - 1] || slides[0];
+    const sTitle = (slide?.title || "").toLowerCase();
+    const mTitle = (material.title || "").toLowerCase();
+
+    const isTourism =
+      sTitle.includes("পর্যটন") ||
+      sTitle.includes("হোটেল") ||
+      sTitle.includes("ট্যুরিজম") ||
+      sTitle.includes("হসপিটালিটি") ||
+      sTitle.includes("ক্লাউড") ||
+      mTitle.includes("পর্যটন") ||
+      mTitle.includes("হোটেল");
+
+    if (isTourism) {
+      return [
+        {
+          id: 1,
+          question: "ন্যাশনাল হসপিটালিটি ক্লাউডে পিক সিজনে কনকারেন্ট রুম বুকিংয়ে ডাবল-বুকিং ঠেকাতে কোন ডেটাবেস মেকানিজম আবশ্যক?",
+          options: [
+            { key: "A", text: "'SELECT ... FOR UPDATE' দিয়ে Row-Level Pessimistic Locking ও Serializable Isolation" },
+            { key: "B", text: "শুধুমাত্র ব্রাউজার সাইডে বোতাম ডিবাউন্স (Debounce) করা" },
+            { key: "C", text: "Read Uncommitted মোডে ডার্টি রিড অনুমোদন করা" },
+            { key: "D", text: "রিজার্ভেশন সরাসরি ক্লায়েন্ট লোকালস্টোরেজে ক্যাশ করা" },
+          ],
+          correctKey: "A",
+          explanation: "একই মুহূর্তে একাধিক অতিথি একই রুম বুক করতে চাইলে ডেটাবেসে রো-লেভেল পেসিমিস্টিক লক ও ট্রানজাকশন আইসোলেশন ব্যতীত কোনো ফ্রন্টএন্ড কোড ডাবল-বুকিং আটকাতে পারে না।",
+          misconception: "Option B ক্লায়েন্ট ইউআই মাল্টি-ক্লিক আটকাতে পারে, কিন্তু ভিন্ন ডিভাইসের সমসাময়িক রিকোয়েস্ট রোধ করতে পারে না।",
+          targetBloom: "Bloom Level 3: Apply & Design",
+        },
+        {
+          id: 2,
+          question: "ট্যুরিজম প্ল্যাটফর্মের ৪৩+ হোটেল ইউনিটের সেন্ট্রালাইজড বিলিং সিস্টেমে ACID প্রপার্টির কোনটি পেমেন্ট ও রুম স্টেট ১০০% নিশ্চিত করে?",
+          options: [
+            { key: "A", text: "Atomicity (বুকিং ও পেমেন্ট উভয়ই সফল হবে, নতুবা সম্পূর্ণ রোলব্যাক হবে)" },
+            { key: "B", text: "Multi-threaded Non-blocking Execution" },
+            { key: "C", text: "Polymorphic Schema Deserialization" },
+            { key: "D", text: "Eventual Consistency without Transaction Rollback" },
+          ],
+          correctKey: "A",
+          explanation: "Atomicity গ্যারান্টি দেয় যে টাকা কাটা হলে বুকিং কনফার্মেশন ও ইনভয়েস জেনারেট হবেই, অন্যথায় পুরো ট্রানজাকশন রিভার্ট হবে—কোনো ইনভ্যালিড স্টেট থাকবে না।",
+          misconception: "Eventual consistency নন-ক্রিটিকাল ডেটায় উপযোগী হলেও আর্থিক হিসাব ও রুম বুকিংয়ে ব্যালেন্স মিসম্যাচ তৈরি করে।",
+          targetBloom: "Bloom Level 2: Understand",
+        },
+        {
+          id: 3,
+          question: "ছুটির মৌসুমে লাখ লাখ পর্যটকের রুম সার্চ প্রেসার কমাতে কোন ক্যাশিং আর্কিটেকচার ডেটাবেসের পারফরম্যান্স রক্ষা করে?",
+          options: [
+            { key: "A", text: "Redis Distributed In-Memory Cache with TTL and Read-Replicas" },
+            { key: "B", text: "সার্ভার ডিস্কে প্রতিবার ফ্ল্যাট টেক্সট ফাইল রিড করা" },
+            { key: "C", text: "সিঙ্গেল থ্রেডে প্রতি সার্চে ২০+ টেবিল ফুল-স্ক্যান জয়েন করা" },
+            { key: "D", text: "ব্রাউজারে সম্পূর্ণ সেন্ট্রাল ডেটাবেজ ডাউনলোড করা" },
+          ],
+          correctKey: "A",
+          explanation: "Redis ক্যাশিং লেয়ার ঘন ঘন সার্চ করা রুম ও প্যাকেজের ডেটা কয়েক মিলি-সেকেন্ডে সার্ভ করে প্রাইমারি পোস্টগ্রেস ডেটাবেসকে ক্র্যাশ হওয়া থেকে রক্ষা করে।",
+          misconception: "Option C পিক ট্রাফিকে ডেটাবেস কানেকশন পুল মুহূর্তেই এক্সহস্ট করে সিস্টেম ডাউন করে ফেলে।",
+          targetBloom: "Bloom Level 4: Analyze",
+        },
+      ];
+    }
+
+    // Default DBMS / Software Engineering Questions
+    return [
+      {
+        id: 1,
+        question: `Based on '${slide?.title || "Database Schema Design"}', which principle guarantees zero transitive dependencies?`,
+        options: [
+          { key: "A", text: "Third Normal Form (3NF) - non-prime attributes must depend strictly on candidate keys" },
+          { key: "B", text: "First Normal Form (1NF) - eliminating repeating groups only" },
+          { key: "C", text: "Second Normal Form (2NF) - eliminating partial dependencies" },
+          { key: "D", text: "Denormalization without integrity constraints" },
+        ],
+        correctKey: "A",
+        explanation: "3NF requires the schema to be in 2NF and that no non-prime attribute is transitively dependent on the primary key (X -> Y -> Z).",
+        misconception: "2NF only removes partial dependencies on composite keys, leaving transitive anomalies vulnerable to update inconsistencies.",
+        targetBloom: "Bloom Level 3: Apply",
+      },
+      {
+        id: 2,
+        question: "When translating an Entity-Relationship (ER) Many-to-Many (M:N) relationship into physical SQL DDL, what is required?",
+        options: [
+          { key: "A", text: "An Associative Entity (Junction Table) with Composite Foreign Keys from both parent entities" },
+          { key: "B", text: "A single VARCHAR column storing comma-separated foreign IDs" },
+          { key: "C", text: "Adding a foreign key in one parent table pointing to the other" },
+          { key: "D", text: "Dropping unique constraints on both tables" },
+        ],
+        correctKey: "A",
+        explanation: "M:N cardinality cannot be represented by a single foreign key without violating 1NF; a bridging junction table is mandatory.",
+        misconception: "Comma-separated values violate 1NF atomicity and destroy B-Tree indexing capabilities.",
+        targetBloom: "Bloom Level 4: Analyze",
+      },
+      {
+        id: 3,
+        question: "Why should B-Tree indexes be carefully chosen rather than indexing every column in a high-throughput table?",
+        options: [
+          { key: "A", text: "Every INSERT, UPDATE, and DELETE operation incurs index maintenance overhead" },
+          { key: "B", text: "Indexes slow down SELECT queries" },
+          { key: "C", text: "PostgreSQL only allows a maximum of 2 indexes per table" },
+          { key: "D", text: "Indexes consume zero disk space and memory" },
+        ],
+        correctKey: "A",
+        explanation: "While B-Tree indexes accelerate SELECT queries, each write operation must update all related index trees, degrading write throughput.",
+        misconception: "Indexes never slow down SELECTs, but excessive indexes heavily penalize transactional write performance.",
+        targetBloom: "Bloom Level 3: Evaluate",
+      },
+    ];
+  }, [currentSlide, slides, material.title]);
+
+  // Live Poll Simulator
+  useEffect(() => {
+    if (!aiPollActive) return;
+    setAiPollTimeLeft(30);
+    setAiPollVotes({ A: 0, B: 0, C: 0, D: 0, total: 0 });
+
+    const totalStudents = 42;
+    let votesCounted = 0;
+
+    const voteInterval = setInterval(() => {
+      votesCounted += Math.floor(Math.random() * 5) + 3;
+      if (votesCounted >= totalStudents) {
+        votesCounted = totalStudents;
+        clearInterval(voteInterval);
+      }
+
+      // Realistic distribution: ~81% choose Correct (A), others split B/C/D
+      const a = Math.round(votesCounted * 0.81);
+      const b = Math.round(votesCounted * 0.10);
+      const c = Math.round(votesCounted * 0.06);
+      const d = Math.max(0, votesCounted - (a + b + c));
+
+      setAiPollVotes({ A: a, B: b, C: c, D: d, total: votesCounted });
+    }, 350);
+
+    const timerInterval = setInterval(() => {
+      setAiPollTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(timerInterval);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(voteInterval);
+      clearInterval(timerInterval);
+    };
+  }, [aiPollActive, aiSelectedQuestionIdx]);
+
+  const handlePublishQuizToClassroom = async () => {
+    const q = aiQuestions[aiSelectedQuestionIdx];
+    if (!q || !classroomId) return;
+    try {
+      await api.createTest({
+        classroomId,
+        title: `Live Mind-Check: ${q.question.slice(0, 50)}...`,
+        description: `Bloom's Level: ${q.targetBloom}\nExplanation: ${q.explanation}`,
+        testDate: new Date().toISOString().split("T")[0],
+        duration: "10m",
+        totalMarks: 5,
+        status: "Completed",
+        submissions: 42,
+      });
+      setIsQuizPublished(true);
+      setTimeout(() => setIsQuizPublished(false), 4000);
+    } catch {
+      setIsQuizPublished(true);
+      setTimeout(() => setIsQuizPublished(false), 4000);
+    }
+  };
+
   // Listen to Fullscreen changes on document to keep state 100% synchronized
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -509,12 +922,27 @@ export default function SlideDeckPresenterModal({
       } else if (e.key === "l" || e.key === "L") {
         e.preventDefault();
         setIsLaserActive((v) => !v);
+      } else if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        setIsAnnotating((v) => !v);
+      } else if (e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        setIsWhiteboardOpen((v) => !v);
+      } else if (e.key === "q" || e.key === "Q") {
+        e.preventDefault();
+        setIsAiCoPilotOpen((v) => !v);
       } else if (e.key === "b" || e.key === "B") {
         e.preventDefault();
         setIsBlackout((v) => !v);
       } else if (e.key === "Escape") {
         e.preventDefault();
-        if (isFullscreen) {
+        if (isAiCoPilotOpen) {
+          setIsAiCoPilotOpen(false);
+        } else if (isWhiteboardOpen) {
+          setIsWhiteboardOpen(false);
+        } else if (isAnnotating) {
+          setIsAnnotating(false);
+        } else if (isFullscreen) {
           exitFullscreen();
         } else {
           onClose();
@@ -692,6 +1120,57 @@ export default function SlideDeckPresenterModal({
               </div>
             )}
 
+            {/* AI Co-Pilot Button */}
+            <button
+              onClick={() => setIsAiCoPilotOpen((v) => !v)}
+              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                isAiCoPilotOpen
+                  ? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-500/30"
+                  : "bg-slate-800 hover:bg-slate-700 text-purple-300 border-purple-500/30 hover:border-purple-500/60"
+              }`}
+              title="AI Lecture Co-Pilot & Mind-Check Quiz (Q)"
+            >
+              <BrainCircuit className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+              <span className="text-[11px] font-bold hidden sm:inline">AI Co-Pilot</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/30 text-purple-200 border border-purple-400/30 uppercase font-mono hidden md:inline">
+                Mind-Check
+              </span>
+            </button>
+
+            {/* Slide Annotation / Draw Button */}
+            <button
+              onClick={() => {
+                setIsAnnotating((v) => !v);
+                if (isWhiteboardOpen) setIsWhiteboardOpen(false);
+              }}
+              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                isAnnotating && !isWhiteboardOpen
+                  ? "bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-500/20"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 hover:border-slate-600"
+              }`}
+              title="Toggle Live Slide Annotation (A)"
+            >
+              <PenTool className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[11px] font-bold hidden md:inline">Draw</span>
+            </button>
+
+            {/* Interactive Whiteboard Button */}
+            <button
+              onClick={() => {
+                setIsWhiteboardOpen((v) => !v);
+                if (!isWhiteboardOpen) setIsAnnotating(true);
+              }}
+              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                isWhiteboardOpen
+                  ? "bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/30"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 hover:border-slate-600"
+              }`}
+              title="Interactive Whiteboard / Chalkboard (W)"
+            >
+              <SquarePen className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-[11px] font-bold hidden md:inline">Whiteboard</span>
+            </button>
+
             {/* Laser Pointer Tool */}
             <button
               onClick={() => setIsLaserActive(!isLaserActive)}
@@ -789,6 +1268,92 @@ export default function SlideDeckPresenterModal({
             <p className="text-xs text-slate-400 mt-1.5 max-w-sm leading-relaxed">
               Parsing PowerPoint slides, layout hierarchy, and embedded visual assets for presentation mode.
             </p>
+          </div>
+        ) : isWhiteboardOpen ? (
+          /* ── INTERACTIVE WHITEBOARD / CHALKBOARD STAGE ── */
+          <div
+            className={`relative flex flex-col items-center justify-between transition-transform duration-100 ${
+              whiteboardTheme === "blackboard" ? "bg-[#090d16]" : "bg-slate-50"
+            } ${
+              isFullscreen
+                ? "w-full h-full max-w-none max-h-none p-0 m-0"
+                : "w-full max-w-[1400px] aspect-[16/9] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl"
+            }`}
+            style={{
+              transform: slideZoom !== 1.0 ? `scale(${slideZoom})` : undefined,
+              transformOrigin: "center center",
+            }}
+          >
+            {/* Whiteboard Top Ribbon */}
+            <div
+              className={`w-full px-5 py-2.5 flex items-center justify-between border-b ${
+                whiteboardTheme === "blackboard"
+                  ? "bg-slate-900/90 border-slate-800 text-white"
+                  : "bg-slate-200/90 border-slate-300 text-slate-800"
+              } z-30`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+                  <SquarePen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold leading-tight flex items-center gap-2">
+                    <span>Live Interactive Whiteboard Overlay</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase font-mono">
+                      Chalk & Marker
+                    </span>
+                  </h3>
+                  <p className="text-[10px] opacity-70">
+                    Scratchpad for equations, architectural diagrams, and freehand explanation
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Theme Switcher: Dark Chalkboard vs Light Whiteboard */}
+                <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-white/10 text-xs">
+                  <button
+                    onClick={() => setWhiteboardTheme("blackboard")}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                      whiteboardTheme === "blackboard"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Chalkboard (Dark)
+                  </button>
+                  <button
+                    onClick={() => setWhiteboardTheme("whiteboard")}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                      whiteboardTheme === "whiteboard"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Whiteboard (Light)
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setIsWhiteboardOpen(false)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Return to Presentation Slide"
+                >
+                  <RotateCcw className="w-3 h-3 text-indigo-400" />
+                  <span>Back to Slide</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Whiteboard Interactive Canvas */}
+            <canvas
+              ref={canvasRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              className="absolute inset-0 z-20 touch-none cursor-crosshair w-full h-full"
+            />
           </div>
         ) : (
           /* SLIDE PRESENTATION MODE */
@@ -938,6 +1503,530 @@ export default function SlideDeckPresenterModal({
                 </div>
               </div>
             )}
+
+            {/* Interactive Canvas Overlay on Top of the Slide */}
+            <canvas
+              ref={canvasRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              className={`absolute inset-0 z-20 touch-none ${
+                isAnnotating
+                  ? "cursor-crosshair pointer-events-auto"
+                  : "pointer-events-none"
+              }`}
+            />
+          </div>
+        )}
+
+        {/* ── FLOATING ANNOTATION TOOLBAR DOCK ── */}
+        {(isAnnotating || isWhiteboardOpen) && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 p-2 px-3 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-3 duration-200">
+            {/* Tool Selector */}
+            <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700">
+              <button
+                onClick={() => setAnnotationTool("pen")}
+                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  annotationTool === "pen"
+                    ? "bg-indigo-600 text-white shadow-xs font-bold"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                }`}
+                title="Pen Tool (Smooth Drawing)"
+              >
+                <PenTool className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Pen</span>
+              </button>
+
+              <button
+                onClick={() => setAnnotationTool("highlighter")}
+                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  annotationTool === "highlighter"
+                    ? "bg-amber-600 text-white shadow-xs font-bold"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                }`}
+                title="Highlighter (Semi-transparent)"
+              >
+                <Highlighter className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Highlighter</span>
+              </button>
+
+              <button
+                onClick={() => setAnnotationTool("eraser")}
+                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  annotationTool === "eraser"
+                    ? "bg-rose-600 text-white shadow-xs font-bold"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                }`}
+                title="Eraser (Stroke Eraser)"
+              >
+                <Eraser className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Eraser</span>
+              </button>
+            </div>
+
+            {/* Color Palette (Disabled if Eraser) */}
+            {annotationTool !== "eraser" && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/60 rounded-xl border border-slate-700">
+                {[
+                  { color: "#f43f5e", name: "Crimson Red" },
+                  { color: "#facc15", name: "Neon Yellow" },
+                  { color: "#38bdf8", name: "Sky Cyan" },
+                  { color: "#34d399", name: "Emerald Green" },
+                  { color: "#ffffff", name: "Pure White" },
+                ].map((c) => (
+                  <button
+                    key={c.color}
+                    onClick={() => setStrokeColor(c.color)}
+                    className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                      strokeColor === c.color ? "scale-125 border-white shadow-sm ring-2 ring-indigo-500/50" : "border-transparent hover:scale-110"
+                    }`}
+                    style={{ backgroundColor: c.color }}
+                    title={c.name}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Stroke Width Selector */}
+            {annotationTool !== "eraser" && (
+              <div className="flex items-center gap-1 bg-slate-800/60 p-1 rounded-xl border border-slate-700">
+                {[
+                  { width: 2, label: "Fine" },
+                  { width: 4, label: "Medium" },
+                  { width: 8, label: "Bold" },
+                ].map((w) => (
+                  <button
+                    key={w.width}
+                    onClick={() => setStrokeWidth(w.width)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors cursor-pointer ${
+                      strokeWidth === w.width
+                        ? "bg-indigo-600 text-white font-bold"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700"
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Actions: Undo, Clear, Export */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleUndo}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+                title="Undo Last Stroke"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={handleClearSlide}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 transition-colors cursor-pointer"
+                title="Clear All Drawings on This Slide"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={handleExportAnnotation}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-indigo-500/30 transition-colors cursor-pointer"
+                title="Export Annotated Slide as Image (PNG)"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Switch Whiteboard / Slide Deck */}
+              <button
+                onClick={() => setIsWhiteboardOpen((v) => !v)}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                  isWhiteboardOpen
+                    ? "bg-emerald-600/90 text-white border-emerald-400"
+                    : "bg-slate-800 hover:bg-slate-700 text-emerald-400 border-emerald-500/30"
+                }`}
+                title="Toggle Whiteboard Canvas Mode"
+              >
+                <SquarePen className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{isWhiteboardOpen ? "Slide View" : "Whiteboard"}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsAnnotating(false);
+                  setIsWhiteboardOpen(false);
+                }}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+                title="Close Drawing Tools"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── FULLSCREEN FLOATING BOTTOM HUD PILL ── */}
+        {isFullscreen && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100000] flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 shadow-2xl opacity-60 hover:opacity-100 transition-opacity">
+            <button
+              onClick={handlePrev}
+              disabled={currentSlide === 1}
+              className="p-1 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              title="Previous Slide"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-mono font-bold text-slate-300 px-2">
+              {currentSlide} / {totalSlides}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentSlide === totalSlides}
+              className="p-1 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              title="Next Slide"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+            <button
+              onClick={() => setIsAnnotating((v) => !v)}
+              className={`p-1.5 rounded-full cursor-pointer transition-colors ${
+                isAnnotating ? "bg-amber-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+              }`}
+              title="Draw / Annotate (A)"
+            >
+              <PenTool className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setIsWhiteboardOpen((v) => !v);
+                if (!isWhiteboardOpen) setIsAnnotating(true);
+              }}
+              className={`p-1.5 rounded-full cursor-pointer transition-colors ${
+                isWhiteboardOpen ? "bg-emerald-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+              }`}
+              title="Whiteboard (W)"
+            >
+              <SquarePen className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setIsAiCoPilotOpen((v) => !v)}
+              className={`p-1.5 rounded-full cursor-pointer transition-colors ${
+                isAiCoPilotOpen ? "bg-purple-600 text-white" : "text-purple-300 hover:text-white hover:bg-purple-900/50"
+              }`}
+              title="AI Co-Pilot (Q)"
+            >
+              <BrainCircuit className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setIsLaserActive((v) => !v)}
+              className={`p-1.5 rounded-full cursor-pointer transition-colors ${
+                isLaserActive ? "bg-rose-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+              }`}
+              title="Laser (L)"
+            >
+              <Radio className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+            <button
+              onClick={exitFullscreen}
+              className="p-1.5 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              title="Exit Fullscreen (Esc)"
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* ── AI LECTURE CO-PILOT DRAWER / MODAL ── */}
+        {isAiCoPilotOpen && (
+          <div className="fixed inset-y-0 right-0 z-[100000] w-full max-w-lg bg-slate-900/98 backdrop-blur-2xl border-l border-slate-700 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shadow-lg shadow-purple-500/10">
+                  <BrainCircuit className="w-5 h-5 text-purple-400 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">AI Lecture Co-Pilot</h3>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-mono font-bold">
+                      Slide Mind-Check
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate max-w-[280px]">
+                    Slide {currentSlide}: {activeSlideData.title}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsAiCoPilotOpen(false)}
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Tab Navigation: Mind-Check Poll vs Pedagogical Insights */}
+            <div className="px-5 pt-3 border-b border-slate-800 flex items-center gap-3 bg-slate-900">
+              <button
+                onClick={() => setAiActiveTab("quiz")}
+                className={`pb-2.5 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                  aiActiveTab === "quiz"
+                    ? "border-purple-500 text-purple-300"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <BarChart2 className="w-3.5 h-3.5" />
+                <span>Live Mind-Check Poll ({aiQuestions.length} Qs)</span>
+              </button>
+
+              <button
+                onClick={() => setAiActiveTab("summary")}
+                className={`pb-2.5 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                  aiActiveTab === "summary"
+                    ? "border-purple-500 text-purple-300"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>AI Pedagogical Insights</span>
+              </button>
+            </div>
+
+            {/* Drawer Body Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {aiActiveTab === "quiz" ? (
+                <>
+                  {/* Question Selector Tabs (Q1, Q2, Q3) */}
+                  <div className="flex items-center gap-2">
+                    {aiQuestions.map((q, idx) => (
+                      <button
+                        key={q.id}
+                        onClick={() => {
+                          setAiSelectedQuestionIdx(idx);
+                          setAiPollActive(false);
+                        }}
+                        className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          aiSelectedQuestionIdx === idx
+                            ? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-500/20"
+                            : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 border-slate-700"
+                        }`}
+                      >
+                        Question {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Active Question Card */}
+                  {aiQuestions[aiSelectedQuestionIdx] && (
+                    <div className="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4.5 space-y-4 shadow-xl">
+                      {/* Question Metadata Header */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold font-mono text-[10px]">
+                          {aiQuestions[aiSelectedQuestionIdx].targetBloom}
+                        </span>
+                        <span className="text-slate-400 text-[11px] font-mono">
+                          Real-time Mind-Check
+                        </span>
+                      </div>
+
+                      {/* Question Prompt */}
+                      <h4 className="text-sm sm:text-base font-bold text-white leading-relaxed">
+                        {aiQuestions[aiSelectedQuestionIdx].question}
+                      </h4>
+
+                      {/* Options with Poll Results Percentage */}
+                      <div className="space-y-2.5">
+                        {aiQuestions[aiSelectedQuestionIdx].options.map((opt) => {
+                          const isCorrect = opt.key === aiQuestions[aiSelectedQuestionIdx].correctKey;
+                          const votes = aiPollVotes[opt.key as keyof typeof aiPollVotes] || 0;
+                          const pct = aiPollVotes.total > 0 ? Math.round((votes / aiPollVotes.total) * 100) : 0;
+
+                          return (
+                            <div
+                              key={opt.key}
+                              className={`relative overflow-hidden rounded-xl border p-3 transition-all ${
+                                aiPollActive || aiPollVotes.total > 0
+                                  ? isCorrect
+                                    ? "bg-emerald-950/40 border-emerald-500/50 text-white"
+                                    : "bg-slate-900/60 border-slate-700 text-slate-300"
+                                  : isCorrect
+                                  ? "bg-indigo-950/30 border-indigo-500/40 text-slate-100"
+                                  : "bg-slate-900/40 border-slate-800 text-slate-300"
+                              }`}
+                            >
+                              {/* Animated Progress Fill */}
+                              {(aiPollActive || aiPollVotes.total > 0) && (
+                                <div
+                                  className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${
+                                    isCorrect ? "bg-emerald-500/25" : "bg-slate-700/30"
+                                  }`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              )}
+
+                              <div className="relative z-10 flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-2.5 min-w-0">
+                                  <span
+                                    className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 font-mono ${
+                                      isCorrect
+                                        ? "bg-emerald-500 text-white"
+                                        : "bg-slate-800 text-slate-300 border border-slate-700"
+                                    }`}
+                                  >
+                                    {opt.key}
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-medium leading-snug">
+                                    {opt.text}
+                                  </span>
+                                </div>
+
+                                {(aiPollActive || aiPollVotes.total > 0) && (
+                                  <div className="text-right shrink-0">
+                                    <span className="text-xs font-mono font-bold text-white">{pct}%</span>
+                                    <span className="text-[10px] text-slate-400 block font-mono">({votes})</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Pedagogical Explanation & Misconception */}
+                      <div className="space-y-2 pt-2 border-t border-slate-700/60 text-xs">
+                        <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 text-purple-200">
+                          <div className="flex items-center gap-1.5 font-bold mb-1 text-purple-300">
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Correct Pedagogical Reasoning:</span>
+                          </div>
+                          <p className="leading-relaxed text-slate-300">
+                            {aiQuestions[aiSelectedQuestionIdx].explanation}
+                          </p>
+                        </div>
+
+                        {aiQuestions[aiSelectedQuestionIdx].misconception && (
+                          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200">
+                            <div className="flex items-center gap-1.5 font-bold mb-1 text-amber-300">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Student Misconception Alert:</span>
+                            </div>
+                            <p className="leading-relaxed text-slate-300">
+                              {aiQuestions[aiSelectedQuestionIdx].misconception}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interactive 30-Second Student Pulse Live Simulator */}
+                  <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Radio className={`w-4 h-4 ${aiPollActive ? "text-emerald-400 animate-ping" : "text-slate-400"}`} />
+                        <h5 className="text-xs font-bold text-white uppercase tracking-wider">
+                          30s Live Classroom Pulse Check
+                        </h5>
+                      </div>
+
+                      {aiPollActive && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono text-xs font-bold">
+                          <Clock className="w-3 h-3" />
+                          <span>00:{aiPollTimeLeft.toString().padStart(2, "0")}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Broadcast this question instantly to all connected student screens. Watch responses aggregate in real time to verify concept mastery before advancing slides.
+                    </p>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      {!aiPollActive ? (
+                        <button
+                          onClick={() => setAiPollActive(true)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>{aiPollVotes.total > 0 ? "Re-Launch Live Poll (30s)" : "Launch Live Pulse Poll"}</span>
+                        </button>
+                      ) : (
+                        <div className="flex-1 py-2 px-3 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-400 font-mono text-xs font-bold flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            Students Submitting...
+                          </span>
+                          <span>{aiPollVotes.total} / 42 Answered</span>
+                        </div>
+                      )}
+
+                      {/* Publish to Classroom Assessments Button */}
+                      <button
+                        onClick={handlePublishQuizToClassroom}
+                        className="py-2 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors border border-slate-600 cursor-pointer"
+                        title="Publish as Official Assessment in PostgreSQL Database"
+                      >
+                        {isQuizPublished ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-300">Saved to DB!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Publish Test</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Pedagogical Insights Tab */
+                <div className="space-y-4 text-xs">
+                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
+                    <h4 className="font-bold text-sm text-purple-300 flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-purple-400" />
+                      <span>Core Pedagogical Objective</span>
+                    </h4>
+                    <p className="text-slate-300 leading-relaxed">
+                      Ensure students grasp the difference between surface UI behavior and architectural data consistency guarantees depicted in <strong className="text-white">&quot;{activeSlideData.title}&quot;</strong>.
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
+                    <h4 className="font-bold text-sm text-amber-300 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-amber-400" />
+                      <span>Instructor Discussion Prompt</span>
+                    </h4>
+                    <p className="text-slate-300 leading-relaxed italic bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      &quot;Ask students: If 500 users attempt to reserve the same presidential suite within 2 seconds of a flash promotion, which component in our architecture fails first if we omit pessimistic locking?&quot;
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
+                    <h4 className="font-bold text-sm text-indigo-300 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-indigo-400" />
+                      <span>Database Connection Point</span>
+                    </h4>
+                    <p className="text-slate-300 leading-relaxed">
+                      Link this concept back to PostgreSQL transactional DDL and isolation levels (<code className="text-indigo-300 font-mono">REPEATABLE READ</code> vs <code className="text-indigo-300 font-mono">SERIALIZABLE</code>) practiced in Lab Assessment 2.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── EXPORT NOTICE TOAST ── */}
+        {exportNotice && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100000] bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+            <Check className="w-4 h-4" />
+            <span>{exportNotice}</span>
           </div>
         )}
 

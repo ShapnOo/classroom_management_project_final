@@ -30,11 +30,15 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    // Sanitize and preserve clean readable filename
+    // Sanitize and preserve clean, URL-safe filename without raw spaces
     const ext = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_\-\s]/g, "_");
+    const rawBase = path.basename(file.originalname, ext);
+    let cleanBase = rawBase.replace(/[^a-zA-Z0-9_\-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 40);
+    if (!cleanBase) {
+      cleanBase = "slide_deck";
+    }
     const uniqueSuffix = `${Date.now()}`;
-    cb(null, `${baseName}-${uniqueSuffix}${ext}`);
+    cb(null, `${cleanBase}-${uniqueSuffix}${ext}`);
   },
 });
 

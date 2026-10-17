@@ -25,8 +25,9 @@ export async function parsePptx(fileOrBuffer: File | Blob | ArrayBuffer | string
   let arrayBuffer: ArrayBuffer;
 
   if (typeof fileOrBuffer === "string") {
-    const res = await fetch(fileOrBuffer);
-    if (!res.ok) throw new Error(`Failed to fetch PPTX from ${fileOrBuffer}`);
+    const safeUrl = encodeURI(fileOrBuffer);
+    const res = await fetch(safeUrl);
+    if (!res.ok) throw new Error(`Failed to fetch PPTX from ${safeUrl} (status ${res.status})`);
     arrayBuffer = await res.arrayBuffer();
   } else if (fileOrBuffer instanceof Blob) {
     arrayBuffer = await fileOrBuffer.arrayBuffer();
