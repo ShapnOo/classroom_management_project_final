@@ -223,13 +223,13 @@ export default function SlideDeckPresenterModal({
   // Annotation & Whiteboard States
   const [isAnnotating, setIsAnnotating] = useState<boolean>(false);
   const [annotationTool, setAnnotationTool] = useState<"pen" | "highlighter" | "eraser">("pen");
-  const [strokeColor, setStrokeColor] = useState<string>("#f43f5e");
+  const [strokeColor, setStrokeColor] = useState<string>("#1d4ed8");
   const [strokeWidth, setStrokeWidth] = useState<number>(3);
   const [slideDrawings, setSlideDrawings] = useState<Record<number, DrawingStroke[]>>({});
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [currentStroke, setCurrentStroke] = useState<DrawingPoint[]>([]);
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState<boolean>(false);
-  const [whiteboardTheme, setWhiteboardTheme] = useState<"blackboard" | "whiteboard">("blackboard");
+  const [whiteboardTheme, setWhiteboardTheme] = useState<"blackboard" | "whiteboard">("whiteboard");
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   // AI Co-Pilot States
@@ -252,12 +252,12 @@ export default function SlideDeckPresenterModal({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // If Whiteboard is open, draw background grid
+    // If Whiteboard is open, draw clean background grid
     if (isWhiteboardOpen) {
       if (whiteboardTheme === "blackboard") {
-        ctx.fillStyle = "#090d16";
+        ctx.fillStyle = "#1e293b";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
         ctx.lineWidth = 1;
         const gridSize = 32;
         for (let x = 0; x < canvas.width; x += gridSize) {
@@ -273,7 +273,7 @@ export default function SlideDeckPresenterModal({
           ctx.stroke();
         }
       } else {
-        ctx.fillStyle = "#f8fafc";
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
         ctx.lineWidth = 1;
@@ -977,17 +977,17 @@ export default function SlideDeckPresenterModal({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[99999] bg-black text-white flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans ${
+      className={`fixed inset-0 z-[99999] bg-slate-100 text-slate-800 flex flex-col overflow-hidden select-none animate-in fade-in duration-150 font-sans ${
         isFullscreen ? "w-screen h-screen p-0 m-0" : ""
       }`}
       onMouseMove={handleMouseMove}
     >
-      {/* ── INVISIBLE HOVER TRIGGER TO EXIT FULLSCREEN (Top Right Corner) ─── */}
+      {/* ── HOVER TRIGGER TO EXIT FULLSCREEN (Top Right Corner) ─── */}
       {isFullscreen && (
         <div className="fixed top-0 right-0 p-4 z-[100000] group pointer-events-auto">
           <button
             onClick={exitFullscreen}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3.5 py-2 rounded-full bg-black/85 hover:bg-black text-slate-300 hover:text-white border border-white/20 text-xs font-medium flex items-center gap-2 shadow-2xl backdrop-blur-md cursor-pointer"
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3.5 py-2 rounded-lg bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-300 text-xs font-semibold flex items-center gap-2 shadow-xl backdrop-blur-md cursor-pointer"
             title="Exit Fullscreen (Esc or F)"
           >
             <Minimize2 className="w-4 h-4" />
@@ -998,7 +998,7 @@ export default function SlideDeckPresenterModal({
 
       {/* ── TOP PRESENTER NAVIGATION BAR (HIDDEN IN FULLSCREEN) ─────────────────── */}
       {!isFullscreen && (
-        <div className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 shadow-md transition-all h-14">
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 h-14 shadow-xs">
           {/* Left: Material & Course Title */}
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -1014,36 +1014,30 @@ export default function SlideDeckPresenterModal({
                   .catch(() => {});
                 onClose();
               }}
-              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700 shrink-0"
-              title="Exit Presentation Mode (Esc)"
+              className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors border border-slate-200 shrink-0 cursor-pointer"
+              title="Exit Presentation (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-mono">
-                  {courseCode}
-                </span>
-                <span className="text-xs text-slate-400 truncate hidden sm:inline">
-                  {courseTitle} ({batchName})
-                </span>
-              </div>
-              <h2 className="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1.5">
-                <Tv className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span className="text-xs text-slate-500 font-medium truncate block">
+                {courseCode} • {courseTitle}
+              </span>
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
                 {material.title}
               </h2>
             </div>
           </div>
 
-          {/* Center: Slide Switcher, Counter & Database Synced Badge */}
+          {/* Center: Slide Switcher & Counter */}
           {!isPdf && (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                 <button
                   onClick={handlePrev}
                   disabled={currentSlide === 1}
-                  className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  className="p-1 rounded hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                   title="Previous Slide (← / Space)"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1051,29 +1045,20 @@ export default function SlideDeckPresenterModal({
 
                 <button
                   onClick={() => setShowThumbnails(!showThumbnails)}
-                  className="px-2 text-xs font-mono font-bold text-white hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+                  className="px-2 text-xs font-semibold text-slate-800 hover:text-slate-950 transition-colors cursor-pointer"
                   title="Click to view all slide thumbnails"
                 >
-                  <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>
-                    Slide {currentSlide} / {totalSlides}
-                  </span>
+                  Slide {currentSlide} of {totalSlides}
                 </button>
 
                 <button
                   onClick={handleNext}
                   disabled={currentSlide === totalSlides}
-                  className="p-1 rounded hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  className="p-1 rounded hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                   title="Next Slide (→ / Space)"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              </div>
-
-              {/* PostgreSQL Persistent DB Badge */}
-              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
-                <Database className="w-3 h-3 text-emerald-400 animate-pulse" />
-                <span>PostgreSQL Synced</span>
               </div>
             </div>
           )}
@@ -1081,38 +1066,38 @@ export default function SlideDeckPresenterModal({
           {/* Right: Classroom Presenter Tools */}
           <div className="flex items-center gap-2">
             {/* Lecture Timer */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 font-mono text-xs text-slate-300">
-              <Clock className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 font-mono text-xs text-slate-700">
+              <Clock className="w-3.5 h-3.5 text-slate-500" />
               <span>{formatTimer(elapsedSeconds)}</span>
               <button
                 onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="ml-1 text-[10px] text-slate-400 hover:text-white"
+                className="ml-1 text-[10px] text-slate-500 hover:text-slate-800 cursor-pointer"
                 title={isTimerRunning ? "Pause Timer" : "Resume Timer"}
               >
                 {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               </button>
             </div>
 
-            {/* Slide Zoom Controls (for presentations) */}
+            {/* Slide Zoom Controls */}
             {!isPdf && (
-              <div className="hidden lg:flex items-center gap-1 bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-700">
+              <div className="hidden lg:flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1 border border-slate-200">
                 <button
                   onClick={() => setSlideZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(1)))}
-                  className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
+                  className="p-0.5 rounded hover:bg-slate-200 text-slate-600 cursor-pointer"
                   title="Zoom Out"
                 >
                   <ZoomOut className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => setSlideZoom(1.0)}
-                  className="text-[10px] font-mono text-slate-300 px-1 hover:text-white"
+                  className="text-[10px] font-mono text-slate-700 px-1 hover:text-slate-900 cursor-pointer"
                   title="Reset Fit"
                 >
                   {Math.round(slideZoom * 100)}%
                 </button>
                 <button
                   onClick={() => setSlideZoom((z) => Math.min(2.0, +(z + 0.1).toFixed(1)))}
-                  className="p-0.5 rounded hover:bg-slate-700 text-slate-300"
+                  className="p-0.5 rounded hover:bg-slate-200 text-slate-600 cursor-pointer"
                   title="Zoom In"
                 >
                   <ZoomIn className="w-3 h-3" />
@@ -1123,18 +1108,15 @@ export default function SlideDeckPresenterModal({
             {/* AI Co-Pilot Button */}
             <button
               onClick={() => setIsAiCoPilotOpen((v) => !v)}
-              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`p-1.5 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isAiCoPilotOpen
-                  ? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-500/30"
-                  : "bg-slate-800 hover:bg-slate-700 text-purple-300 border-purple-500/30 hover:border-purple-500/60"
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
               }`}
               title="AI Lecture Co-Pilot & Mind-Check Quiz (Q)"
             >
-              <BrainCircuit className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-              <span className="text-[11px] font-bold hidden sm:inline">AI Co-Pilot</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/30 text-purple-200 border border-purple-400/30 uppercase font-mono hidden md:inline">
-                Mind-Check
-              </span>
+              <BrainCircuit className="w-4 h-4 text-indigo-600" />
+              <span className="hidden sm:inline">AI Co-Pilot</span>
             </button>
 
             {/* Slide Annotation / Draw Button */}
@@ -1143,15 +1125,15 @@ export default function SlideDeckPresenterModal({
                 setIsAnnotating((v) => !v);
                 if (isWhiteboardOpen) setIsWhiteboardOpen(false);
               }}
-              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`p-1.5 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isAnnotating && !isWhiteboardOpen
-                  ? "bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-500/20"
-                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 hover:border-slate-600"
+                  ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
               }`}
-              title="Toggle Live Slide Annotation (A)"
+              title="Slide Annotation Mode (A)"
             >
-              <PenTool className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] font-bold hidden md:inline">Draw</span>
+              <PenTool className="w-4 h-4 text-amber-600" />
+              <span className="hidden sm:inline">Annotate</span>
             </button>
 
             {/* Interactive Whiteboard Button */}
@@ -1160,35 +1142,35 @@ export default function SlideDeckPresenterModal({
                 setIsWhiteboardOpen((v) => !v);
                 if (!isWhiteboardOpen) setIsAnnotating(true);
               }}
-              className={`p-1.5 px-2.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`p-1.5 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isWhiteboardOpen
-                  ? "bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/30"
-                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 hover:border-slate-600"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
               }`}
-              title="Interactive Whiteboard / Chalkboard (W)"
+              title="Interactive Whiteboard (W)"
             >
-              <SquarePen className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[11px] font-bold hidden md:inline">Whiteboard</span>
+              <SquarePen className="w-4 h-4 text-emerald-600" />
+              <span className="hidden sm:inline">Whiteboard</span>
             </button>
 
             {/* Laser Pointer Tool */}
             <button
               onClick={() => setIsLaserActive(!isLaserActive)}
-              className={`p-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
+              className={`p-1.5 px-2 rounded-lg border text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isLaserActive
-                  ? "bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-xs"
-                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
+                  ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
               }`}
               title="Toggle Laser Pointer Mode (L)"
             >
               <Radio className="w-3.5 h-3.5 text-rose-500" />
-              <span className="text-[11px] font-bold hidden md:inline">Laser</span>
+              <span className="hidden md:inline">Laser</span>
             </button>
 
             {/* Toggle Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500 transition-all shadow-sm"
+              className="p-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
               title="Projector Fullscreen Mode (F)"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1240,8 +1222,8 @@ export default function SlideDeckPresenterModal({
 
       {/* ── SLIDE STAGE / CANVAS ─────────────────────────────────────────── */}
       <div
-        className={`flex-1 relative flex items-center justify-center bg-black overflow-hidden ${
-          isFullscreen ? "w-full h-full p-0 m-0" : "p-3 sm:p-6"
+        className={`flex-1 relative flex items-center justify-center bg-slate-200/70 overflow-hidden ${
+          isFullscreen ? "w-full h-full p-0 m-0 bg-slate-100" : "p-3 sm:p-6"
         }`}
       >
         {isPdf ? (
@@ -1262,22 +1244,22 @@ export default function SlideDeckPresenterModal({
           </div>
         ) : isParsingPptx ? (
           /* PPTX DYNAMIC PARSING LOADER */
-          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-300">
-            <Loader2 className="w-12 h-12 text-indigo-400 animate-spin mb-4" />
-            <h3 className="text-lg font-bold text-white tracking-tight">Extracting Presentation Slides...</h3>
-            <p className="text-xs text-slate-400 mt-1.5 max-w-sm leading-relaxed">
-              Parsing PowerPoint slides, layout hierarchy, and embedded visual assets for presentation mode.
+          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-700">
+            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-3" />
+            <h3 className="text-base font-semibold text-slate-900">Rendering Lecture Slides...</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              Processing PowerPoint presentation slides and formatting hierarchy.
             </p>
           </div>
         ) : isWhiteboardOpen ? (
-          /* ── INTERACTIVE WHITEBOARD / CHALKBOARD STAGE ── */
+          /* ── INTERACTIVE WHITEBOARD STAGE ── */
           <div
             className={`relative flex flex-col items-center justify-between transition-transform duration-100 ${
-              whiteboardTheme === "blackboard" ? "bg-[#090d16]" : "bg-slate-50"
+              whiteboardTheme === "blackboard" ? "bg-slate-900" : "bg-white"
             } ${
               isFullscreen
                 ? "w-full h-full max-w-none max-h-none p-0 m-0"
-                : "w-full max-w-[1400px] aspect-[16/9] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl"
+                : "w-full max-w-[1360px] aspect-[16/9] rounded-xl overflow-hidden border border-slate-300 shadow-2xl"
             }`}
             style={{
               transform: slideZoom !== 1.0 ? `scale(${slideZoom})` : undefined,
@@ -1286,82 +1268,95 @@ export default function SlideDeckPresenterModal({
           >
             {/* Whiteboard Top Ribbon */}
             <div
-              className={`w-full px-5 py-2.5 flex items-center justify-between border-b ${
+              className={`w-full px-5 py-3 flex items-center justify-between border-b shrink-0 relative z-30 ${
                 whiteboardTheme === "blackboard"
-                  ? "bg-slate-900/90 border-slate-800 text-white"
-                  : "bg-slate-200/90 border-slate-300 text-slate-800"
-              } z-30`}
+                  ? "bg-slate-900 border-slate-800 text-white"
+                  : "bg-white border-slate-200 text-slate-900"
+              }`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  whiteboardTheme === "blackboard" ? "bg-emerald-500/20 text-emerald-400" : "bg-indigo-50 text-indigo-600"
+                }`}>
                   <SquarePen className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold leading-tight flex items-center gap-2">
-                    <span>Live Interactive Whiteboard Overlay</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase font-mono">
-                      Chalk & Marker
-                    </span>
+                  <h3 className="text-sm font-bold leading-tight">
+                    Interactive Lecture Whiteboard
                   </h3>
-                  <p className="text-[10px] opacity-70">
-                    Scratchpad for equations, architectural diagrams, and freehand explanation
+                  <p className={`text-xs ${whiteboardTheme === "blackboard" ? "text-slate-400" : "text-slate-500"}`}>
+                    Live technical scratchpad for equations and derivations
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* Theme Switcher: Dark Chalkboard vs Light Whiteboard */}
-                <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-white/10 text-xs">
+              <div className="flex items-center gap-2.5">
+                {/* Theme Switcher: Whiteboard (Light) vs Chalkboard (Dark) */}
+                <div className={`flex items-center gap-1 p-1 rounded-lg border text-xs ${
+                  whiteboardTheme === "blackboard" ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
+                }`}>
                   <button
-                    onClick={() => setWhiteboardTheme("blackboard")}
-                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                      whiteboardTheme === "blackboard"
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "text-slate-400 hover:text-white"
+                    onClick={() => {
+                      setWhiteboardTheme("whiteboard");
+                      if (strokeColor === "#ffffff") setStrokeColor("#1d4ed8");
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      whiteboardTheme === "whiteboard"
+                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
+                        : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
-                    Chalkboard (Dark)
+                    Whiteboard
                   </button>
                   <button
-                    onClick={() => setWhiteboardTheme("whiteboard")}
-                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                      whiteboardTheme === "whiteboard"
-                        ? "bg-indigo-600 text-white shadow-xs"
+                    onClick={() => {
+                      setWhiteboardTheme("blackboard");
+                      if (strokeColor === "#0f172a" || strokeColor === "#1d4ed8") setStrokeColor("#facc15");
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      whiteboardTheme === "blackboard"
+                        ? "bg-slate-700 text-white shadow-xs"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Whiteboard (Light)
+                    Chalkboard
                   </button>
                 </div>
 
                 <button
                   onClick={() => setIsWhiteboardOpen(false)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                    whiteboardTheme === "blackboard"
+                      ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-700"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200"
+                  }`}
                   title="Return to Presentation Slide"
                 >
-                  <RotateCcw className="w-3 h-3 text-indigo-400" />
-                  <span>Back to Slide</span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Return to Slide</span>
                 </button>
               </div>
             </div>
 
-            {/* Whiteboard Interactive Canvas */}
-            <canvas
-              ref={canvasRef}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              className="absolute inset-0 z-20 touch-none cursor-crosshair w-full h-full"
-            />
+            {/* Whiteboard Interactive Canvas Area */}
+            <div className="relative flex-1 w-full h-full overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                className="absolute inset-0 z-20 touch-none cursor-crosshair w-full h-full"
+              />
+            </div>
           </div>
         ) : (
           /* SLIDE PRESENTATION MODE */
           <div
             className={`relative flex items-center justify-center transition-transform duration-100 ${
               isFullscreen
-                ? "w-full h-full max-w-none max-h-none p-0 m-0 bg-black"
-                : "w-full max-w-[1400px] aspect-[16/9] bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl"
+                ? "w-full h-full max-w-none max-h-none p-0 m-0 bg-slate-950"
+                : "w-full max-w-[1360px] aspect-[16/9] bg-white rounded-xl overflow-hidden border border-slate-800/80 shadow-2xl"
             }`}
             style={{
               transform: slideZoom !== 1.0 ? `scale(${slideZoom})` : undefined,
@@ -1382,7 +1377,7 @@ export default function SlideDeckPresenterModal({
                     }
                   }
                 }}
-                className="relative w-full h-full flex items-center justify-center bg-black select-none cursor-default"
+                className="relative w-full h-full flex items-center justify-center bg-slate-950 select-none cursor-default"
               >
                 <img
                   src={activeSlideData.imageUrl}
@@ -1390,67 +1385,64 @@ export default function SlideDeckPresenterModal({
                   className="w-full h-full object-contain pointer-events-none"
                 />
                 {!isFullscreen && (
-                  <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl">
-                    <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
+                  <div className="absolute bottom-3 left-4 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 border border-slate-700 flex items-center gap-2.5 shadow-xl">
+                    <span className="font-semibold text-white">Slide {currentSlide} of {totalSlides}</span>
                     <span className="text-slate-600">•</span>
-                    <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
+                    <span className="truncate max-w-[420px] text-slate-300 font-sans">{activeSlideData.title}</span>
                   </div>
                 )}
               </div>
             ) : activeSlideData.type === "html" && activeSlideData.htmlUrl ? (
               /* 2. AUTHENTIC HTML SLIDE (Inception_v2 copy.pptx) */
-              <div className="relative w-full h-full flex items-center justify-center bg-black select-none">
+              <div className="relative w-full h-full flex items-center justify-center bg-slate-950 select-none">
                 <iframe
                   src={activeSlideData.htmlUrl}
                   title={`Slide ${currentSlide}`}
                   className="w-full h-full border-0 bg-transparent"
                 />
                 {!isFullscreen && (
-                  <div className="absolute bottom-3 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 border border-white/10 flex items-center gap-2.5 shadow-xl pointer-events-none">
-                    <span className="font-bold text-white">Slide {currentSlide} of {totalSlides}</span>
+                  <div className="absolute bottom-3 left-4 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 border border-slate-700 flex items-center gap-2.5 shadow-xl pointer-events-none">
+                    <span className="font-semibold text-white">Slide {currentSlide} of {totalSlides}</span>
                     <span className="text-slate-600">•</span>
-                    <span className="truncate max-w-[420px] text-slate-300 font-sans font-medium">{activeSlideData.title}</span>
+                    <span className="truncate max-w-[420px] text-slate-300 font-sans">{activeSlideData.title}</span>
                   </div>
                 )}
               </div>
             ) : (
-              /* 3. STRUCTURED DYNAMIC & CONTENT PRESENTATION DECK */
-              <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-6 sm:p-10 flex flex-col justify-between overflow-hidden">
-                <div className="flex items-start justify-between pb-4 border-b border-slate-800/80">
+              /* 3. STRUCTURED CLEAN ACADEMIC PRESENTATION DECK */
+              <div className="w-full h-full bg-white text-slate-900 p-8 sm:p-12 flex flex-col justify-between overflow-hidden">
+                <div className="flex items-start justify-between pb-4 border-b border-slate-200">
                   <div>
-                    <span className="text-[11px] font-bold tracking-widest text-indigo-400 uppercase font-mono">
+                    <span className="text-xs font-semibold tracking-wider text-indigo-700 uppercase font-mono">
                       {courseCode} • {courseTitle}
                     </span>
-                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white mt-1 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">
                       {activeSlideData.title}
                     </h1>
                     {activeSlideData.subtitle && (
-                      <p className="text-sm text-slate-400 mt-1 font-medium">{activeSlideData.subtitle}</p>
+                      <p className="text-sm sm:text-base text-slate-600 mt-1 font-medium">{activeSlideData.subtitle}</p>
                     )}
                   </div>
-                  <div className="text-right shrink-0 font-mono text-[11px] text-slate-500 hidden sm:block">
-                    <span>Scholaris Presentation</span>
+                  <div className="text-right shrink-0 text-xs text-slate-400 font-medium hidden sm:block">
+                    Slide {currentSlide} of {totalSlides}
                   </div>
                 </div>
 
-                <div className="flex-1 py-4 flex flex-col justify-center overflow-y-auto">
+                <div className="flex-1 py-6 flex flex-col justify-center overflow-y-auto">
                   {activeSlideData.type === "cover" ? (
-                    <div className="space-y-6 text-center sm:text-left py-4">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
-                        <BookOpen className="w-3.5 h-3.5" /> Department of Computer Science & Engineering
-                      </div>
+                    <div className="space-y-4 text-center sm:text-left py-4">
                       <div className="space-y-2">
-                        <p className="text-sm font-semibold text-slate-400">
+                        <p className="text-sm font-semibold text-slate-600">
                           Faculty of Mathematical & Physical Sciences • Jahangirnagar University
                         </p>
                         <p className="text-xs text-slate-500">
-                          Instructor: <strong className="text-slate-300">{teacherName}</strong> • Batch:{" "}
-                          <strong className="text-slate-300">{batchName}</strong>
+                          Instructor: <strong className="text-slate-800">{teacherName}</strong> • Batch:{" "}
+                          <strong className="text-slate-800">{batchName}</strong>
                         </p>
                       </div>
                       {activeSlideData.imageUrl && (
-                        <div className="mt-4 max-h-52 overflow-hidden rounded-xl border border-slate-800 flex items-center justify-center bg-black/40">
-                          <img src={activeSlideData.imageUrl} alt="Slide Graphic" className="max-h-52 object-contain" />
+                        <div className="mt-4 max-h-60 overflow-hidden rounded-xl border border-slate-200 flex items-center justify-center bg-slate-50 p-2">
+                          <img src={activeSlideData.imageUrl} alt="Slide Graphic" className="max-h-56 object-contain" />
                         </div>
                       )}
                     </div>
@@ -1458,28 +1450,28 @@ export default function SlideDeckPresenterModal({
                     /* Content Slide: Supports Bullets, Embedded Visuals & Split Screen */
                     <div className={`grid gap-6 items-center ${activeSlideData.imageUrl && activeSlideData.bullets && activeSlideData.bullets.length > 0 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
                       {activeSlideData.bullets && activeSlideData.bullets.length > 0 ? (
-                        <ul className="space-y-3 text-sm sm:text-base text-slate-200">
+                        <ul className="space-y-3 text-sm sm:text-base text-slate-800">
                           {activeSlideData.bullets.map((bullet, idx) => (
-                            <li key={idx} className="flex items-start gap-3 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
-                              <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                            <li key={idx} className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                              <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                                 {idx + 1}
                               </div>
-                              <span className="leading-relaxed">{bullet}</span>
+                              <span className="leading-relaxed font-normal">{bullet}</span>
                             </li>
                           ))}
                         </ul>
                       ) : activeSlideData.codeSnippet ? (
-                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto shadow-inner leading-relaxed">
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-100 overflow-x-auto shadow-inner leading-relaxed">
                           <pre className="text-emerald-400">{activeSlideData.codeSnippet}</pre>
                         </div>
                       ) : activeSlideData.imageUrl ? null : (
-                        <div className="text-slate-400 text-sm italic">
+                        <div className="text-slate-600 text-sm italic">
                           {activeSlideData.notes || "Presentation content slide."}
                         </div>
                       )}
 
                       {activeSlideData.imageUrl && (
-                        <div className="w-full h-full min-h-[220px] max-h-[360px] rounded-xl overflow-hidden border border-slate-800 bg-black/60 flex items-center justify-center p-2 shadow-inner">
+                        <div className="w-full h-full min-h-[220px] max-h-[360px] rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center p-2">
                           <img
                             src={activeSlideData.imageUrl}
                             alt={activeSlideData.title}
@@ -1489,7 +1481,7 @@ export default function SlideDeckPresenterModal({
                       )}
 
                       {activeSlideData.type === "summary" && activeSlideData.takeaway && (
-                        <div className="mt-2 p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-xs font-semibold">
+                        <div className="mt-3 p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold">
                           💡 {activeSlideData.takeaway}
                         </div>
                       )}
@@ -1497,7 +1489,7 @@ export default function SlideDeckPresenterModal({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs font-mono text-slate-500">
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-xs text-slate-500 font-medium">
                   <span>Slide {currentSlide} of {totalSlides}</span>
                   <span>{teacherName}</span>
                 </div>
@@ -1522,15 +1514,15 @@ export default function SlideDeckPresenterModal({
 
         {/* ── FLOATING ANNOTATION TOOLBAR DOCK ── */}
         {(isAnnotating || isWhiteboardOpen) && (
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 p-2 px-3 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-3 duration-200">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-white/95 backdrop-blur-xl border border-slate-300 p-2 px-3 rounded-xl shadow-xl animate-in slide-in-from-bottom-2 duration-150 text-slate-800">
             {/* Tool Selector */}
-            <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
               <button
                 onClick={() => setAnnotationTool("pen")}
-                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`p-1.5 px-2 rounded-md text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                   annotationTool === "pen"
-                    ? "bg-indigo-600 text-white shadow-xs font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                    ? "bg-indigo-600 text-white font-medium shadow-xs"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-slate-200"
                 }`}
                 title="Pen Tool (Smooth Drawing)"
               >
@@ -1540,10 +1532,10 @@ export default function SlideDeckPresenterModal({
 
               <button
                 onClick={() => setAnnotationTool("highlighter")}
-                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`p-1.5 px-2 rounded-md text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                   annotationTool === "highlighter"
-                    ? "bg-amber-600 text-white shadow-xs font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                    ? "bg-amber-600 text-white font-medium shadow-xs"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-slate-200"
                 }`}
                 title="Highlighter (Semi-transparent)"
               >
@@ -1553,33 +1545,34 @@ export default function SlideDeckPresenterModal({
 
               <button
                 onClick={() => setAnnotationTool("eraser")}
-                className={`p-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`p-1.5 px-2 rounded-md text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                   annotationTool === "eraser"
-                    ? "bg-rose-600 text-white shadow-xs font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700"
+                    ? "bg-rose-600 text-white font-medium shadow-xs"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-slate-200"
                 }`}
-                title="Eraser (Stroke Eraser)"
+                title="Eraser"
               >
                 <Eraser className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Eraser</span>
               </button>
             </div>
 
-            {/* Color Palette (Disabled if Eraser) */}
+            {/* Professional Academic Ink Palette */}
             {annotationTool !== "eraser" && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/60 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg border border-slate-200">
                 {[
-                  { color: "#f43f5e", name: "Crimson Red" },
-                  { color: "#facc15", name: "Neon Yellow" },
-                  { color: "#38bdf8", name: "Sky Cyan" },
-                  { color: "#34d399", name: "Emerald Green" },
-                  { color: "#ffffff", name: "Pure White" },
+                  { color: "#0f172a", name: "Slate Black" },
+                  { color: "#1d4ed8", name: "Academic Blue" },
+                  { color: "#dc2626", name: "Red Marker" },
+                  { color: "#16a34a", name: "Emerald Green" },
+                  { color: "#eab308", name: "Yellow Highlighter" },
+                  { color: "#ffffff", name: "White" },
                 ].map((c) => (
                   <button
                     key={c.color}
                     onClick={() => setStrokeColor(c.color)}
                     className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
-                      strokeColor === c.color ? "scale-125 border-white shadow-sm ring-2 ring-indigo-500/50" : "border-transparent hover:scale-110"
+                      strokeColor === c.color ? "scale-110 border-indigo-600 shadow-sm ring-2 ring-indigo-500/40" : "border-slate-300 hover:scale-105"
                     }`}
                     style={{ backgroundColor: c.color }}
                     title={c.name}
@@ -1590,19 +1583,19 @@ export default function SlideDeckPresenterModal({
 
             {/* Stroke Width Selector */}
             {annotationTool !== "eraser" && (
-              <div className="flex items-center gap-1 bg-slate-800/60 p-1 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
                 {[
                   { width: 2, label: "Fine" },
                   { width: 4, label: "Medium" },
-                  { width: 8, label: "Bold" },
+                  { width: 7, label: "Bold" },
                 ].map((w) => (
                   <button
                     key={w.width}
                     onClick={() => setStrokeWidth(w.width)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
                       strokeWidth === w.width
-                        ? "bg-indigo-600 text-white font-bold"
-                        : "text-slate-400 hover:text-white hover:bg-slate-700"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
                     }`}
                   >
                     {w.label}
@@ -1615,24 +1608,24 @@ export default function SlideDeckPresenterModal({
             <div className="flex items-center gap-1">
               <button
                 onClick={handleUndo}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-                title="Undo Last Stroke"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer"
+                title="Undo (Ctrl+Z)"
               >
                 <Undo2 className="w-3.5 h-3.5" />
               </button>
 
               <button
                 onClick={handleClearSlide}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 transition-colors cursor-pointer"
-                title="Clear All Drawings on This Slide"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-700 border border-slate-200 transition-colors cursor-pointer"
+                title="Clear Drawing"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
 
               <button
                 onClick={handleExportAnnotation}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-indigo-500/30 transition-colors cursor-pointer"
-                title="Export Annotated Slide as Image (PNG)"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer"
+                title="Export Image (PNG)"
               >
                 <Download className="w-3.5 h-3.5" />
               </button>
@@ -1640,15 +1633,15 @@ export default function SlideDeckPresenterModal({
               {/* Switch Whiteboard / Slide Deck */}
               <button
                 onClick={() => setIsWhiteboardOpen((v) => !v)}
-                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all cursor-pointer ${
                   isWhiteboardOpen
-                    ? "bg-emerald-600/90 text-white border-emerald-400"
-                    : "bg-slate-800 hover:bg-slate-700 text-emerald-400 border-emerald-500/30"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-emerald-700 border-slate-200"
                 }`}
-                title="Toggle Whiteboard Canvas Mode"
+                title="Toggle Whiteboard Canvas"
               >
                 <SquarePen className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{isWhiteboardOpen ? "Slide View" : "Whiteboard"}</span>
+                <span className="hidden md:inline">{isWhiteboardOpen ? "Slides" : "Whiteboard"}</span>
               </button>
 
               <button
@@ -1656,8 +1649,8 @@ export default function SlideDeckPresenterModal({
                   setIsAnnotating(false);
                   setIsWhiteboardOpen(false);
                 }}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-                title="Close Drawing Tools"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 border border-slate-200 transition-colors cursor-pointer"
+                title="Close Tools"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -1667,33 +1660,33 @@ export default function SlideDeckPresenterModal({
 
         {/* ── FULLSCREEN FLOATING BOTTOM HUD PILL ── */}
         {isFullscreen && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100000] flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 shadow-2xl opacity-60 hover:opacity-100 transition-opacity">
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100000] flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-300 shadow-xl opacity-80 hover:opacity-100 transition-opacity text-slate-800">
             <button
               onClick={handlePrev}
               disabled={currentSlide === 1}
-              className="p-1 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              className="p-1 rounded-full text-slate-600 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
               title="Previous Slide"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-mono font-bold text-slate-300 px-2">
+            <span className="text-xs font-mono font-bold text-slate-800 px-2">
               {currentSlide} / {totalSlides}
             </span>
             <button
               onClick={handleNext}
               disabled={currentSlide === totalSlides}
-              className="p-1 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+              className="p-1 rounded-full text-slate-600 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
               title="Next Slide"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
             <button
               onClick={() => setIsAnnotating((v) => !v)}
               className={`p-1.5 rounded-full cursor-pointer transition-colors ${
-                isAnnotating ? "bg-amber-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                isAnnotating ? "bg-amber-600 text-white" : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
               }`}
-              title="Draw / Annotate (A)"
+              title="Annotate (A)"
             >
               <PenTool className="w-3.5 h-3.5" />
             </button>
@@ -1703,7 +1696,7 @@ export default function SlideDeckPresenterModal({
                 if (!isWhiteboardOpen) setIsAnnotating(true);
               }}
               className={`p-1.5 rounded-full cursor-pointer transition-colors ${
-                isWhiteboardOpen ? "bg-emerald-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                isWhiteboardOpen ? "bg-emerald-600 text-white" : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
               }`}
               title="Whiteboard (W)"
             >
@@ -1712,7 +1705,7 @@ export default function SlideDeckPresenterModal({
             <button
               onClick={() => setIsAiCoPilotOpen((v) => !v)}
               className={`p-1.5 rounded-full cursor-pointer transition-colors ${
-                isAiCoPilotOpen ? "bg-purple-600 text-white" : "text-purple-300 hover:text-white hover:bg-purple-900/50"
+                isAiCoPilotOpen ? "bg-indigo-600 text-white" : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
               }`}
               title="AI Co-Pilot (Q)"
             >
@@ -1721,16 +1714,16 @@ export default function SlideDeckPresenterModal({
             <button
               onClick={() => setIsLaserActive((v) => !v)}
               className={`p-1.5 rounded-full cursor-pointer transition-colors ${
-                isLaserActive ? "bg-rose-600 text-white" : "text-slate-300 hover:text-white hover:bg-slate-800"
+                isLaserActive ? "bg-rose-600 text-white" : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
               }`}
               title="Laser (L)"
             >
               <Radio className="w-3.5 h-3.5" />
             </button>
-            <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
             <button
               onClick={exitFullscreen}
-              className="p-1.5 rounded-full text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className="p-1.5 rounded-full text-slate-600 hover:text-slate-950 hover:bg-slate-100 cursor-pointer"
               title="Exit Fullscreen (Esc)"
             >
               <Minimize2 className="w-3.5 h-3.5" />
@@ -1740,21 +1733,16 @@ export default function SlideDeckPresenterModal({
 
         {/* ── AI LECTURE CO-PILOT DRAWER / MODAL ── */}
         {isAiCoPilotOpen && (
-          <div className="fixed inset-y-0 right-0 z-[100000] w-full max-w-lg bg-slate-900/98 backdrop-blur-2xl border-l border-slate-700 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+          <div className="fixed inset-y-0 right-0 z-[100000] w-full max-w-lg bg-white border-l border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 text-slate-900">
             {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shadow-lg shadow-purple-500/10">
-                  <BrainCircuit className="w-5 h-5 text-purple-400 animate-pulse" />
+                <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
+                  <BrainCircuit className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">AI Lecture Co-Pilot</h3>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-mono font-bold">
-                      Slide Mind-Check
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 truncate max-w-[280px]">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">AI Lecture Co-Pilot</h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[280px]">
                     Slide {currentSlide}: {activeSlideData.title}
                   </p>
                 </div>
@@ -1762,44 +1750,44 @@ export default function SlideDeckPresenterModal({
 
               <button
                 onClick={() => setIsAiCoPilotOpen(false)}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center border border-slate-200 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Tab Navigation: Mind-Check Poll vs Pedagogical Insights */}
-            <div className="px-5 pt-3 border-b border-slate-800 flex items-center gap-3 bg-slate-900">
+            {/* Tab Navigation */}
+            <div className="px-5 pt-3 border-b border-slate-200 flex items-center gap-3 bg-white">
               <button
                 onClick={() => setAiActiveTab("quiz")}
-                className={`pb-2.5 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                className={`pb-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
                   aiActiveTab === "quiz"
-                    ? "border-purple-500 text-purple-300"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
-                <BarChart2 className="w-3.5 h-3.5" />
-                <span>Live Mind-Check Poll ({aiQuestions.length} Qs)</span>
+                <BarChart2 className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Mind-Check Quiz</span>
               </button>
 
               <button
                 onClick={() => setAiActiveTab("summary")}
-                className={`pb-2.5 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                className={`pb-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
                   aiActiveTab === "summary"
-                    ? "border-purple-500 text-purple-300"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
-                <Lightbulb className="w-3.5 h-3.5" />
-                <span>AI Pedagogical Insights</span>
+                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                <span>Pedagogical Guide</span>
               </button>
             </div>
 
             {/* Drawer Body Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50">
               {aiActiveTab === "quiz" ? (
                 <>
-                  {/* Question Selector Tabs (Q1, Q2, Q3) */}
+                  {/* Question Selector Tabs */}
                   <div className="flex items-center gap-2">
                     {aiQuestions.map((q, idx) => (
                       <button
@@ -1808,10 +1796,10 @@ export default function SlideDeckPresenterModal({
                           setAiSelectedQuestionIdx(idx);
                           setAiPollActive(false);
                         }}
-                        className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition-colors border cursor-pointer ${
                           aiSelectedQuestionIdx === idx
-                            ? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-500/20"
-                            : "bg-slate-800/80 text-slate-300 hover:bg-slate-800 border-slate-700"
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                            : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200"
                         }`}
                       >
                         Question {idx + 1}
@@ -1821,24 +1809,22 @@ export default function SlideDeckPresenterModal({
 
                   {/* Active Question Card */}
                   {aiQuestions[aiSelectedQuestionIdx] && (
-                    <div className="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4.5 space-y-4 shadow-xl">
-                      {/* Question Metadata Header */}
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold font-mono text-[10px]">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3.5 shadow-xs">
+                      {/* Clean Question Header */}
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span className="font-semibold text-indigo-600">
                           {aiQuestions[aiSelectedQuestionIdx].targetBloom}
                         </span>
-                        <span className="text-slate-400 text-[11px] font-mono">
-                          Real-time Mind-Check
-                        </span>
+                        <span>Evaluation</span>
                       </div>
 
                       {/* Question Prompt */}
-                      <h4 className="text-sm sm:text-base font-bold text-white leading-relaxed">
+                      <h4 className="text-sm font-bold text-slate-900 leading-relaxed">
                         {aiQuestions[aiSelectedQuestionIdx].question}
                       </h4>
 
                       {/* Options with Poll Results Percentage */}
-                      <div className="space-y-2.5">
+                      <div className="space-y-2">
                         {aiQuestions[aiSelectedQuestionIdx].options.map((opt) => {
                           const isCorrect = opt.key === aiQuestions[aiSelectedQuestionIdx].correctKey;
                           const votes = aiPollVotes[opt.key as keyof typeof aiPollVotes] || 0;
@@ -1847,21 +1833,21 @@ export default function SlideDeckPresenterModal({
                           return (
                             <div
                               key={opt.key}
-                              className={`relative overflow-hidden rounded-xl border p-3 transition-all ${
+                              className={`relative overflow-hidden rounded-lg border p-3 transition-colors ${
                                 aiPollActive || aiPollVotes.total > 0
                                   ? isCorrect
-                                    ? "bg-emerald-950/40 border-emerald-500/50 text-white"
-                                    : "bg-slate-900/60 border-slate-700 text-slate-300"
+                                    ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-medium"
+                                    : "bg-white border-slate-200 text-slate-700"
                                   : isCorrect
-                                  ? "bg-indigo-950/30 border-indigo-500/40 text-slate-100"
-                                  : "bg-slate-900/40 border-slate-800 text-slate-300"
+                                  ? "bg-indigo-50/40 border-indigo-200 text-slate-900"
+                                  : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                               }`}
                             >
                               {/* Animated Progress Fill */}
                               {(aiPollActive || aiPollVotes.total > 0) && (
                                 <div
                                   className={`absolute inset-y-0 left-0 transition-all duration-500 ease-out ${
-                                    isCorrect ? "bg-emerald-500/25" : "bg-slate-700/30"
+                                    isCorrect ? "bg-emerald-100" : "bg-slate-100"
                                   }`}
                                   style={{ width: `${pct}%` }}
                                 />
@@ -1870,23 +1856,23 @@ export default function SlideDeckPresenterModal({
                               <div className="relative z-10 flex items-start justify-between gap-3">
                                 <div className="flex items-start gap-2.5 min-w-0">
                                   <span
-                                    className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 font-mono ${
+                                    className={`w-5 h-5 rounded flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
                                       isCorrect
-                                        ? "bg-emerald-500 text-white"
-                                        : "bg-slate-800 text-slate-300 border border-slate-700"
+                                        ? "bg-emerald-600 text-white"
+                                        : "bg-slate-100 text-slate-700 border border-slate-200"
                                     }`}
                                   >
                                     {opt.key}
                                   </span>
-                                  <span className="text-xs sm:text-sm font-medium leading-snug">
+                                  <span className="text-xs font-normal leading-snug">
                                     {opt.text}
                                   </span>
                                 </div>
 
                                 {(aiPollActive || aiPollVotes.total > 0) && (
                                   <div className="text-right shrink-0">
-                                    <span className="text-xs font-mono font-bold text-white">{pct}%</span>
-                                    <span className="text-[10px] text-slate-400 block font-mono">({votes})</span>
+                                    <span className="text-xs font-mono font-semibold text-slate-900">{pct}%</span>
+                                    <span className="text-[10px] text-slate-500 block font-mono">({votes})</span>
                                   </div>
                                 )}
                               </div>
@@ -1896,24 +1882,24 @@ export default function SlideDeckPresenterModal({
                       </div>
 
                       {/* Pedagogical Explanation & Misconception */}
-                      <div className="space-y-2 pt-2 border-t border-slate-700/60 text-xs">
-                        <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 text-purple-200">
-                          <div className="flex items-center gap-1.5 font-bold mb-1 text-purple-300">
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Correct Pedagogical Reasoning:</span>
+                      <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+                        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">
+                          <div className="flex items-center gap-1.5 font-semibold mb-1 text-emerald-800">
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Correct Reasoning:</span>
                           </div>
-                          <p className="leading-relaxed text-slate-300">
+                          <p className="leading-relaxed">
                             {aiQuestions[aiSelectedQuestionIdx].explanation}
                           </p>
                         </div>
 
                         {aiQuestions[aiSelectedQuestionIdx].misconception && (
-                          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200">
-                            <div className="flex items-center gap-1.5 font-bold mb-1 text-amber-300">
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Student Misconception Alert:</span>
+                          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900">
+                            <div className="flex items-center gap-1.5 font-semibold mb-1 text-amber-800">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Common Student Misconception:</span>
                             </div>
-                            <p className="leading-relaxed text-slate-300">
+                            <p className="leading-relaxed text-amber-950">
                               {aiQuestions[aiSelectedQuestionIdx].misconception}
                             </p>
                           </div>
@@ -1922,62 +1908,56 @@ export default function SlideDeckPresenterModal({
                     </div>
                   )}
 
-                  {/* Interactive 30-Second Student Pulse Live Simulator */}
-                  <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
+                  {/* 30-Second Student Pulse Live Simulator */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Radio className={`w-4 h-4 ${aiPollActive ? "text-emerald-400 animate-ping" : "text-slate-400"}`} />
-                        <h5 className="text-xs font-bold text-white uppercase tracking-wider">
-                          30s Live Classroom Pulse Check
-                        </h5>
-                      </div>
+                      <h5 className="text-xs font-bold text-slate-900">
+                        30-Second Classroom Pulse Check
+                      </h5>
 
                       {aiPollActive && (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono text-xs font-bold">
-                          <Clock className="w-3 h-3" />
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 font-mono text-xs font-semibold text-slate-700">
+                          <Clock className="w-3 h-3 text-slate-500" />
                           <span>00:{aiPollTimeLeft.toString().padStart(2, "0")}</span>
                         </div>
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Broadcast this question instantly to all connected student screens. Watch responses aggregate in real time to verify concept mastery before advancing slides.
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Evaluate student comprehension in real time before advancing to the next concept.
                     </p>
 
                     <div className="flex items-center gap-3 pt-1">
                       {!aiPollActive ? (
                         <button
                           onClick={() => setAiPollActive(true)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+                          className="flex-1 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
                         >
                           <Play className="w-3.5 h-3.5" />
-                          <span>{aiPollVotes.total > 0 ? "Re-Launch Live Poll (30s)" : "Launch Live Pulse Poll"}</span>
+                          <span>{aiPollVotes.total > 0 ? "Restart Pulse Poll (30s)" : "Launch Pulse Poll (30s)"}</span>
                         </button>
                       ) : (
-                        <div className="flex-1 py-2 px-3 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-400 font-mono text-xs font-bold flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            Students Submitting...
-                          </span>
-                          <span>{aiPollVotes.total} / 42 Answered</span>
+                        <div className="flex-1 py-2 px-3 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 font-mono text-xs font-medium flex items-center justify-between">
+                          <span>Collecting Responses...</span>
+                          <span className="text-indigo-600 font-bold">{aiPollVotes.total} / 42 Recorded</span>
                         </div>
                       )}
 
                       {/* Publish to Classroom Assessments Button */}
                       <button
                         onClick={handlePublishQuizToClassroom}
-                        className="py-2 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors border border-slate-600 cursor-pointer"
+                        className="py-2 px-3 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs flex items-center gap-1.5 transition-colors border border-slate-300 cursor-pointer shadow-xs"
                         title="Publish as Official Assessment in PostgreSQL Database"
                       >
                         {isQuizPublished ? (
                           <>
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-emerald-300">Saved to DB!</span>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700 font-semibold">Saved!</span>
                           </>
                         ) : (
                           <>
-                            <Send className="w-3.5 h-3.5 text-indigo-400" />
-                            <span>Publish Test</span>
+                            <Send className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Save to Tests</span>
                           </>
                         )}
                       </button>
@@ -1986,34 +1966,34 @@ export default function SlideDeckPresenterModal({
                 </>
               ) : (
                 /* Pedagogical Insights Tab */
-                <div className="space-y-4 text-xs">
-                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
-                    <h4 className="font-bold text-sm text-purple-300 flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-purple-400" />
-                      <span>Core Pedagogical Objective</span>
+                <div className="space-y-3.5 text-xs">
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 shadow-xs">
+                    <h4 className="font-bold text-sm text-indigo-700 flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-indigo-600" />
+                      <span>Key Learning Objective</span>
                     </h4>
-                    <p className="text-slate-300 leading-relaxed">
-                      Ensure students grasp the difference between surface UI behavior and architectural data consistency guarantees depicted in <strong className="text-white">&quot;{activeSlideData.title}&quot;</strong>.
+                    <p className="text-slate-600 leading-relaxed">
+                      Reinforce student understanding of data integrity guarantees and core principles demonstrated in <strong className="text-slate-900">&quot;{activeSlideData.title}&quot;</strong>.
                     </p>
                   </div>
 
-                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
-                    <h4 className="font-bold text-sm text-amber-300 flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-amber-400" />
-                      <span>Instructor Discussion Prompt</span>
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 shadow-xs">
+                    <h4 className="font-bold text-sm text-amber-700 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-amber-600" />
+                      <span>Class Discussion Prompt</span>
                     </h4>
-                    <p className="text-slate-300 leading-relaxed italic bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                      &quot;Ask students: If 500 users attempt to reserve the same presidential suite within 2 seconds of a flash promotion, which component in our architecture fails first if we omit pessimistic locking?&quot;
+                    <p className="text-slate-700 leading-relaxed italic bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      &quot;Ask students: If multiple concurrent transactions attempt to update the same record within 1 second, how does our database isolation level prevent lost updates?&quot;
                     </p>
                   </div>
 
-                  <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
-                    <h4 className="font-bold text-sm text-indigo-300 flex items-center gap-2">
-                      <Database className="w-4 h-4 text-indigo-400" />
-                      <span>Database Connection Point</span>
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 shadow-xs">
+                    <h4 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-slate-500" />
+                      <span>Database Connection</span>
                     </h4>
-                    <p className="text-slate-300 leading-relaxed">
-                      Link this concept back to PostgreSQL transactional DDL and isolation levels (<code className="text-indigo-300 font-mono">REPEATABLE READ</code> vs <code className="text-indigo-300 font-mono">SERIALIZABLE</code>) practiced in Lab Assessment 2.
+                    <p className="text-slate-600 leading-relaxed">
+                      Connect this concept to the relational schemas and transactional constraints practiced in practical lab sessions.
                     </p>
                   </div>
                 </div>
@@ -2032,7 +2012,7 @@ export default function SlideDeckPresenterModal({
 
         {/* ── THUMBNAILS DRAWER ────────────────────────────────────────── */}
         {!isPdf && showThumbnails && (
-          <div className="absolute inset-x-8 bottom-6 max-h-48 bg-slate-900/95 border border-slate-700 rounded-2xl p-4 shadow-2xl backdrop-blur-md z-30 overflow-x-auto flex items-center gap-3 animate-in slide-in-from-bottom-2 duration-150">
+          <div className="absolute inset-x-8 bottom-6 max-h-48 bg-white/95 border border-slate-200 rounded-2xl p-4 shadow-2xl backdrop-blur-md z-30 overflow-x-auto flex items-center gap-3 animate-in slide-in-from-bottom-2 duration-150">
             {slides.map((s, idx) => {
               const slideNo = idx + 1;
               const isSelected = currentSlide === slideNo;
@@ -2045,8 +2025,8 @@ export default function SlideDeckPresenterModal({
                   }}
                   className={`w-36 h-24 rounded-xl overflow-hidden text-left flex flex-col justify-between shrink-0 transition-all border relative group ${
                     isSelected
-                      ? "bg-indigo-950 border-indigo-400 ring-2 ring-indigo-500/40 scale-105"
-                      : "bg-slate-800 border-slate-700 hover:border-slate-500"
+                      ? "bg-indigo-50 border-indigo-500 ring-2 ring-indigo-500/30 scale-105"
+                      : "bg-slate-50 border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   {s.imageUrl ? (
@@ -2060,9 +2040,9 @@ export default function SlideDeckPresenterModal({
                     </div>
                   ) : (
                     <div className="p-2.5 flex flex-col justify-between h-full">
-                      <span className="text-[10px] font-mono font-bold text-slate-400">Slide {slideNo}</span>
-                      <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight">{s.title}</p>
-                      <span className="text-[9px] uppercase font-bold text-indigo-400 font-mono">{s.type}</span>
+                      <span className="text-[10px] font-mono font-bold text-slate-500">Slide {slideNo}</span>
+                      <p className="text-[11px] font-bold text-slate-800 line-clamp-2 leading-tight">{s.title}</p>
+                      <span className="text-[9px] uppercase font-bold text-indigo-600 font-mono">{s.type}</span>
                     </div>
                   )}
                 </button>
@@ -2074,32 +2054,32 @@ export default function SlideDeckPresenterModal({
 
       {/* ── BOTTOM PROGRESS BAR & KEYBOARD SHORTCUTS ─────────────────────── */}
       {!isFullscreen && !isPdf && (
-        <div className="h-9 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 shrink-0 font-mono">
+        <div className="h-9 bg-white border-t border-slate-200 px-4 flex items-center justify-between text-[11px] text-slate-500 shrink-0 font-mono">
           <div className="flex items-center gap-3">
             <span>
-              Navigation: <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Space</kbd> /{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">→</kbd> Next
+              Navigation: <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">Space</kbd> /{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">→</kbd> Next
             </span>
             <span>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">←</kbd> Prev
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">←</kbd> Prev
             </span>
             <span className="hidden sm:inline">
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">L</kbd> Laser
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">L</kbd> Laser
             </span>
             <span className="hidden sm:inline">
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">F</kbd> Fullscreen
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">F</kbd> Fullscreen
             </span>
           </div>
 
           {/* Dynamic Progress Bar */}
           <div className="flex items-center gap-2">
-            <div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+            <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
               <div
-                className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                className="h-full bg-indigo-600 rounded-full transition-all duration-300"
                 style={{ width: `${(currentSlide / totalSlides) * 100}%` }}
               />
             </div>
-            <span>{Math.round((currentSlide / totalSlides) * 100)}%</span>
+            <span className="font-semibold text-slate-700">{Math.round((currentSlide / totalSlides) * 100)}%</span>
           </div>
         </div>
       )}
