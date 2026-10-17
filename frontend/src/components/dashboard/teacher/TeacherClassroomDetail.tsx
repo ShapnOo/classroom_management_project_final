@@ -20,6 +20,7 @@ import type { SyllabusTopic, Assignment, Test, Announcement, AttendanceRecord } 
 import ModalDialog from "@/components/ui/ModalDialog";
 import { ClassroomDetailSkeleton } from "@/components/ui/Skeleton";
 import SlideDeckPresenterModal, { getSavedSlideState } from "./SlideDeckPresenterModal";
+import { parsePptx } from "@/lib/pptxParser";
 
 interface TeacherClassroomDetailProps {
   classroomId: string;
@@ -371,6 +372,23 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   });
   const [isUploadingMaterialFile, setIsUploadingMaterialFile] = useState(false);
   const [attachedMaterialFile, setAttachedMaterialFile] = useState<File | null>(null);
+  const [attachedParsedSlides, setAttachedParsedSlides] = useState<any[] | null>(null);
+
+  const backendBase =
+    typeof window !== "undefined"
+      ? (process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5001")
+      : "http://localhost:5001";
+
+  const resolveFileUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+      return url;
+    }
+    if (url.startsWith("/uploads/")) {
+      return `${backendBase}${url}`;
+    }
+    return `${backendBase}/uploads/${url}`;
+  };
 
   // Populate default attendance to "present"
   useEffect(() => {
@@ -591,7 +609,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     setAttendanceMap(next);
   };
 
-  const availableMaterials = [
+  const availableMaterials: any[] = [
     { id: "mat_pres1", title: "Presentation1.pptx", fileName: "Presentation1.pptx", type: "Slides", totalSlides: 20 },
     { id: "mat_incep2", title: "Inception_v2 copy.pptx", fileName: "Inception_v2 copy.pptx", type: "Slides", totalSlides: 24 },
     { id: "mat_uml", title: "UML Diagram - Library System.pdf", fileName: "UML Diagram - Library System.pdf", type: "PDF", totalSlides: 12 },
@@ -599,8 +617,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       id: m.id,
       title: m.title,
       fileName: m.fileName || m.title,
-      type: m.type || "Slides",
+      type: m.type || m.fileType || "Slides",
       totalSlides: m.totalSlides || 15,
+      fileUrl: m.fileUrl,
+      fileData: m.fileData,
+      parsedSlides: m.parsedSlides,
     })),
   ];
 
@@ -619,15 +640,20 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       (matched.fileName && matched.fileName.toLowerCase().endsWith(".pdf")) ||
       Boolean(targetTopic?.topic && targetTopic.topic.toLowerCase().includes("uml"));
 
+    const resolvedFileUrl = matched.fileUrl || matched.fileData;
+
     setPresenterMaterial({
       id: matched.id || targetTopic?.id || "deck_1",
       title: targetTopic?.materialTitle || matched.title || targetTopic?.topic || "Lecture Presentation",
       fileName: targetFileName,
       fileType: isMatchedPdf ? "PDF" : (matched.type || "Slides"),
+      fileUrl: resolvedFileUrl,
+      fileData: matched.fileData,
+      parsedSlides: matched.parsedSlides,
       pdfUrl: isMatchedPdf
-        ? (targetFileName.toLowerCase().includes("uml") || (targetTopic?.topic && targetTopic.topic.toLowerCase().includes("uml"))
+        ? (resolvedFileUrl ? resolveFileUrl(resolvedFileUrl) : (targetFileName.toLowerCase().includes("uml") || (targetTopic?.topic && targetTopic.topic.toLowerCase().includes("uml"))
             ? "/UML Diagram - Library System.pdf"
-            : `/${targetFileName}`)
+            : `${backendBase}/uploads/${targetFileName}`))
         : undefined,
       lastSlide: currentSlide,
     });
@@ -659,6 +685,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     currentTopicLower.includes(".pdf");
   const isInception = !isPdfTopic && (currentFileNameLower.includes("inception") || currentTopicLower.includes("inception") || currentTopicLower.includes("wenp"));
   const isPresentation1 = !isInception && !isPdfTopic && (currentFileNameLower.includes("presentation1") || (!currentTopic?.materialFileName && true));
+  const currentMatchedMaterial = availableMaterials.find(
+    (m) => (m.fileName && m.fileName.toLowerCase() === currentFileNameLower) ||
+           (currentTopic?.materialId && m.id === currentTopic.materialId)
+  );
 
   // Submit Quick Attendance
   const handleSaveAttendance = (e: React.FormEvent) => {
@@ -731,17 +761,18 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
     let detectedSlides = 20;
+    let parsedSlidesFromPptx: any[] | undefined = undefined;
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-
       if (isPdf) {
         try {
+          const arrayBuffer = await file.arrayBuffer();
           const pdfjs = await import("pdfjs-dist");
           pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
           const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
           detectedSlides = doc.numPages;
         } catch {
+          const arrayBuffer = await file.arrayBuffer();
           const bytes = new Uint8Array(arrayBuffer);
           let binaryStr = "";
           const len = Math.min(bytes.byteLength, 500000);
@@ -752,19 +783,27 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           if (matches && matches.length > 0) detectedSlides = matches.length;
         }
       } else {
-        // PPTX Slide Count detection from zip manifest
-        const bytes = new Uint8Array(arrayBuffer);
-        let binaryStr = "";
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i += 8192) {
-          binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
-        }
-        const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
-        if (slideMatches && slideMatches.length > 0) {
-          detectedSlides = new Set(slideMatches).size;
-        } else {
-          const countTag = binaryStr.match(/<Slides>([0-9]+)<\/Slides>/);
-          if (countTag) detectedSlides = parseInt(countTag[1], 10);
+        // Universal PPTX Parser: extracts slides, titles, bullets and visual assets
+        try {
+          const parseResult = await parsePptx(file);
+          if (parseResult && parseResult.slides.length > 0) {
+            detectedSlides = parseResult.totalSlides;
+            parsedSlidesFromPptx = parseResult.slides;
+          }
+        } catch (pptxErr) {
+          console.warn("Could not parse PPTX with pptxParser:", pptxErr);
+          // Fallback to manifest slide counting
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = "";
+          const len = bytes.byteLength;
+          for (let i = 0; i < len; i += 8192) {
+            binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+          }
+          const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
+          if (slideMatches && slideMatches.length > 0) {
+            detectedSlides = new Set(slideMatches).size;
+          }
         }
       }
     } catch (err) {
@@ -802,6 +841,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       totalSlides: detectedSlides,
       lastSlide: 1,
       category: "Slides",
+      parsedSlides: parsedSlidesFromPptx,
     };
 
     addMaterial(newMaterialObj);
@@ -1082,15 +1122,15 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     let detectedSlides = isPptx ? 20 : isPdf ? 12 : 1;
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-
       if (isPdf) {
         try {
+          const arrayBuffer = await file.arrayBuffer();
           const pdfjs = await import("pdfjs-dist");
           pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
           const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
           detectedSlides = doc.numPages;
         } catch {
+          const arrayBuffer = await file.arrayBuffer();
           const bytes = new Uint8Array(arrayBuffer);
           let binaryStr = "";
           const len = Math.min(bytes.byteLength, 500000);
@@ -1101,18 +1141,25 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           if (matches && matches.length > 0) detectedSlides = matches.length;
         }
       } else if (isPptx) {
-        const bytes = new Uint8Array(arrayBuffer);
-        let binaryStr = "";
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i += 8192) {
-          binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
-        }
-        const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
-        if (slideMatches && slideMatches.length > 0) {
-          detectedSlides = new Set(slideMatches).size;
-        } else {
-          const countTag = binaryStr.match(/<Slides>([0-9]+)<\/Slides>/);
-          if (countTag) detectedSlides = parseInt(countTag[1], 10);
+        try {
+          const parseResult = await parsePptx(file);
+          if (parseResult && parseResult.slides.length > 0) {
+            detectedSlides = parseResult.totalSlides;
+            setAttachedParsedSlides(parseResult.slides);
+          }
+        } catch (pptxErr) {
+          console.warn("Could not parse PPTX:", pptxErr);
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = "";
+          const len = bytes.byteLength;
+          for (let i = 0; i < len; i += 8192) {
+            binaryStr += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + 8192, len))));
+          }
+          const slideMatches = binaryStr.match(/ppt\/slides\/slide[0-9]+\.xml/g);
+          if (slideMatches && slideMatches.length > 0) {
+            detectedSlides = new Set(slideMatches).size;
+          }
         }
       }
     } catch (err) {
@@ -1176,6 +1223,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           lastSlide: 1,
           date: "Just now",
           downloads: 0,
+          parsedSlides: attachedParsedSlides || undefined,
         };
 
         addMaterial(newMatObj);
@@ -1650,10 +1698,41 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 />
               ) : isPdfTopic ? (
                 <iframe
-                  src={`/UML Diagram - Library System.pdf#page=${activeSlideNum}&view=FitH`}
+                  src={`${resolveFileUrl(currentMatchedMaterial?.fileUrl || currentMatchedMaterial?.fileData) || "/UML Diagram - Library System.pdf"}#page=${activeSlideNum}&view=FitH`}
                   title="PDF Slide Document"
                   className="w-full h-full border-0 bg-slate-900"
                 />
+              ) : currentMatchedMaterial?.parsedSlides && currentMatchedMaterial.parsedSlides[activeSlideNum - 1] ? (
+                currentMatchedMaterial.parsedSlides[activeSlideNum - 1].imageUrl ? (
+                  <img
+                    src={currentMatchedMaterial.parsedSlides[activeSlideNum - 1].imageUrl}
+                    alt={currentMatchedMaterial.parsedSlides[activeSlideNum - 1].title || `Slide ${activeSlideNum}`}
+                    className="w-full h-full object-contain pointer-events-none"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col justify-between p-6 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-left">
+                    <div className="border-b border-slate-800 pb-2">
+                      <span className="text-[10px] font-bold text-indigo-400 uppercase font-mono">Slide {activeSlideNum} of {totalSlidesCount}</span>
+                      <h4 className="text-base font-bold text-white mt-1 line-clamp-2">
+                        {currentMatchedMaterial.parsedSlides[activeSlideNum - 1].title}
+                      </h4>
+                    </div>
+                    {currentMatchedMaterial.parsedSlides[activeSlideNum - 1].bullets && (
+                      <ul className="space-y-1.5 my-auto text-xs text-slate-300">
+                        {currentMatchedMaterial.parsedSlides[activeSlideNum - 1].bullets.slice(0, 4).map((b: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-indigo-400 font-bold">•</span>
+                            <span className="line-clamp-1">{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="pt-2 text-[10px] font-mono text-slate-500 flex justify-between">
+                      <span>{currentTopic?.topic}</span>
+                      <span>Scholaris Live Class</span>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-center">
                   <Presentation className="w-16 h-16 text-indigo-400/40 mb-3" />
@@ -2073,13 +2152,17 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                         mat.type === "PDF" ||
                         Boolean(mat.fileName && mat.fileName.toLowerCase().endsWith(".pdf")) ||
                         mat.title.toLowerCase().endsWith(".pdf");
+                      const resolvedUrl = mat.fileUrl || mat.fileData;
                       setPresenterMaterial({
                         id: mat.id,
                         title: mat.title,
                         fileName: mat.fileName,
                         fileType: isMatPdf ? "PDF" : mat.type,
+                        fileUrl: resolvedUrl,
+                        fileData: mat.fileData,
+                        parsedSlides: mat.parsedSlides,
                         pdfUrl: isMatPdf
-                          ? (mat.fileName?.toLowerCase().includes("uml") ? "/UML Diagram - Library System.pdf" : `/${mat.fileName}`)
+                          ? (resolvedUrl ? resolveFileUrl(resolvedUrl) : (mat.fileName?.toLowerCase().includes("uml") ? "/UML Diagram - Library System.pdf" : `${backendBase}/uploads/${mat.fileName}`))
                           : undefined,
                       });
                       setIsPresenterOpen(true);

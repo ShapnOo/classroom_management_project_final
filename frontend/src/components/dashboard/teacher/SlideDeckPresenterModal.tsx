@@ -26,10 +26,12 @@ import {
   Database,
   ZoomIn,
   ZoomOut,
-  RefreshCw
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import PdfCanvasViewer from "@/components/ui/PdfCanvasViewer";
+import { parsePptx } from "@/lib/pptxParser";
 
 export interface SlideMaterial {
   id: string;
@@ -40,6 +42,10 @@ export interface SlideMaterial {
   category?: string;
   date?: string;
   pdfUrl?: string;
+  fileUrl?: string;
+  fileData?: string;
+  parsedSlides?: SlideData[];
+  lastSlide?: number;
 }
 
 interface SlideDeckPresenterModalProps {
@@ -58,7 +64,7 @@ export interface SlideData {
   id: number;
   title: string;
   subtitle?: string;
-  type: "cover" | "agenda" | "concept" | "code" | "diagram" | "discussion" | "summary" | "image" | "html";
+  type: "cover" | "agenda" | "concept" | "code" | "diagram" | "discussion" | "summary" | "image" | "html" | "bullets";
   bullets?: string[];
   codeSnippet?: string;
   diagramType?: "er" | "uml" | "flow" | "architecture";
@@ -147,18 +153,99 @@ export default function SlideDeckPresenterModal({
     fileNameLower.endsWith(".pdf") ||
     titleLower.endsWith(".pdf") ||
     titleLower.includes("uml diagram") ||
-    (Boolean(material.pdfUrl) && !fileNameLower.endsWith(".pptx"));
+    (Boolean(material.pdfUrl) && !fileNameLower.endsWith(".pptx") && !fileNameLower.endsWith(".ppt"));
+
+  const backendBase =
+    typeof window !== "undefined"
+      ? (process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5001")
+      : "http://localhost:5001";
+
+  const rawPdfUrl = material.pdfUrl || material.fileUrl || material.fileData;
+  const resolveTargetUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+      return url;
+    }
+    if (url.startsWith("/uploads/")) {
+      return `${backendBase}${url}`;
+    }
+    return url;
+  };
 
   const pdfTargetUrl =
-    material.pdfUrl ||
+    resolveTargetUrl(rawPdfUrl) ||
     (fileNameLower.includes("uml") || titleLower.includes("uml")
       ? "/UML Diagram - Library System.pdf"
       : fileNameLower.endsWith(".pdf")
-      ? `/${material.fileName}`
+      ? `${backendBase}/uploads/${material.fileName}`
       : "/assignment_mockup.pdf");
+
+  const [dynamicSlides, setDynamicSlides] = useState<SlideData[] | null>(material.parsedSlides || null);
+  const [isParsingPptx, setIsParsingPptx] = useState<boolean>(false);
+
+  // Synchronize or parse PPTX on modal open
+  useEffect(() => {
+    if (!isOpen) {
+      setIsParsingPptx(false);
+      return;
+    }
+
+    if (material.parsedSlides && material.parsedSlides.length > 0) {
+      setDynamicSlides(material.parsedSlides);
+      return;
+    }
+
+    const isPres1 = fileNameLower.includes("presentation1") || titleLower.includes("presentation1");
+    const isInc = fileNameLower.includes("inception") || titleLower.includes("inception");
+    const isPpt = fileNameLower.endsWith(".pptx") || fileNameLower.endsWith(".ppt") || (material.fileType || "").toUpperCase() === "SLIDES";
+
+    if (!isPdf && !isPres1 && !isInc && isPpt) {
+      let targetUrl = material.fileUrl || material.fileData || "";
+      if (targetUrl && targetUrl.startsWith("/uploads/")) {
+        targetUrl = `${backendBase}${targetUrl}`;
+      } else if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://") && !targetUrl.startsWith("data:") && !targetUrl.startsWith("blob:")) {
+        targetUrl = `${backendBase}/uploads/${material.fileName || targetUrl}`;
+      }
+
+      if (targetUrl) {
+        let isCancelled = false;
+        setIsParsingPptx(true);
+        parsePptx(targetUrl)
+          .then((res) => {
+            if (!isCancelled && res.slides.length > 0) {
+              setDynamicSlides(
+                res.slides.map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  subtitle: s.subtitle,
+                  type: s.type,
+                  bullets: s.bullets,
+                  imageUrl: s.imageUrl,
+                  notes: s.notes,
+                }))
+              );
+            }
+          })
+          .catch((err) => {
+            console.warn("Could not parse PPTX dynamically from URL:", targetUrl, err);
+          })
+          .finally(() => {
+            if (!isCancelled) setIsParsingPptx(false);
+          });
+
+        return () => {
+          isCancelled = true;
+        };
+      }
+    }
+  }, [isOpen, material.id, material.fileUrl, material.fileData, material.fileName, material.parsedSlides, isPdf, fileNameLower, titleLower, backendBase]);
 
   // Generate authentic presentation slides tailored to the material
   const slides: SlideData[] = React.useMemo(() => {
+    if (dynamicSlides && dynamicSlides.length > 0) {
+      return dynamicSlides;
+    }
+
     // 1. Presentation1.pptx (Higher Education Digital Suite) - 20 authentic high-resolution slides
     const isPresentation1 =
       fileNameLower.includes("presentation1") ||
@@ -271,7 +358,7 @@ export default function SlideDeckPresenterModal({
         takeaway: "Next Lecture: B-Tree Indexing, Query Optimization & Execution Plans.",
       },
     ];
-  }, [material.title, material.fileName, titleLower, fileNameLower]);
+  }, [dynamicSlides, material.title, material.fileName, titleLower, fileNameLower]);
 
   const totalSlides = slides.length;
 
@@ -694,6 +781,15 @@ export default function SlideDeckPresenterModal({
               className="w-full h-full"
             />
           </div>
+        ) : isParsingPptx ? (
+          /* PPTX DYNAMIC PARSING LOADER */
+          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-300">
+            <Loader2 className="w-12 h-12 text-indigo-400 animate-spin mb-4" />
+            <h3 className="text-lg font-bold text-white tracking-tight">Extracting Presentation Slides...</h3>
+            <p className="text-xs text-slate-400 mt-1.5 max-w-sm leading-relaxed">
+              Parsing PowerPoint slides, layout hierarchy, and embedded visual assets for presentation mode.
+            </p>
+          </div>
         ) : (
           /* SLIDE PRESENTATION MODE */
           <div
@@ -707,7 +803,7 @@ export default function SlideDeckPresenterModal({
               transformOrigin: "center center",
             }}
           >
-            {/* 1. AUTHENTIC IMAGE SLIDE (Presentation1.pptx) */}
+            {/* 1. AUTHENTIC IMAGE SLIDE (Presentation1.pptx or full-bleed graphic slide) */}
             {activeSlideData.type === "image" && activeSlideData.imageUrl ? (
               <div
                 onClick={(e) => {
@@ -753,27 +849,27 @@ export default function SlideDeckPresenterModal({
                 )}
               </div>
             ) : (
-              /* 3. STRUCTURED FALLBACK PRESENTATION DECK */
-              <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-8 sm:p-14 flex flex-col justify-between overflow-hidden">
+              /* 3. STRUCTURED DYNAMIC & CONTENT PRESENTATION DECK */
+              <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-6 sm:p-10 flex flex-col justify-between overflow-hidden">
                 <div className="flex items-start justify-between pb-4 border-b border-slate-800/80">
                   <div>
                     <span className="text-[11px] font-bold tracking-widest text-indigo-400 uppercase font-mono">
                       {courseCode} • {courseTitle}
                     </span>
-                    <h1 className="text-xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white mt-1 tracking-tight">
                       {activeSlideData.title}
                     </h1>
                     {activeSlideData.subtitle && (
                       <p className="text-sm text-slate-400 mt-1 font-medium">{activeSlideData.subtitle}</p>
                     )}
                   </div>
-                  <div className="text-right shrink-0 font-mono text-[11px] text-slate-500">
+                  <div className="text-right shrink-0 font-mono text-[11px] text-slate-500 hidden sm:block">
                     <span>Scholaris Presentation</span>
                   </div>
                 </div>
 
-                <div className="flex-1 py-6 flex flex-col justify-center overflow-y-auto">
-                  {activeSlideData.type === "cover" && (
+                <div className="flex-1 py-4 flex flex-col justify-center overflow-y-auto">
+                  {activeSlideData.type === "cover" ? (
                     <div className="space-y-6 text-center sm:text-left py-4">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
                         <BookOpen className="w-3.5 h-3.5" /> Department of Computer Science & Engineering
@@ -787,44 +883,48 @@ export default function SlideDeckPresenterModal({
                           <strong className="text-slate-300">{batchName}</strong>
                         </p>
                       </div>
+                      {activeSlideData.imageUrl && (
+                        <div className="mt-4 max-h-52 overflow-hidden rounded-xl border border-slate-800 flex items-center justify-center bg-black/40">
+                          <img src={activeSlideData.imageUrl} alt="Slide Graphic" className="max-h-52 object-contain" />
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {(activeSlideData.type === "agenda" || activeSlideData.type === "concept") && activeSlideData.bullets && (
-                    <ul className="space-y-4 text-sm sm:text-base text-slate-200">
-                      {activeSlideData.bullets.map((bullet, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                            {idx + 1}
-                          </div>
-                          <span className="leading-relaxed">{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {activeSlideData.type === "code" && (
-                    <div className="space-y-3">
-                      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto shadow-inner leading-relaxed">
-                        <pre className="text-emerald-400">{activeSlideData.codeSnippet}</pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeSlideData.type === "summary" && (
-                    <div className="space-y-4">
-                      {activeSlideData.bullets && (
-                        <ul className="space-y-3">
-                          {activeSlideData.bullets.map((b, i) => (
-                            <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                              <span>{b}</span>
+                  ) : (
+                    /* Content Slide: Supports Bullets, Embedded Visuals & Split Screen */
+                    <div className={`grid gap-6 items-center ${activeSlideData.imageUrl && activeSlideData.bullets && activeSlideData.bullets.length > 0 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
+                      {activeSlideData.bullets && activeSlideData.bullets.length > 0 ? (
+                        <ul className="space-y-3 text-sm sm:text-base text-slate-200">
+                          {activeSlideData.bullets.map((bullet, idx) => (
+                            <li key={idx} className="flex items-start gap-3 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+                              <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                                {idx + 1}
+                              </div>
+                              <span className="leading-relaxed">{bullet}</span>
                             </li>
                           ))}
                         </ul>
+                      ) : activeSlideData.codeSnippet ? (
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto shadow-inner leading-relaxed">
+                          <pre className="text-emerald-400">{activeSlideData.codeSnippet}</pre>
+                        </div>
+                      ) : activeSlideData.imageUrl ? null : (
+                        <div className="text-slate-400 text-sm italic">
+                          {activeSlideData.notes || "Presentation content slide."}
+                        </div>
                       )}
-                      {activeSlideData.takeaway && (
-                        <div className="mt-4 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-xs font-semibold">
+
+                      {activeSlideData.imageUrl && (
+                        <div className="w-full h-full min-h-[220px] max-h-[360px] rounded-xl overflow-hidden border border-slate-800 bg-black/60 flex items-center justify-center p-2 shadow-inner">
+                          <img
+                            src={activeSlideData.imageUrl}
+                            alt={activeSlideData.title}
+                            className="w-full h-full object-contain max-h-[340px]"
+                          />
+                        </div>
+                      )}
+
+                      {activeSlideData.type === "summary" && activeSlideData.takeaway && (
+                        <div className="mt-2 p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-xs font-semibold">
                           💡 {activeSlideData.takeaway}
                         </div>
                       )}
@@ -832,7 +932,7 @@ export default function SlideDeckPresenterModal({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-500">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs font-mono text-slate-500">
                   <span>Slide {currentSlide} of {totalSlides}</span>
                   <span>{teacherName}</span>
                 </div>
