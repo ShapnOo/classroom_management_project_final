@@ -166,12 +166,6 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
           <p className="text-[10px] text-slate-500">{batch.name}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href={`/dashboard/teacher/sessions/start?classId=${cls.id}`}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-brand-dark px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
-          >
-            <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> Take Attendance
-          </Link>
           <button 
             onClick={() => {
               if (!view) return;

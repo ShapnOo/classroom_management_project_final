@@ -33,7 +33,7 @@ export default function TeacherCourses() {
   }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
 
   const colorsList = [

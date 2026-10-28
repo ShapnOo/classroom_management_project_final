@@ -7,7 +7,9 @@ import Link from "next/link";
 import {
   ArrowLeft, Users, Search, Download, CheckCircle2,
   AlertTriangle, TrendingUp, Star, Settings2, Sliders, Check,
-  Save, X, Info, FileText, CheckSquare
+  Save, X, Info, FileText, CheckSquare, Sparkles, Plus, Minus,
+  RotateCcw, AlertCircle, Percent, ShieldCheck, GraduationCap,
+  Award, FolderGit2, ListTodo, ClipboardCheck, Zap, RefreshCw
 } from "lucide-react";
 import ModalDialog from "@/components/ui/ModalDialog";
 
@@ -20,6 +22,8 @@ export type EvaluationPolicyComponent = {
   rule?: "best_n" | "avg_all" | "best_1";
 };
 
+export type PolicyComponentKey = "ct" | "assignment" | "project" | "attendance" | "midterm" | "finalExam";
+
 export type CourseEvaluationPolicy = {
   ct: EvaluationPolicyComponent;
   assignment: EvaluationPolicyComponent;
@@ -27,6 +31,8 @@ export type CourseEvaluationPolicy = {
   attendance: EvaluationPolicyComponent;
   midterm: EvaluationPolicyComponent;
   finalExam: EvaluationPolicyComponent;
+  minAttendanceThreshold?: number;
+  latePenaltyPerDay?: number;
 };
 
 const DEFAULT_POLICY: CourseEvaluationPolicy = {
@@ -36,6 +42,140 @@ const DEFAULT_POLICY: CourseEvaluationPolicy = {
   attendance: { enabled: true, weight: 10, label: "Attendance" },
   midterm: { enabled: true, weight: 20, label: "Mid-Term Exam" },
   finalExam: { enabled: true, weight: 30, label: "Final Exam" },
+  minAttendanceThreshold: 75,
+  latePenaltyPerDay: 5,
+};
+
+const PRESET_TEMPLATES = [
+  {
+    id: "standard_ugc",
+    name: "Standard UGC / University",
+    tag: "Recommended",
+    description: "Balanced traditional weightage with Best 3 of 5 CTs",
+    policy: {
+      ct: { enabled: true, weight: 15, label: "Class Tests (CT)", totalConducted: 5, bestCount: 3, rule: "best_n" as const },
+      assignment: { enabled: true, weight: 10, label: "Assignments", totalConducted: 3, bestCount: 2, rule: "best_n" as const },
+      project: { enabled: true, weight: 15, label: "Term Project", totalConducted: 1, bestCount: 1, rule: "avg_all" as const },
+      attendance: { enabled: true, weight: 10, label: "Attendance" },
+      midterm: { enabled: true, weight: 20, label: "Mid-Term Exam" },
+      finalExam: { enabled: true, weight: 30, label: "Final Exam" },
+      minAttendanceThreshold: 75,
+      latePenaltyPerDay: 5,
+    }
+  },
+  {
+    id: "continuous_heavy",
+    name: "Continuous Assessment Focused",
+    tag: "High Coursework",
+    description: "Emphasis on continuous coursework, quizzes & projects",
+    policy: {
+      ct: { enabled: true, weight: 25, label: "Class Tests (CT)", totalConducted: 4, bestCount: 3, rule: "best_n" as const },
+      assignment: { enabled: true, weight: 20, label: "Assignments", totalConducted: 4, bestCount: 3, rule: "best_n" as const },
+      project: { enabled: true, weight: 20, label: "Term Project", totalConducted: 1, bestCount: 1, rule: "avg_all" as const },
+      attendance: { enabled: true, weight: 10, label: "Attendance" },
+      midterm: { enabled: false, weight: 0, label: "Mid-Term Exam" },
+      finalExam: { enabled: true, weight: 25, label: "Final Exam" },
+      minAttendanceThreshold: 75,
+      latePenaltyPerDay: 5,
+    }
+  },
+  {
+    id: "exam_heavy",
+    name: "Exam & Theory Heavy",
+    tag: "Traditional",
+    description: "Higher weightage allocated to Midterm & Final exams",
+    policy: {
+      ct: { enabled: true, weight: 15, label: "Class Tests (CT)", totalConducted: 3, bestCount: 2, rule: "best_n" as const },
+      assignment: { enabled: true, weight: 5, label: "Assignments", totalConducted: 2, bestCount: 2, rule: "best_n" as const },
+      project: { enabled: false, weight: 0, label: "Term Project" },
+      attendance: { enabled: true, weight: 10, label: "Attendance" },
+      midterm: { enabled: true, weight: 30, label: "Mid-Term Exam" },
+      finalExam: { enabled: true, weight: 40, label: "Final Exam" },
+      minAttendanceThreshold: 80,
+      latePenaltyPerDay: 5,
+    }
+  },
+  {
+    id: "project_lab",
+    name: "Project & Practical Heavy",
+    tag: "Lab / SE",
+    description: "Ideal for software engineering, capstone & lab courses",
+    policy: {
+      ct: { enabled: true, weight: 10, label: "Class Tests (CT)", totalConducted: 3, bestCount: 2, rule: "best_n" as const },
+      assignment: { enabled: true, weight: 15, label: "Assignments", totalConducted: 3, bestCount: 2, rule: "best_n" as const },
+      project: { enabled: true, weight: 35, label: "Term Project", totalConducted: 1, bestCount: 1, rule: "avg_all" as const },
+      attendance: { enabled: true, weight: 10, label: "Attendance" },
+      midterm: { enabled: true, weight: 10, label: "Mid-Term Exam" },
+      finalExam: { enabled: true, weight: 20, label: "Final Exam" },
+      minAttendanceThreshold: 75,
+      latePenaltyPerDay: 5,
+    }
+  }
+];
+
+const COMPONENT_METADATA: Record<PolicyComponentKey, {
+  label: string;
+  description: string;
+  icon: any;
+  color: string;
+  bgLight: string;
+  borderColor: string;
+  barColor: string;
+}> = {
+  ct: {
+    label: "Class Tests (CT)",
+    description: "Periodic quizzes and continuous evaluation class tests",
+    icon: FileText,
+    color: "text-indigo-600",
+    bgLight: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+    barColor: "bg-indigo-600",
+  },
+  assignment: {
+    label: "Assignments & Homework",
+    description: "Take-home problem sets, reports and code submissions",
+    icon: ListTodo,
+    color: "text-sky-600",
+    bgLight: "bg-sky-50",
+    borderColor: "border-sky-200",
+    barColor: "bg-sky-500",
+  },
+  project: {
+    label: "Term Project",
+    description: "Capstone development project or semester research report",
+    icon: FolderGit2,
+    color: "text-amber-600",
+    bgLight: "bg-amber-50",
+    borderColor: "border-amber-200",
+    barColor: "bg-amber-500",
+  },
+  attendance: {
+    label: "Attendance & Participation",
+    description: "Classroom session presence and active engagement",
+    icon: ClipboardCheck,
+    color: "text-emerald-600",
+    bgLight: "bg-emerald-50",
+    borderColor: "border-emerald-200",
+    barColor: "bg-emerald-500",
+  },
+  midterm: {
+    label: "Mid-Term Exam",
+    description: "Mid-semester centralized written or practical examination",
+    icon: GraduationCap,
+    color: "text-blue-600",
+    bgLight: "bg-blue-50",
+    borderColor: "border-blue-200",
+    barColor: "bg-blue-600",
+  },
+  finalExam: {
+    label: "Final Semester Exam",
+    description: "Comprehensive end-of-semester examination score",
+    icon: Award,
+    color: "text-purple-600",
+    bgLight: "bg-purple-50",
+    borderColor: "border-purple-200",
+    barColor: "bg-purple-600",
+  },
 };
 
 function getLetterGrade(score: number): { grade: string; gpa: string; color: string } {
@@ -147,9 +287,34 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
   }, [selectedClassId]);
 
   // Calculate policy sum
-  const totalWeightSum = Object.values(policy)
-    .filter(c => c.enabled)
-    .reduce((sum, c) => sum + Number(c.weight || 0), 0);
+  const componentKeys: PolicyComponentKey[] = ["ct", "assignment", "project", "attendance", "midterm", "finalExam"];
+  const totalWeightSum = componentKeys
+    .filter(k => policy[k]?.enabled)
+    .reduce((sum, k) => sum + Number(policy[k]?.weight || 0), 0);
+
+  // Auto-balance remaining weight
+  const handleAutoBalance = () => {
+    const diff = 100 - totalWeightSum;
+    if (diff === 0) return;
+    setPolicy(prev => {
+      const targetKey: PolicyComponentKey = prev.finalExam?.enabled
+        ? "finalExam"
+        : prev.midterm?.enabled
+        ? "midterm"
+        : prev.ct?.enabled
+        ? "ct"
+        : "assignment";
+      const current = Number(prev[targetKey]?.weight || 0);
+      const nextWeight = Math.max(0, current + diff);
+      return {
+        ...prev,
+        [targetKey]: {
+          ...prev[targetKey],
+          weight: nextWeight,
+        }
+      };
+    });
+  };
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -455,8 +620,9 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
 
         {/* Enabled Component Weight Chips */}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {Object.entries(policy).map(([key, item]) => {
-            if (!item.enabled) return null;
+          {componentKeys.map((key) => {
+            const item = policy[key];
+            if (!item || !item.enabled) return null;
             const ruleText = item.rule === "best_n" ? `(Best ${item.bestCount} of ${item.totalConducted})` : item.rule === "best_1" ? "(Best 1)" : item.totalConducted ? `(Avg of ${item.totalConducted})` : "";
             return (
               <div key={key} className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5 font-medium text-slate-700">
@@ -648,160 +814,495 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
 
       {/* TAB 2: POLICY CONFIGURATION FORM */}
       {activeTab === "policy" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6 max-w-3xl">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Course Evaluation Policy Configurator</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Select components to include in this course and set their weightage percentages. Total must equal 100%.
-            </p>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 shadow-sm space-y-7 max-w-4xl">
+          {/* Header & Description */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-brand-dark/10 text-brand-dark">
+                  <Sliders className="w-5 h-5" />
+                </span>
+                <h3 className="text-lg font-bold text-slate-900">Course Evaluation Policy Configurator</h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Customize grade weightages, best-of-N criteria, and academic eligibility requirements for this course.
+              </p>
+            </div>
+
+            {selectedClass && (
+              <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-700 flex items-center gap-2 self-start md:self-auto">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>{selectedClass.code} • {selectedClass.name}</span>
+              </div>
+            )}
           </div>
 
-          {/* Component Switches */}
-          <div className="space-y-4 divide-y divide-slate-100">
-            {Object.entries(policy).map(([key, comp]) => {
-              const compKey = key as keyof CourseEvaluationPolicy;
-              const hasSubRules = key === "ct" || key === "assignment";
-              return (
-                <div key={key} className="pt-4 first:pt-0 space-y-2.5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={comp.enabled}
-                        onChange={(e) => {
-                          setPolicy(prev => ({
-                            ...prev,
-                            [compKey]: { ...prev[compKey], enabled: e.target.checked }
-                          }));
-                        }}
-                        className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">{comp.label}</p>
-                        <p className="text-[11px] text-slate-500">Enable/disable {comp.label.toLowerCase()} in final calculation</p>
-                      </div>
-                    </div>
+          {/* ── 1. Smart Presets Bar ── */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Recommended University Presets
+              </label>
+              <span className="text-[11px] text-slate-400">1-click apply standard weightages</span>
+            </div>
 
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        disabled={!comp.enabled}
-                        value={comp.weight}
-                        onChange={(e) => {
-                          setPolicy(prev => ({
-                            ...prev,
-                            [compKey]: { ...prev[compKey], weight: Number(e.target.value) }
-                          }));
-                        }}
-                        className="w-16 px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl text-center focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
-                      />
-                      <span className="text-xs font-bold text-slate-500">%</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {PRESET_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  onClick={() => setPolicy(tmpl.policy as any)}
+                  className="p-3 text-left rounded-xl border border-slate-200/80 hover:border-brand-dark bg-slate-50/60 hover:bg-white transition-all group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                        {tmpl.name}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200/70 text-slate-600 group-hover:bg-brand-dark/10 group-hover:text-brand-dark">
+                        {tmpl.tag}
+                      </span>
                     </div>
+                    <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {tmpl.description}
+                    </p>
                   </div>
+                  <div className="mt-2 pt-2 border-t border-slate-200/50 flex items-center justify-between text-[10px] font-semibold text-brand-dark">
+                    <span>Apply Preset</span>
+                    <span>→</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  {/* Sub-rules for CTs & Assignments */}
-                  {comp.enabled && hasSubRules && (
-                    <div className="ml-7 p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
-                      <div className="flex flex-wrap items-center gap-3 text-xs">
-                        <span className="font-bold text-slate-700">Selection Policy:</span>
-                        <select
-                          value={comp.rule || "best_n"}
-                          onChange={(e) => {
+          {/* ── 2. Real-Time Visual Stacked Allocation Bar ── */}
+          <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Percent className="w-4 h-4 text-slate-600" />
+                <span className="text-xs font-bold text-slate-800">Total Weightage Allocation:</span>
+                <span className={`text-sm font-extrabold px-2 py-0.5 rounded-lg ${
+                  totalWeightSum === 100
+                    ? "bg-emerald-100 text-emerald-800"
+                    : totalWeightSum > 100
+                    ? "bg-red-100 text-red-800"
+                    : "bg-amber-100 text-amber-800"
+                }`}>
+                  {totalWeightSum}% / 100%
+                </span>
+              </div>
+
+              {totalWeightSum !== 100 ? (
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold ${totalWeightSum > 100 ? "text-red-600" : "text-amber-700"}`}>
+                    {totalWeightSum > 100
+                      ? `⚠️ Overallocated by ${totalWeightSum - 100}%`
+                      : `⚠️ Needs +${100 - totalWeightSum}% more`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAutoBalance}
+                    className="px-2.5 py-1 bg-brand-dark text-white rounded-lg text-[11px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-1 shadow-2xs"
+                  >
+                    <Zap className="w-3 h-3 text-amber-300" />
+                    Auto-Balance to 100%
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  100% Validated & Balanced
+                </span>
+              )}
+            </div>
+
+            {/* Stacked multi-color progress bar */}
+            <div className="w-full h-3.5 bg-slate-200/90 rounded-full overflow-hidden flex shadow-inner">
+              {componentKeys.map((k) => {
+                const comp = policy[k];
+                if (!comp || !comp.enabled || comp.weight <= 0) return null;
+                const meta = COMPONENT_METADATA[k];
+                return (
+                  <div
+                    key={k}
+                    style={{ width: `${Math.min(100, comp.weight)}%` }}
+                    className={`${meta.barColor} h-full transition-all duration-300 relative group`}
+                    title={`${comp.label}: ${comp.weight}%`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Component Legend Pills */}
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 pt-1 text-[11px]">
+              {componentKeys.map((k) => {
+                const comp = policy[k];
+                const meta = COMPONENT_METADATA[k];
+                return (
+                  <div
+                    key={k}
+                    className={`flex items-center gap-1.5 ${comp.enabled ? "text-slate-700 font-semibold" : "text-slate-400 line-through"}`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full ${comp.enabled ? meta.barColor : "bg-slate-300"}`} />
+                    <span>{comp.label}:</span>
+                    <span className="font-bold">{comp.enabled ? `${comp.weight}%` : "Off"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── 3. Well-Aligned Component Cards Grid ── */}
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between pb-1">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Evaluation Components & Weightages
+              </h4>
+              <span className="text-[11px] text-slate-400">Drag sliders or use number steppers</span>
+            </div>
+
+            {componentKeys.map((k) => {
+              const comp = policy[k];
+              const meta = COMPONENT_METADATA[k];
+              const Icon = meta.icon;
+              const hasSubRules = k === "ct" || k === "assignment" || k === "project";
+
+              const updateWeight = (val: number) => {
+                const clamped = Math.max(0, Math.min(100, val));
+                setPolicy(prev => ({
+                  ...prev,
+                  [k]: { ...prev[k], weight: clamped }
+                }));
+              };
+
+              return (
+                <div
+                  key={k}
+                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                    comp.enabled
+                      ? "bg-white border-slate-200 shadow-2xs hover:border-slate-300"
+                      : "bg-slate-50/60 border-slate-200/60 opacity-60"
+                  }`}
+                >
+                  <div className="p-4 sm:p-5 space-y-3">
+                    {/* Top Row: Icon, Title, Stepper, and Toggle */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start sm:items-center gap-3">
+                        <div className={`p-2.5 rounded-xl ${comp.enabled ? meta.bgLight : "bg-slate-200/60"} ${comp.enabled ? meta.color : "text-slate-400"} shrink-0`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-slate-900">{meta.label}</p>
+                            {!comp.enabled && (
+                              <span className="text-[10px] font-semibold text-slate-400 px-1.5 py-0.2 rounded bg-slate-200">
+                                Disabled
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">{meta.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-3 self-end sm:self-auto w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        {/* Number Stepper */}
+                        <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-1 border border-slate-200/80">
+                          <button
+                            type="button"
+                            disabled={!comp.enabled || comp.weight <= 0}
+                            onClick={() => updateWeight(comp.weight - 5)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors border border-slate-200/60 shadow-2xs font-bold"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="5"
+                            disabled={!comp.enabled}
+                            value={comp.weight}
+                            onChange={(e) => updateWeight(Number(e.target.value))}
+                            className="w-12 text-center text-xs font-extrabold text-slate-900 bg-transparent focus:outline-none disabled:text-slate-400"
+                          />
+                          <span className="text-xs font-bold text-slate-400 pr-1">%</span>
+                          <button
+                            type="button"
+                            disabled={!comp.enabled || comp.weight >= 100}
+                            onClick={() => updateWeight(comp.weight + 5)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors border border-slate-200/60 shadow-2xs font-bold"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        {/* Modern Toggle Switch */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextState = !comp.enabled;
                             setPolicy(prev => ({
                               ...prev,
-                              [compKey]: { ...prev[compKey], rule: e.target.value as any }
+                              [k]: {
+                                ...prev[k],
+                                enabled: nextState,
+                                weight: nextState && prev[k].weight === 0 ? 10 : prev[k].weight
+                              }
                             }));
                           }}
-                          className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold bg-white focus:outline-none focus:border-slate-900"
+                          className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ease-in-out shrink-0 ${
+                            comp.enabled ? "bg-emerald-500" : "bg-slate-300"
+                          }`}
                         >
-                          <option value="best_n">Best N (e.g. Best 2 of 3)</option>
-                          <option value="avg_all">Average of All Conducted</option>
-                          <option value="best_1">Best 1 (Highest Score)</option>
-                        </select>
-
-                        {(comp.rule === "best_n" || comp.rule === "avg_all" || !comp.rule) && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-500 font-medium">Total Conducted:</span>
-                            <input
-                              type="number"
-                              min="1"
-                              max="10"
-                              value={comp.totalConducted || 3}
-                              onChange={(e) => {
-                                const val = Math.max(1, Number(e.target.value));
-                                setPolicy(prev => ({
-                                  ...prev,
-                                  [compKey]: {
-                                    ...prev[compKey],
-                                    totalConducted: val,
-                                    bestCount: Math.min(prev[compKey].bestCount || 2, val),
-                                  }
-                                }));
-                              }}
-                              className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-white"
-                            />
-                          </div>
-                        )}
-
-                        {(comp.rule === "best_n" || !comp.rule) && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-500 font-medium">Consider Best:</span>
-                            <input
-                              type="number"
-                              min="1"
-                              max={comp.totalConducted || 10}
-                              value={comp.bestCount || 2}
-                              onChange={(e) => {
-                                const val = Math.min(comp.totalConducted || 10, Math.max(1, Number(e.target.value)));
-                                setPolicy(prev => ({
-                                  ...prev,
-                                  [compKey]: { ...prev[compKey], bestCount: val }
-                                }));
-                              }}
-                              className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-white"
-                            />
-                          </div>
-                        )}
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                              comp.enabled ? "translate-x-6" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
                       </div>
-                      <p className="text-[10px] text-slate-500 italic">
-                        {comp.rule === "best_n" || !comp.rule
-                          ? `Will calculate grade from student's Top ${comp.bestCount || 2} highest scores out of ${comp.totalConducted || 3} total ${comp.label.toLowerCase()}.`
-                          : comp.rule === "best_1"
-                          ? `Will take only the single highest score among all conducted ${comp.label.toLowerCase()}.`
-                          : `Will calculate average across all ${comp.totalConducted || 3} conducted ${comp.label.toLowerCase()}.`}
-                      </p>
                     </div>
-                  )}
+
+                    {/* Weight Range Slider */}
+                    {comp.enabled && (
+                      <div className="pt-2">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="range"
+                            min="0"
+                            max="60"
+                            step="5"
+                            value={comp.weight}
+                            onChange={(e) => updateWeight(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-900"
+                          />
+                          <span className="text-xs font-bold text-slate-700 shrink-0 w-8 text-right">
+                            {comp.weight}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sub-rule configuration for CT, Assignment, Project */}
+                    {comp.enabled && hasSubRules && (
+                      <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-3 mt-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <Settings2 className="w-3.5 h-3.5 text-slate-500" />
+                            Grade Calculation Mode:
+                          </span>
+
+                          <div className="inline-flex rounded-xl bg-white p-1 border border-slate-200 shadow-2xs gap-1">
+                            {[
+                              { id: "best_n", label: "Best N of Total" },
+                              { id: "avg_all", label: "Average of All" },
+                              { id: "best_1", label: "Highest Score" },
+                            ].map((ruleOpt) => (
+                              <button
+                                key={ruleOpt.id}
+                                type="button"
+                                onClick={() => {
+                                  setPolicy(prev => ({
+                                    ...prev,
+                                    [k]: { ...prev[k], rule: ruleOpt.id as any }
+                                  }));
+                                }}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                  (comp.rule || "best_n") === ruleOpt.id
+                                    ? "bg-slate-900 text-white shadow-xs"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                                }`}
+                              >
+                                {ruleOpt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Counts when Best N or Average */}
+                        {(comp.rule === "best_n" || !comp.rule) && (
+                          <div className="flex flex-wrap items-center gap-4 text-xs pt-1 border-t border-slate-200/50">
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-600 font-medium">Total Conducted:</span>
+                              <div className="flex items-center gap-1 bg-white rounded-lg p-0.5 border border-slate-200">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.max(1, (comp.totalConducted || 3) - 1);
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [k]: {
+                                        ...prev[k],
+                                        totalConducted: next,
+                                        bestCount: Math.min(prev[k].bestCount || 2, next),
+                                      }
+                                    }));
+                                  }}
+                                  className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 text-slate-600 font-bold"
+                                >
+                                  -
+                                </button>
+                                <span className="w-6 text-center font-bold text-slate-900 text-xs">
+                                  {comp.totalConducted || 3}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.min(10, (comp.totalConducted || 3) + 1);
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [k]: { ...prev[k], totalConducted: next }
+                                    }));
+                                  }}
+                                  className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 text-slate-600 font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-600 font-medium">Consider Best:</span>
+                              <div className="flex items-center gap-1 bg-white rounded-lg p-0.5 border border-slate-200">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.max(1, (comp.bestCount || 2) - 1);
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [k]: { ...prev[k], bestCount: next }
+                                    }));
+                                  }}
+                                  className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 text-slate-600 font-bold"
+                                >
+                                  -
+                                </button>
+                                <span className="w-6 text-center font-bold text-slate-900 text-xs">
+                                  {comp.bestCount || 2}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.min(comp.totalConducted || 10, (comp.bestCount || 2) + 1);
+                                    setPolicy(prev => ({
+                                      ...prev,
+                                      [k]: { ...prev[k], bestCount: next }
+                                    }));
+                                  }}
+                                  className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 text-slate-600 font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="p-2.5 rounded-lg bg-white/80 border border-slate-200/60 text-[11px] text-slate-600 flex items-center gap-2">
+                          <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                          <span>
+                            {comp.rule === "best_n" || !comp.rule
+                              ? `Takes Top ${comp.bestCount || 2} highest scores out of ${comp.totalConducted || 3} conducted ${comp.label.toLowerCase()} to form ${comp.weight}% of student grade.`
+                              : comp.rule === "best_1"
+                              ? `Takes single highest score among all conducted ${comp.label.toLowerCase()} for the ${comp.weight}% weightage.`
+                              : `Averages all ${comp.totalConducted || 3} conducted ${comp.label.toLowerCase()} towards the ${comp.weight}% weightage.`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Validation Bar */}
-          <div className={`p-4 rounded-xl border flex items-center justify-between text-xs font-bold ${
-            totalWeightSum === 100
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-amber-50 text-amber-800 border-amber-200"
-          }`}>
-            <span>Total Weightage Sum: {totalWeightSum}%</span>
-            <span>{totalWeightSum === 100 ? "✓ 100% Validated" : "⚠️ Sum must equal 100%"}</span>
+          {/* ── 4. Extra Academic Governance Rules ── */}
+          <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-4">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Academic Governance & Clearance Rules
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              {/* Rule 1: Attendance Threshold */}
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">Minimum Attendance Threshold</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="50"
+                      max="100"
+                      value={policy.minAttendanceThreshold || 75}
+                      onChange={(e) => setPolicy(prev => ({ ...prev, minAttendanceThreshold: Number(e.target.value) }))}
+                      className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-slate-50"
+                    />
+                    <span className="text-slate-500 font-bold">%</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Students failing to maintain this threshold will be flagged as debarred from semester final exam.
+                </p>
+              </div>
+
+              {/* Rule 2: Late Submission Deduction */}
+              <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">Late Submission Deduction</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="20"
+                      value={policy.latePenaltyPerDay || 5}
+                      onChange={(e) => setPolicy(prev => ({ ...prev, latePenaltyPerDay: Number(e.target.value) }))}
+                      className="w-12 px-2 py-0.5 text-xs font-bold border border-slate-200 rounded-md text-center bg-slate-50"
+                    />
+                    <span className="text-slate-500 font-bold">%/day</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Automatic score deduction applied to student assignment submissions submitted after the due date.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {/* ── 5. Action Footer ── */}
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <button
+              type="button"
               onClick={() => setPolicy(DEFAULT_POLICY)}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-2 w-fit"
             >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               Reset Default
             </button>
-            <button
-              onClick={handleSavePolicy}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md transition-colors flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" /> Save Course Evaluation Policy
-            </button>
+
+            <div className="flex items-center gap-3">
+              {totalWeightSum !== 100 && (
+                <button
+                  type="button"
+                  onClick={handleAutoBalance}
+                  className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  Auto-Balance ({100 - totalWeightSum > 0 ? `+${100 - totalWeightSum}%` : `${100 - totalWeightSum}%`})
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={totalWeightSum !== 100}
+                onClick={handleSavePolicy}
+                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
+              >
+                <Save className="w-4 h-4 text-emerald-400" />
+                Save Course Evaluation Policy
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -852,9 +1353,11 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
 
             <div className="p-6 space-y-5 text-xs">
               <div className="space-y-3 divide-y divide-slate-100 max-h-[420px] overflow-y-auto pr-1">
-                {Object.entries(policy).map(([key, comp]) => {
-                  const compKey = key as keyof CourseEvaluationPolicy;
-                  const hasSubRules = key === "ct" || key === "assignment";
+                {componentKeys.map((key) => {
+                  const comp = policy[key];
+                  if (!comp) return null;
+                  const compKey = key;
+                  const hasSubRules = key === "ct" || key === "assignment" || key === "project";
                   return (
                     <div key={key} className="pt-3 first:pt-0 space-y-2">
                       <div className="flex items-center justify-between gap-4">

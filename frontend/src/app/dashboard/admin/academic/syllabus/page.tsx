@@ -58,7 +58,7 @@ export default function AdminSyllabusPage() {
 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grouped" | "table">("grouped");
+  const [viewMode, setViewMode] = useState<"grouped" | "table">("table");
 
   // Hierarchical Filter States: Program -> Batch -> Semester -> Course
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");

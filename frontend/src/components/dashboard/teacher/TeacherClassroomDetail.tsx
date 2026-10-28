@@ -133,8 +133,18 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   const view = getClassroomView(classroomId);
 
   const [activeTab, setActiveTab] = useState<
-    "live" | "outline" | "attendance" | "assignments" | "tests"
-  >("live");
+    "live" | "outline" | "attendance" | "assignments" | "tests" | null
+  >(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["live", "outline", "attendance", "assignments", "tests"].includes(tab)) {
+        setActiveTab(tab as any);
+      }
+    }
+  }, []);
 
   // Filter & Search states
   const [studentSearch, setStudentSearch] = useState("");
@@ -1280,23 +1290,64 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       )}
 
-      {/* ── Header Breadcrumb Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <Link
-            href="/dashboard/teacher/classrooms"
-            className="hover:text-slate-900 transition-colors flex items-center gap-1.5 font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" /> Classrooms
-          </Link>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-600 font-medium">{batch.name}</span>
-          <span className="text-slate-300">/</span>
-          <span className="font-bold text-slate-900">{course.code}</span>
+      {/* ── Header Breadcrumb & Classroom Overview Bar ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Link
+              href="/dashboard/teacher/classrooms"
+              className="hover:text-slate-900 transition-colors flex items-center gap-1.5 font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" /> Classrooms
+            </Link>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-600 font-medium">{batch.name}</span>
+            <span className="text-slate-300">/</span>
+            <span className="font-bold text-slate-900">{course.code}</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+              {course.title}
+            </h1>
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${
+              cls.status === "ongoing"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                : cls.status === "upcoming"
+                ? "bg-blue-50 text-blue-700 border border-blue-200/60"
+                : "bg-slate-100 text-slate-600"
+            }`}>
+              ● {cls.status}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 pt-0.5">
+            <span className="flex items-center gap-1.5 font-medium text-slate-700">
+              <MapPin className="w-3.5 h-3.5 text-slate-400" /> {cls.room || "Room TBA"}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              {schedules.length > 0
+                ? `${[...new Set(schedules.map((s) => s.day.slice(0, 3)))].join(", ")} • ${schedules[0].startTime} - ${schedules[0].endTime}`
+                : "Schedule TBA"}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+              {new Date(cls.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – {new Date(cls.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+          </div>
         </div>
 
         {/* Primary Header Action */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowEvaluationPolicyModal(true)}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+          >
+            <Sliders className="w-3.5 h-3.5 text-slate-500" /> Evaluation Policy
+          </button>
           {cls.status === "completed" ? (
             <button
               onClick={() => setShowArchiveModal(true)}
@@ -1307,7 +1358,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
           ) : (
             <button
               onClick={() => setShowAttendanceModal(true)}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
             >
               <ClipboardCheck className="w-4 h-4" /> Take Attendance
             </button>
@@ -1315,200 +1366,251 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       </div>
 
-      {/* ── Main Classroom Hero Banner ── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden relative">
-        <div className={`h-2.5 w-full ${colors.color}`} />
-        <div className="p-6 md:p-7 space-y-6">
-          
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            {/* Title & Metadata */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider ${colors.light} ${colors.text}`}>
-                  {course.code}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700">
-                  {batch.name}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
-                  {session.name}
-                </span>
-                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold capitalize ${
-                  cls.status === "ongoing"
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                    : cls.status === "upcoming"
-                    ? "bg-blue-50 text-blue-700 border border-blue-200/60"
-                    : "bg-slate-100 text-slate-600"
-                }`}>
-                  ● {cls.status}
-                </span>
-              </div>
-
-              <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
-                {course.title}
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 pt-1">
-                <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {cls.room || "Room TBA"}
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {schedules.length > 0
-                    ? `${[...new Set(schedules.map((s) => s.day.slice(0, 3)))].join(", ")} • ${schedules[0].startTime} - ${schedules[0].endTime}`
-                    : "Schedule TBA"}
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                  {new Date(cls.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – {new Date(cls.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Actions Dropdown / Action Buttons */}
-            <div className="flex items-center flex-wrap gap-2 shrink-0">
-              <button
-                onClick={() => setShowAssignmentModal(true)}
-                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" /> Assignment
-              </button>
-              <button
-                onClick={() => setShowTestModal(true)}
-                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" /> Class Test
-              </button>
-              <button
-                onClick={() => setShowAnnouncementModal(true)}
-                className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
-              >
-                <Megaphone className="w-3.5 h-3.5 text-slate-500" /> Notice
-              </button>
-              <button
-                onClick={() => setShowEvaluationPolicyModal(true)}
-                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
-              >
-                <Sliders className="w-3.5 h-3.5 text-slate-600" /> Evaluation Policy
-              </button>
+      {/* ── CLASSROOM MODULES MENU OR ACTIVE MODULE HEADER ── */}
+      {!activeTab ? (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <LayoutGrid className="w-4 h-4 text-brand-dark" />
+                Classroom Modules
+              </h2>
+              <p className="text-xs text-slate-500">
+                Select a module below to conduct live classes, manage syllabus, record attendance, and evaluate students.
+              </p>
             </div>
           </div>
 
-          {/* Key Metrics Strip (4 Sleek Cards) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4 border-t border-slate-100">
-            <button
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 1. Live Class */}
+            <div
+              onClick={() => setActiveTab("live")}
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-500/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                    <Presentation className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white tracking-wider animate-pulse flex items-center gap-1 shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span> LIVE
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                  Live Class & Lectures
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Present lecture slides (PPTX/PDF), view presenter notes, recall slide position, and log live session attendance.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600 group-hover:text-emerald-700">
+                <span>Enter Live Classroom</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 2. Course Outline & Slides */}
+            <div
               onClick={() => setActiveTab("outline")}
-              className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-sky-500/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
             >
-              <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
-                Class Progress
-              </span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="text-base font-extrabold text-slate-900">
-                  {cls.classesCompleted} <span className="text-xs text-slate-400 font-normal">/ {cls.totalClasses}</span>
-                </span>
-                <span className={`text-xs font-bold ${colors.text}`}>{progress}%</span>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold border border-sky-100 group-hover:bg-sky-600 group-hover:text-white transition-all">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
+                    {courseSyllabus.length} Topics
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
+                  Course Outline & Slides
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Organize weekly syllabus topics, teaching plans, attach lecture slides, and track topic completion progress.
+                </p>
               </div>
-              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-2">
-                <div className={`h-full ${colors.color} rounded-full`} style={{ width: `${progress}%` }} />
-              </div>
-            </button>
 
-            <button
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-sky-600 group-hover:text-sky-700">
+                <span>{completedTopicsCount} / {courseSyllabus.length} Completed</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 3. Attendance & Sessions */}
+            <div
               onClick={() => setActiveTab("attendance")}
-              className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-indigo-500/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
             >
-              <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
-                Enrolled Students
-              </span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="text-base font-extrabold text-slate-900">{students.length}</span>
-                <span className="text-[11px] text-slate-500 font-medium">{batch.code}</span>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <ClipboardCheck className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    {classroomSessions.length} Sessions
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                  Attendance & Sessions
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Log daily classroom attendance, review student presence rosters, RFID records, and historical logs.
+                </p>
               </div>
-              <p className="text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors mt-1">View Attendance Roster →</p>
-            </button>
 
-            <button
-              onClick={() => setActiveTab("attendance")}
-              className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
-            >
-              <span className="text-[10px] font-bold text-slate-500 group-hover:text-emerald-700 uppercase tracking-wider transition-colors">
-                Avg Attendance Rate
-              </span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="text-base font-extrabold text-emerald-600">{avgAttendanceRate}%</span>
-                <span className="text-[11px] text-emerald-700 font-semibold">{classroomSessions.length} Sessions</span>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600 group-hover:text-indigo-700">
+                <span>Avg Rate: {avgAttendanceRate}%</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
-              <p className="text-[10px] text-slate-400 group-hover:text-emerald-700 transition-colors mt-1">View Session History →</p>
-            </button>
+            </div>
 
-            <button
-              onClick={() => setActiveTab("outline")}
-              className="bg-slate-50/70 hover:bg-white hover:border-brand-dark cursor-pointer transition-all hover:shadow-xs rounded-xl p-3.5 border border-slate-200/60 flex flex-col justify-between text-left group"
+            {/* 4. Assignments */}
+            <div
+              onClick={() => setActiveTab("assignments")}
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-amber-500/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
             >
-              <span className="text-[10px] font-bold text-slate-500 group-hover:text-brand-dark uppercase tracking-wider transition-colors">
-                Outline & Slide Decks
-              </span>
-              <div className="flex items-baseline justify-between mt-2">
-                <span className="text-base font-extrabold text-slate-900">
-                  {completedTopicsCount} <span className="text-xs text-slate-400 font-normal">/ {courseSyllabus.length}</span>
-                </span>
-                <span className="text-xs font-bold text-slate-700">
-                  {courseSyllabus.length > 0 ? Math.round((completedTopicsCount / courseSyllabus.length) * 100) : 0}%
-                </span>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                    <ListTodo className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                    {assignments.length} Tasks
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                  Assignments & Homework
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Create term assignments, review student code & attachments, provide feedback, and grade submissions.
+                </p>
               </div>
-              <p className="text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors mt-1">View Course Outline →</p>
-            </button>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600 group-hover:text-amber-700">
+                <span>Manage Submissions</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 5. Class Tests (CT) */}
+            <div
+              onClick={() => setActiveTab("tests")}
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-purple-500/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                    {tests.length} Tests
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                  Class Tests & Quizzes (CT)
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Schedule class tests, define syllabus coverage, input marks, and track student assessment performance.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-600 group-hover:text-purple-700">
+                <span>Manage Continuous Marks</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 6. Notices & Announcements */}
+            <div
+              onClick={() => setShowAnnouncementModal(true)}
+              className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-brand-dark/50 p-5 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-900/5 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-brand-dark flex items-center justify-center font-bold border border-slate-200 group-hover:bg-brand-dark group-hover:text-white transition-all">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    Broadcast
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                  Class Notice & Broadcast
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Post instant notifications, upcoming exam deadlines, and important instructions to student portals.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-brand-dark group-hover:text-brand-dark">
+                <span>Post Announcement</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
           </div>
-
         </div>
-      </div>
+      ) : (
+        /* ── Active Module Navigation Bar with Back Button ── */
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <button
+            onClick={() => setActiveTab(null)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-brand-dark hover:bg-slate-100/90 transition-all border border-slate-200/70 w-fit"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500" />
+            <span>← Back to Modules</span>
+          </button>
 
-      {/* ── Standalone Navigation Pill Bar (5 Streamlined Tabs) ── */}
-      <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        {[
-          { id: "live", label: "Live Class", icon: Presentation, badge: "LIVE" },
-          { id: "outline", label: "Course Outline & Slides", icon: BookOpen, count: courseSyllabus.length },
-          { id: "attendance", label: "Attendance", icon: ClipboardCheck, count: classroomSessions.length },
-          { id: "assignments", label: "Assignments", icon: ListTodo, count: assignments.length },
-          { id: "tests", label: "Class Tests (CT)", icon: FileText, count: tests.length },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                isActive
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-extrabold"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60 font-semibold"
-              }`}
-            >
-              <div className={`p-1 rounded-lg ${isActive ? "bg-indigo-50 text-indigo-600" : "bg-slate-200/60 text-slate-500"}`}>
-                <Icon className="w-3.5 h-3.5" />
-              </div>
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500 text-white tracking-wider animate-pulse">
-                  {tab.badge}
-                </span>
-              )}
-              {typeof tab.count === "number" && (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] ${
-                    isActive ? "bg-indigo-600 text-white font-extrabold" : "bg-slate-200 text-slate-600 font-bold"
+          {/* Quick-switch pill tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { id: "live", label: "Live Class", icon: Presentation, badge: "LIVE" },
+              { id: "outline", label: "Outline & Slides", icon: BookOpen, count: courseSyllabus.length },
+              { id: "attendance", label: "Attendance", icon: ClipboardCheck, count: classroomSessions.length },
+              { id: "assignments", label: "Assignments", icon: ListTodo, count: assignments.length },
+              { id: "tests", label: "Class Tests (CT)", icon: FileText, count: tests.length },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                    isActive
+                      ? "bg-slate-900 text-white shadow-xs font-extrabold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold"
                   }`}
                 >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-emerald-500 text-white tracking-wider animate-pulse">
+                      {tab.badge}
+                    </span>
+                  )}
+                  {typeof tab.count === "number" && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[9px] ${
+                        isActive ? "bg-white/20 text-white font-extrabold" : "bg-slate-200 text-slate-600 font-bold"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── TAB CONTENT (5 Streamlined Tabs) ── */}
 

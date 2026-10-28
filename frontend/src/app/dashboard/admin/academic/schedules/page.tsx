@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Edit2, Trash2, Clock, ArrowLeft, AlertTriangle, CheckCircle2, 
   ArrowRightLeft, Building2, Monitor, Check, X, ExternalLink, Copy, 
-  Video, Users, Sliders, ShieldAlert, Sparkles, Filter, CheckSquare
+  Video, Users, Sliders, ShieldAlert, Sparkles, Filter, CheckSquare,
+  Search, LayoutGrid, List as ListIcon
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -33,11 +34,13 @@ export default function SchedulesPage() {
   }, []);
 
   const [mainTab, setMainTab] = useState<"routine" | "conflicts" | "reschedules" | "rooms">("routine");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [search, setSearch] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
+  const [dayFilter, setDayFilter] = useState<string>("all");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<ClassSchedule | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   // Mock Reschedule Requests state
   const [rescheduleRequests, setRescheduleRequests] = useState([
@@ -77,8 +80,15 @@ export default function SchedulesPage() {
 
   const filtered = schedules.filter(s => {
     const view = allViews.find(v => v.classroom.id === s.classroomId);
-    if (selectedBatchId && view?.batch.id !== selectedBatchId) return false;
-    return !search || view?.course.title.toLowerCase().includes(search.toLowerCase()) || view?.course.code.toLowerCase().includes(search.toLowerCase()) || s.day.toLowerCase().includes(search.toLowerCase());
+    if (selectedBatchId && selectedBatchId !== "all" && view?.batch.id !== selectedBatchId) return false;
+    if (dayFilter && dayFilter !== "all" && s.day.toLowerCase() !== dayFilter.toLowerCase()) return false;
+    return !search || 
+      view?.course.title.toLowerCase().includes(search.toLowerCase()) || 
+      view?.course.code.toLowerCase().includes(search.toLowerCase()) || 
+      view?.teacher.name.toLowerCase().includes(search.toLowerCase()) ||
+      view?.batch.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.day.toLowerCase().includes(search.toLowerCase()) ||
+      s.room.toLowerCase().includes(search.toLowerCase());
   });
 
   const uniqueBatches = Array.from(new Map(allViews.map(c => [c.batch.id, c.batch])).values());
@@ -227,74 +237,174 @@ export default function SchedulesPage() {
       {/* ── TAB 1: CLASS ROUTINE & SCHEDULES ── */}
       {mainTab === "routine" && (
         <div className="space-y-4">
-          {!selectedBatchId ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Controls Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search course, teacher, day, room, batch..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500/30 focus:border-indigo-500 placeholder:text-slate-400"
+                />
+              </div>
+
+              <select
+                value={selectedBatchId}
+                onChange={e => setSelectedBatchId(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+              >
+                <option value="all">All Batches ({schedules.length} slots)</option>
                 {uniqueBatches.map(b => {
-                  const batchSchedules = schedules.filter(s => {
-                    const view = allViews.find(v => v.classroom.id === s.classroomId);
-                    return view?.batch.id === b.id;
-                  });
+                  const bCount = schedules.filter(s => {
+                    const v = allViews.find(view => view.classroom.id === s.classroomId);
+                    return v?.batch.id === b.id;
+                  }).length;
                   return (
-                    <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-400 hover:shadow-md transition-all group block text-left">
-                      <div className="h-1.5 w-full rounded-full bg-slate-100 group-hover:bg-indigo-500 transition-colors mb-4" />
-                      <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{b.name}</h3>
-                      <p className="text-xs text-slate-500 mt-1">{batchSchedules.length} routine slot(s) configured</p>
-                    </button>
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({bCount} slots)
+                    </option>
                   );
                 })}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedBatchId(null)} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 text-slate-600 transition-colors">
-                  <ArrowLeft className="w-4 h-4" />
+              </select>
+
+              <select
+                value={dayFilter}
+                onChange={e => setDayFilter(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+              >
+                <option value="all">All Days</option>
+                {DAYS.map(day => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 justify-between lg:justify-end">
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    viewMode === "list"
+                      ? "bg-white text-slate-900 shadow-2xs font-bold"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                  title="List View"
+                >
+                  <ListIcon className="w-3.5 h-3.5" /> List
                 </button>
-                <h3 className="text-sm font-extrabold text-slate-900">Schedules for {batchInfo?.name}</h3>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                    viewMode === "grid"
+                      ? "bg-white text-slate-900 shadow-2xs font-bold"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                  title="Batch Cards View"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" /> Batches
+                </button>
               </div>
 
-              <SearchInput placeholder="Search by course or day..." value={search} onChange={e => setSearch(e.target.value)}
-                actionButton={
-                  <button onClick={openAdd} className="flex items-center gap-1.5 bg-indigo-600 text-white px-3.5 py-2 rounded-xl hover:bg-indigo-700 transition-all font-bold text-xs shadow-sm whitespace-nowrap">
-                    <Plus className="w-4 h-4" /> Add Schedule
-                  </button>
-                }
-              />
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-1.5 bg-indigo-600 text-white px-3.5 py-2 rounded-xl hover:bg-indigo-700 transition-all font-bold text-xs shadow-sm whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" /> Add Schedule
+              </button>
+            </div>
+          </div>
 
-              <DataTable columns={["Classroom / Course", "Teacher", "Batch", "Day", "Time", "Room", "Actions"]}
-                isEmpty={filtered.length === 0} emptyStateIcon={Clock} emptyStateTitle="No schedules found" emptyStateDescription="Create classrooms first, then add schedules.">
-                {filtered.map(sched => {
-                  const view = getView(sched.classroomId);
-                  return (
-                    <tr key={sched.id} className="hover:bg-slate-50/80 transition-colors group text-xs">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-xs"><Clock className="w-4 h-4" /></div>
-                          <div>
-                            <span className="font-extrabold text-slate-900 block">{view?.course.title ?? "Unknown"}</span>
-                            <span className="text-[10px] text-indigo-600 font-bold">{view?.course.code}</span>
-                          </div>
+          {/* Active Filter Indicator if batch filtered */}
+          {selectedBatchId !== "all" && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-500">Filtered by batch:</span>
+              <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded-lg flex items-center gap-1.5">
+                {batchInfo?.name}
+                <button
+                  onClick={() => setSelectedBatchId("all")}
+                  className="hover:text-indigo-900 p-0.5"
+                  title="Clear batch filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+          )}
+
+          {/* Content: List (Default) or Batch Cards Grid */}
+          {viewMode === "list" ? (
+            <DataTable
+              columns={["Classroom / Course", "Teacher", "Batch", "Day", "Time", "Room", "Actions"]}
+              isEmpty={filtered.length === 0}
+              emptyStateIcon={Clock}
+              emptyStateTitle="No schedules found"
+              emptyStateDescription="Try adjusting your filters or create a new schedule."
+            >
+              {filtered.map(sched => {
+                const view = getView(sched.classroomId);
+                return (
+                  <tr key={sched.id} className="hover:bg-slate-50/80 transition-colors group text-xs">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-xs">
+                          <Clock className="w-4 h-4" />
                         </div>
-                      </td>
-                      <td className="px-5 py-4 font-bold text-slate-700">{view?.teacher.name ?? "—"}</td>
-                      <td className="px-5 py-4 font-bold text-slate-600">{view?.batch.code ?? "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className="font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100">{sched.day}</span>
-                      </td>
-                      <td className="px-5 py-4 font-bold text-slate-700">{sched.startTime} – {sched.endTime}</td>
-                      <td className="px-5 py-4 font-extrabold text-slate-900">{sched.room || "Room 301"}</td>
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEdit(sched)} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => deleteSchedule(sched.id)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <div>
+                          <span className="font-extrabold text-slate-900 block">{view?.course.title ?? "Unknown"}</span>
+                          <span className="text-[10px] text-indigo-600 font-bold">{view?.course.code}</span>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </DataTable>
-            </>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 font-bold text-slate-700">{view?.teacher.name ?? "—"}</td>
+                    <td className="px-5 py-4 font-bold text-slate-600">{view?.batch.name ?? view?.batch.code ?? "—"}</td>
+                    <td className="px-5 py-4">
+                      <span className="font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100">{sched.day}</span>
+                    </td>
+                    <td className="px-5 py-4 font-bold text-slate-700">{sched.startTime} – {sched.endTime}</td>
+                    <td className="px-5 py-4 font-extrabold text-slate-900">{sched.room || "Room 301"}</td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEdit(sched)} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteSchedule(sched.id)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </DataTable>
+          ) : (
+            /* Batch Cards Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {uniqueBatches.map(b => {
+                const batchSchedules = schedules.filter(s => {
+                  const view = allViews.find(v => v.classroom.id === s.classroomId);
+                  return view?.batch.id === b.id;
+                });
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      setSelectedBatchId(b.id);
+                      setViewMode("list");
+                    }}
+                    className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-400 hover:shadow-md transition-all group block text-left"
+                  >
+                    <div className="h-1.5 w-full rounded-full bg-slate-100 group-hover:bg-indigo-500 transition-colors mb-4" />
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{b.name}</h3>
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">View List</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">{batchSchedules.length} routine slot(s) configured</p>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
