@@ -41,7 +41,7 @@ export default function AdminClassrooms() {
   }, []);
 
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Classroom | null>(null);

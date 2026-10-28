@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Users, BookOpen, Search, GraduationCap, Sparkles, CheckCircle2, AlertCircle, XCircle, RotateCcw, ArrowRight, Sliders } from "lucide-react";
+import { Plus, Edit2, Trash2, Users, BookOpen, Search, GraduationCap, Sparkles, CheckCircle2, AlertCircle, XCircle, RotateCcw, ArrowRight, Sliders, Layers } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -42,6 +42,9 @@ export default function BatchesPage() {
     Record<string, "promote" | "improvement" | "hold" | "gap" | "drop">
   >({});
   const [promotionSuccessToast, setPromotionSuccessToast] = useState<string | null>(null);
+  const [promotionFilterTab, setPromotionFilterTab] = useState<"all" | "promoted" | "review">("all");
+  const [promotionSearchQuery, setPromotionSearchQuery] = useState("");
+  const [isSubmittingPromotion, setIsSubmittingPromotion] = useState(false);
 
   const filtered = batches.filter(b =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -267,34 +270,47 @@ export default function BatchesPage() {
         title="🎓 Batch Promotion & Academic Progression Engine"
         maxWidth="max-w-4xl"
       >
-        <div className="space-y-5 text-xs">
-          <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h4 className="font-extrabold text-indigo-900 text-sm flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" /> Automated Semester Progression & Retake / Drop Evaluator
-              </h4>
-              <p className="text-[11px] text-indigo-700 mt-0.5">
-                Evaluate batch results, determine promotion eligibility, grant retake exams for failed subjects, or process course drops.
-              </p>
+        <div className="space-y-4 text-xs">
+          {/* Header Banner */}
+          <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-indigo-50/40 to-slate-50 border border-indigo-100/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                    Automated Semester Progression Evaluator
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-700">
+                    Academic Engine
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Evaluate batch clearance, assign next-term promotions, grant retake exams, or process course drops.
+                </p>
+              </div>
             </div>
             {promotionSuccessToast && (
-              <span className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-xl text-[10px] animate-in fade-in shadow-sm flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {promotionSuccessToast}
+              <span className="px-3.5 py-1.5 bg-emerald-600 text-white font-semibold rounded-xl text-xs animate-in fade-in shadow-sm flex items-center gap-1.5 shrink-0">
+                <CheckCircle2 className="w-4 h-4" /> {promotionSuccessToast}
               </span>
             )}
           </div>
 
-          {/* Batch Selector & Target Semester */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-extrabold text-slate-800">Select Source Batch to Evaluate</label>
+          {/* Batch Selector & Target Semester Pathway */}
+          <div className="p-3.5 bg-slate-50/80 border border-slate-200/80 rounded-2xl grid grid-cols-1 sm:grid-cols-11 gap-3 items-center">
+            <div className="sm:col-span-5 space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-indigo-600" /> Source Batch to Evaluate
+              </label>
               <select
                 value={promotionSourceBatchId}
                 onChange={(e) => {
                   setPromotionSourceBatchId(e.target.value);
                   setStudentProgressionDecisions({});
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-2xs"
               >
                 <option value="">Select a batch...</option>
                 {batches.map((b) => (
@@ -305,21 +321,25 @@ export default function BatchesPage() {
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-extrabold text-slate-800">Target Promotion Semester</label>
-              <div className="flex items-center gap-2">
-                <select
-                  value={promotionTargetSemester}
-                  onChange={(e) => setPromotionTargetSemester(Number(e.target.value))}
-                  className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-indigo-500"
-                >
-                  {[2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                      Semester {sem} (Target Term)
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="hidden sm:flex sm:col-span-1 items-center justify-center pt-5 text-indigo-400">
+              <ArrowRight className="w-4 h-4" />
+            </div>
+
+            <div className="sm:col-span-5 space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-indigo-600" /> Target Promotion Term
+              </label>
+              <select
+                value={promotionTargetSemester}
+                onChange={(e) => setPromotionTargetSemester(Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-2xs"
+              >
+                {[2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                  <option key={sem} value={sem}>
+                    Semester {sem} (Target Term)
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -328,49 +348,134 @@ export default function BatchesPage() {
             const batchStudents = students.filter((s) => s.batchId === promotionSourceBatchId);
             const sourceBatch = batches.find((b) => b.id === promotionSourceBatchId);
 
+            // Compute student evaluations
+            const evaluatedStudents = batchStudents.map((stud, idx) => {
+              const mockGpa = (3.8 - (idx * 0.45)).toFixed(2);
+              const gpaNum = parseFloat(mockGpa);
+              const failedCount = gpaNum < 2.0 ? 3 : gpaNum < 2.5 ? 1 : 0;
+              const defaultDecision: "promote" | "improvement" | "hold" | "gap" | "drop" =
+                failedCount >= 3 ? "drop" : failedCount >= 1 ? "hold" : gpaNum < 2.5 ? "improvement" : "promote";
+              const currentDecision = studentProgressionDecisions[stud.id] || defaultDecision;
+              return { stud, mockGpa, gpaNum, failedCount, defaultDecision, currentDecision };
+            });
+
+            const promotedCount = evaluatedStudents.filter((e) => e.currentDecision === "promote").length;
+            const reviewCount = evaluatedStudents.filter((e) => e.currentDecision !== "promote").length;
+
+            const filteredStudents = evaluatedStudents.filter(({ stud, currentDecision }) => {
+              const matchesSearch =
+                stud.name.toLowerCase().includes(promotionSearchQuery.toLowerCase()) ||
+                stud.rollNo.toLowerCase().includes(promotionSearchQuery.toLowerCase());
+              if (!matchesSearch) return false;
+              if (promotionFilterTab === "promoted") return currentDecision === "promote";
+              if (promotionFilterTab === "review") return currentDecision !== "promote";
+              return true;
+            });
+
             return (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-indigo-600" /> Student Progression List ({batchStudents.length} Students in {sourceBatch?.name})
-                  </h4>
-                  <div className="flex items-center gap-2 text-[10px] font-bold">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">🟢 Promoted</span>
-                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800">🟡 Improvement</span>
-                    <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800">🟠 Retake</span>
-                    <span className="px-2 py-0.5 rounded bg-red-100 text-red-800">🔴 Drop/Probation</span>
+                {/* Stats & Filter Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setPromotionFilterTab("all")}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        promotionFilterTab === "all"
+                          ? "bg-slate-900 text-white shadow-2xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                      }`}
+                    >
+                      All ({batchStudents.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPromotionFilterTab("promoted")}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        promotionFilterTab === "promoted"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70 border border-emerald-200/60"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Promoted ({promotedCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPromotionFilterTab("review")}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        promotionFilterTab === "review"
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : "bg-amber-50 text-amber-700 hover:bg-amber-100/70 border border-amber-200/60"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span> Review Needed ({reviewCount})
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Search student..."
+                        value={promotionSearchQuery}
+                        onChange={(e) => setPromotionSearchQuery(e.target.value)}
+                        className="pl-8 pr-3 py-1 rounded-lg border border-slate-200 text-xs text-slate-700 placeholder:text-slate-400 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 w-36 sm:w-44"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStudentProgressionDecisions({})}
+                      title="Reset all to engine recommendations"
+                      className="px-2.5 py-1 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 shadow-2xs whitespace-nowrap"
+                    >
+                      <RotateCcw className="w-3 h-3 text-slate-400" /> Reset
+                    </button>
                   </div>
                 </div>
 
-                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto bg-white">
-                  {batchStudents.length > 0 ? (
-                    batchStudents.map((stud, idx) => {
-                      const mockGpa = (3.8 - (idx * 0.45)).toFixed(2);
-                      const gpaNum = parseFloat(mockGpa);
-                      const failedCount = gpaNum < 2.0 ? 3 : gpaNum < 2.5 ? 1 : 0;
-                      const defaultDecision: "promote" | "improvement" | "hold" | "gap" | "drop" =
-                        failedCount >= 3 ? "drop" : failedCount >= 1 ? "hold" : gpaNum < 2.5 ? "improvement" : "promote";
-
-                      const currentDecision = studentProgressionDecisions[stud.id] || defaultDecision;
-
+                {/* Student Rows */}
+                <div className="border border-slate-200/90 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto bg-white shadow-2xs">
+                  {filteredStudents.length > 0 ? (
+                    filteredStudents.map(({ stud, mockGpa, gpaNum, failedCount, currentDecision }) => {
                       return (
-                        <div key={stud.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                        <div
+                          key={stud.id}
+                          className="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-extrabold text-slate-800 text-xs shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-50 to-indigo-100 border border-indigo-200/80 flex items-center justify-center font-bold text-indigo-700 text-xs shrink-0">
                               {stud.name.slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-extrabold text-slate-900 text-xs">{stud.name}</p>
-                              <p className="text-[10px] text-slate-400 font-medium">Roll: {stud.rollNo} • CGPA: <strong className="text-slate-700">{mockGpa}</strong></p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900 text-xs">{stud.name}</p>
+                                <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                                  gpaNum >= 3.5 ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" :
+                                  gpaNum >= 2.5 ? "bg-slate-100 text-slate-700" :
+                                  "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                }`}>
+                                  CGPA: {mockGpa}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                Roll: {stud.rollNo}
+                              </p>
                             </div>
                           </div>
 
                           {/* Evaluation Status Badge & Action Selector */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5">
                             <div className="text-right hidden sm:block">
-                              <span className="text-[10px] font-bold text-slate-500">
-                                {failedCount === 0 ? "All Courses Cleared" : `${failedCount} Course(s) Failed`}
-                              </span>
+                              {failedCount === 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> All Cleared
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
+                                  <AlertCircle className="w-3 h-3 text-rose-600" /> {failedCount} Backlog(s)
+                                </span>
+                              )}
                             </div>
 
                             <select
@@ -379,23 +484,23 @@ export default function BatchesPage() {
                                 const val = e.target.value as any;
                                 setStudentProgressionDecisions((prev) => ({ ...prev, [stud.id]: val }));
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
                                 currentDecision === "promote"
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                  ? "bg-emerald-50/90 text-emerald-800 border-emerald-300"
                                   : currentDecision === "improvement"
-                                  ? "bg-blue-50 text-blue-800 border-blue-300"
+                                  ? "bg-blue-50/90 text-blue-800 border-blue-300"
                                   : currentDecision === "hold"
-                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  ? "bg-amber-50/90 text-amber-800 border-amber-300"
                                   : currentDecision === "gap"
-                                  ? "bg-orange-50 text-orange-800 border-orange-300"
-                                  : "bg-red-50 text-red-800 border-red-300"
+                                  ? "bg-orange-50/90 text-orange-800 border-orange-300"
+                                  : "bg-red-50/90 text-red-800 border-red-300"
                               }`}
                             >
-                              <option value="promote">🟢 Promote to Semester {promotionTargetSemester} (Clean Pass)</option>
-                              <option value="hold">🟡 Hold Status (Pending Re-evaluation)</option>
-                              <option value="improvement">🔵 Improvement Exam Allowed</option>
-                              <option value="gap">🟠 Semester Gap / Leave of Absence</option>
-                              <option value="drop">🔴 Course Drop / Readmission Required</option>
+                              <option value="promote">Promote to Semester {promotionTargetSemester} (Clean Pass)</option>
+                              <option value="hold">Hold Status (Pending Re-evaluation)</option>
+                              <option value="improvement">Improvement Exam Allowed</option>
+                              <option value="gap">Semester Gap / Leave of Absence</option>
+                              <option value="drop">Course Drop / Readmission Required</option>
                             </select>
                           </div>
                         </div>
@@ -403,50 +508,66 @@ export default function BatchesPage() {
                     })
                   ) : (
                     <div className="p-8 text-center text-slate-400">
-                      No students enrolled in this batch.
+                      No students found matching your filters.
                     </div>
                   )}
                 </div>
 
                 {/* Footer Action */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setShowPromotionModal(false)}
-                    className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const payload = {
-                        sourceBatchId: promotionSourceBatchId,
-                        targetSemester: promotionTargetSemester,
-                        studentDecisions: Object.entries(studentProgressionDecisions).map(([studentId, decision]) => ({ studentId, decision })),
-                      };
-                      try {
-                        const { api } = await import("@/lib/api");
-                        await api.executeBatchPromotion(payload);
-                      } catch (err) {
-                        console.log("Local store fallback mode:", err);
-                      }
-                      setPromotionSuccessToast(`Batch promoted & progression decisions saved to PostgreSQL!`);
-                      setTimeout(() => {
-                        setPromotionSuccessToast(null);
-                        setShowPromotionModal(false);
-                      }, 2000);
-                    }}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-white" /> Execute Promotion & Save to PostgreSQL
-                  </button>
+                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="text-xs text-slate-500">
+                    Advancing <strong className="text-slate-900 font-bold">{promotedCount}</strong> of <strong className="text-slate-900 font-bold">{batchStudents.length}</strong> students to <span className="font-semibold text-indigo-700">Semester {promotionTargetSemester}</span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowPromotionModal(false)}
+                      className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition-colors shadow-2xs"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSubmittingPromotion}
+                      onClick={async () => {
+                        setIsSubmittingPromotion(true);
+                        const payload = {
+                          sourceBatchId: promotionSourceBatchId,
+                          targetSemester: promotionTargetSemester,
+                          studentDecisions: Object.entries(studentProgressionDecisions).map(([studentId, decision]) => ({ studentId, decision })),
+                        };
+                        try {
+                          const { api } = await import("@/lib/api");
+                          await api.executeBatchPromotion(payload);
+                        } catch (err) {
+                          console.log("Local store fallback mode:", err);
+                        }
+                        setIsSubmittingPromotion(false);
+                        setPromotionSuccessToast(`Batch promoted & student progressions updated successfully!`);
+                        setTimeout(() => {
+                          setPromotionSuccessToast(null);
+                          setShowPromotionModal(false);
+                        }, 2000);
+                      }}
+                      className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 active:scale-[0.99] text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-200/50 transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      {isSubmittingPromotion ? "Processing Promotion..." : "Confirm & Promote Batch"}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })() : (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl">
-              Please select a batch from the dropdown above to begin progression evaluation.
+            <div className="p-10 text-center bg-slate-50/70 border border-dashed border-slate-200 rounded-2xl space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                <Layers className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-semibold text-slate-700">No Source Batch Selected</p>
+              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                Please select a source batch from the dropdown above to review students and execute semester progression.
+              </p>
             </div>
           )}
         </div>
