@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 
 interface TeacherAttendanceProps {
@@ -26,6 +27,7 @@ function statusColor(p: number) {
 import { TableSkeleton } from "@/components/ui/Skeleton";
 
 export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) {
+  const router = useRouter();
   const {
     getMyClassroomViews, classSessions, attendanceRecords, isLoading,
     fetchClassrooms, fetchCourses, fetchBatches, fetchSessions, fetchStudents,
@@ -64,20 +66,52 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
       return (
         <div className="space-y-4 animate-in fade-in duration-500 pb-12">
           <div className="pb-4 border-b border-slate-200">
-            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view its attendance records.</p>
+            <h2 className="text-[13px] font-semibold text-slate-900">Select Academic Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view and record its attendance.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {uniqueBatches.map(b => {
-              const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
-              return (
-                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
-                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
-                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
-                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
-                </button>
-              );
-            })}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Academic Batch</th>
+                  <th className="px-5 py-3.5">Assigned Courses</th>
+                  <th className="px-5 py-3.5">Total Enrolled</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {uniqueBatches.map(b => {
+                  const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
+                  const totalStudents = batchClasses[0]?.students.length || 0;
+                  return (
+                    <tr
+                      key={b.id}
+                      onClick={() => setSelectedBatchId(b.id)}
+                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-5 py-4 font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                        {b.name}
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-semibold text-slate-900">{batchClasses.length}</span> Courses
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-semibold text-slate-900">{totalStudents}</span> Students
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <span>Open Batch</span>
+                          <span>→</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -91,32 +125,68 @@ export default function TeacherAttendance({ courseId }: TeacherAttendanceProps) 
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view its attendance records.</p>
+              <h2 className="text-[13px] font-semibold text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view or record its attendance records.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {batchClasses.map(({ classroom: cls, course, batch, students, colors }) => {
-              const sessions = classSessions.filter(s => s.classroomId === cls.id);
-              const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && r.status === "present").length;
-              const totalMarked  = attendanceRecords.filter(r => r.classroomId === cls.id).length;
-              const classAvg = pct(totalPresent, totalMarked);
-              const sc = statusColor(classAvg);
-              return (
-                <Link key={cls.id} href={`/dashboard/teacher/attendance/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-                  <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                  <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                  <p className="text-[10px] text-slate-500 mt-1">{batch.name} • {students.length} students</p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="text-[10px] text-slate-500">{sessions.length} sessions conducted</div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
-                      {classAvg > 0 ? `${classAvg}% avg` : "No data"}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Course Code</th>
+                  <th className="px-5 py-3.5 min-w-[200px]">Course Title</th>
+                  <th className="px-5 py-3.5">Enrolled Students</th>
+                  <th className="px-5 py-3.5">Sessions Conducted</th>
+                  <th className="px-5 py-3.5">Attendance Average</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {batchClasses.map(({ classroom: cls, course, batch, students, colors }) => {
+                  const sessions = classSessions.filter(s => s.classroomId === cls.id);
+                  const totalPresent = attendanceRecords.filter(r => r.classroomId === cls.id && r.status === "present").length;
+                  const totalMarked  = attendanceRecords.filter(r => r.classroomId === cls.id).length;
+                  const classAvg = pct(totalPresent, totalMarked);
+                  const sc = statusColor(classAvg);
+                  return (
+                    <tr
+                      key={cls.id}
+                      className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                      onClick={() => router.push(`/dashboard/teacher/attendance/${cls.id}`)}
+                    >
+                      <td className="px-5 py-4 font-bold text-slate-900">
+                        <span className={`inline-block px-2.5 py-1 rounded text-[11px] font-extrabold uppercase ${colors.light} ${colors.text}`}>
+                          {course.code}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                        {course.title}
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-bold text-slate-800">{students.length}</span> Students
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-semibold text-slate-800">{sessions.length}</span> Sessions
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${sc.bg} ${sc.text}`}>
+                          {classAvg > 0 ? `${classAvg}% Average` : "No data"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <Link
+                          href={`/dashboard/teacher/attendance/${cls.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <span>Open Attendance</span>
+                          <span>→</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       );

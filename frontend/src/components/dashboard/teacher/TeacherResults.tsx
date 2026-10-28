@@ -5,6 +5,7 @@ import {
   CheckCircle2, AlertCircle, Search
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
@@ -55,6 +56,7 @@ function seededRand(seed: string, min: number, max: number) {
 }
 
 export default function TeacherResults({ courseId }: TeacherResultsProps) {
+  const router = useRouter();
   const {
     getMyClassroomViews, classSessions, attendanceRecords, gradeRecords, upsertGradeRecord,
     fetchClassrooms, fetchCourses, fetchBatches, fetchStudents, fetchGradeRecords, fetchClassSessions, fetchAttendanceRecords
@@ -85,20 +87,52 @@ export default function TeacherResults({ courseId }: TeacherResultsProps) {
       return (
         <div className="space-y-4 animate-in fade-in duration-500 pb-12">
           <div className="pb-4 border-b border-slate-200">
-            <h2 className="text-[13px] font-medium text-slate-900">Select Batch</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view its courses.</p>
+            <h2 className="text-[13px] font-semibold text-slate-900">Select Academic Batch</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Select a batch to view and evaluate its course marks.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {uniqueBatches.map(b => {
-              const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
-              return (
-                <button key={b.id} onClick={() => setSelectedBatchId(b.id)} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block text-left">
-                  <div className="h-1 w-full rounded-full bg-slate-200 group-hover:bg-brand-dark/40 transition-colors mb-4" />
-                  <h3 className="text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{b.name}</h3>
-                  <p className="text-[10px] text-slate-500 mt-1">{batchClasses.length} courses</p>
-                </button>
-              );
-            })}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Academic Batch</th>
+                  <th className="px-5 py-3.5">Assigned Courses</th>
+                  <th className="px-5 py-3.5">Enrolled Students</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {uniqueBatches.map(b => {
+                  const batchClasses = myClassrooms.filter(c => c.batch.id === b.id);
+                  const totalStudents = batchClasses[0]?.students.length || 0;
+                  return (
+                    <tr
+                      key={b.id}
+                      onClick={() => setSelectedBatchId(b.id)}
+                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-5 py-4 font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                        {b.name}
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-semibold text-slate-900">{batchClasses.length}</span> Courses
+                      </td>
+                      <td className="px-5 py-4 font-medium text-slate-600">
+                        <span className="font-semibold text-slate-900">{totalStudents}</span> Students
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <span>Open Batch</span>
+                          <span>→</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -112,19 +146,51 @@ export default function TeacherResults({ courseId }: TeacherResultsProps) {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-[13px] font-medium text-slate-900">Courses in {batchInfo?.name}</h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view or enter grades.</p>
+              <h2 className="text-[13px] font-semibold text-slate-900">Courses in {batchInfo?.name}</h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">Select a course to view, enter, or manage grades.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {batchClasses.map(({ classroom: cls, course, batch, students, colors }) => (
-              <Link key={cls.id} href={`/dashboard/teacher/results/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group block">
-                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{students.length} students</p>
-              </Link>
-            ))}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Course Code</th>
+                  <th className="px-5 py-3.5 min-w-[200px]">Course Title</th>
+                  <th className="px-5 py-3.5">Enrolled Students</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {batchClasses.map(({ classroom: cls, course, batch, students, colors }) => (
+                  <tr
+                    key={cls.id}
+                    className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                    onClick={() => router.push(`/dashboard/teacher/results/${cls.id}`)}
+                  >
+                    <td className="px-5 py-4 font-bold text-slate-900">
+                      <span className={`inline-block px-2.5 py-1 rounded text-[11px] font-extrabold uppercase ${colors.light} ${colors.text}`}>
+                        {course.code}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                      {course.title}
+                    </td>
+                    <td className="px-5 py-4 font-medium text-slate-600">
+                      <span className="font-bold text-slate-800">{students.length}</span> Students
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        href={`/dashboard/teacher/results/${cls.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                      >
+                        <span>Manage Results</span>
+                        <span>→</span>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       );

@@ -180,51 +180,69 @@ export default function StartClassSession() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-          {myClassrooms.filter(v => v.classroom.status === "ongoing").map(({ classroom: cls, course, batch, students, colors, progress }) => {
-            const todayPastCount = classSessions.filter(s => s.classroomId === cls.id && s.date === new Date().toISOString().split("T")[0]).length;
-            return (
-              <button
-                key={cls.id}
-                onClick={() => { setSelectedId(cls.id); setStep("session"); }}
-                className="bg-white border border-slate-200/80 rounded-xl p-4 text-left hover:border-slate-400 hover:shadow-xs transition-all group space-y-3 relative overflow-hidden"
-              >
-                <div className={`h-1.5 w-full absolute top-0 left-0 ${colors.color}`} />
-                <div className="flex justify-between items-start pt-0.5">
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${colors.light} ${colors.text}`}>
-                    {course.code}
-                  </span>
-                  {todayPastCount > 0 && (
-                    <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                      ✓ {todayPastCount} done today
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
-                    {course.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">{batch.name} • {students.length} Enrolled</p>
-                </div>
-
-                <div className="space-y-1 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-slate-500 font-medium">{cls.classesCompleted}/{cls.totalClasses} Lectures</span>
-                    <span className={`font-bold ${colors.text}`}>{progress}%</span>
-                  </div>
-                  <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${colors.color}`} style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-
-                <div className="pt-1 flex items-center justify-between text-[11px] font-bold text-slate-900">
-                  <span>Start Live Session</span>
-                  <span>→</span>
-                </div>
-              </button>
-            );
-          })}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Course Details</th>
+                  <th className="px-5 py-3.5">Academic Batch</th>
+                  <th className="px-5 py-3.5">Lectures & Progress</th>
+                  <th className="px-5 py-3.5">Today's Status</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {myClassrooms.filter(v => v.classroom.status === "ongoing").map(({ classroom: cls, course, batch, students, colors, progress }) => {
+                  const todayPastCount = classSessions.filter(s => s.classroomId === cls.id && s.date === new Date().toISOString().split("T")[0]).length;
+                  return (
+                    <tr key={cls.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider ${colors.light} ${colors.text}`}>
+                            {course.code}
+                          </span>
+                          <span className="font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                            {course.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-600">
+                        {batch.name} • <span className="font-semibold text-slate-900">{students.length} Enrolled</span>
+                      </td>
+                      <td className="px-5 py-4 min-w-[180px]">
+                        <div className="flex justify-between text-[11px] font-medium mb-1">
+                          <span className="text-slate-500">{cls.classesCompleted}/{cls.totalClasses} Lectures</span>
+                          <span className={`font-bold ${colors.text}`}>{progress}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${colors.color} rounded-full transition-all`} style={{ width: `${progress}%` }} />
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {todayPastCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                            ✓ {todayPastCount} session{todayPastCount > 1 ? "s" : ""} done today
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium">Ready for session</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => { setSelectedId(cls.id); setStep("session"); }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <span>Start Live Session</span>
+                          <span className="text-emerald-400 font-bold">→</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {myClassrooms.filter(v => v.classroom.status === "ongoing").length === 0 && (

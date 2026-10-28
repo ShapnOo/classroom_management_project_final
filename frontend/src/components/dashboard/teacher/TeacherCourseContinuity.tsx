@@ -49,27 +49,59 @@ export default function TeacherCourseContinuity({ courseId }: TeacherCourseConti
           <h2 className="text-[13px] font-medium text-slate-900">Course Continuity</h2>
           <p className="text-[11px] text-slate-500 mt-0.5">Select a classroom to view and track its syllabus progress.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {myClassrooms.map(({ classroom: cls, course, batch, syllabusTopics, colors, progress }) => {
-            const done = syllabusTopics.filter(t => t.teacherStatus === "done").length;
-            return (
-              <Link key={cls.id} href={`/dashboard/teacher/continuity/${cls.id}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-dark/40 hover:shadow-md transition-all group">
-                <div className={`h-1 w-full rounded-full ${colors.color} mb-4`} />
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded uppercase ${colors.light} ${colors.text}`}>{course.code}</span>
-                <h3 className="mt-2 text-[13px] font-medium text-slate-900 group-hover:text-brand-dark transition-colors leading-snug">{course.title}</h3>
-                <p className="text-[10px] text-slate-500 mt-1">{batch.name}</p>
-                <div className="mt-4">
-                  <div className="flex justify-between text-[10px] font-medium mb-1">
-                    <span className="text-slate-500">Progress</span>
-                    <span className={colors.text}>{done}/{syllabusTopics.length} topics done</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${colors.color} rounded-full transition-all`} style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Course Details</th>
+                  <th className="px-5 py-3.5">Academic Batch</th>
+                  <th className="px-5 py-3.5">Syllabus Progress</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {myClassrooms.map(({ classroom: cls, course, batch, syllabusTopics, colors, progress }) => {
+                  const done = syllabusTopics.filter(t => t.teacherStatus === "done").length;
+                  return (
+                    <tr key={cls.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${colors.light} ${colors.text}`}>
+                            {course.code}
+                          </span>
+                          <span className="font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                            {course.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-600">
+                        {batch.name}
+                      </td>
+                      <td className="px-5 py-4 min-w-[200px]">
+                        <div className="flex justify-between text-[11px] font-medium mb-1.5">
+                          <span className="text-slate-500">{done}/{syllabusTopics.length} topics done</span>
+                          <span className={`font-bold ${colors.text}`}>{progress}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${colors.color} rounded-full transition-all`} style={{ width: `${progress}%` }} />
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                        <Link
+                          href={`/dashboard/teacher/continuity/${cls.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <span>Track Syllabus</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );

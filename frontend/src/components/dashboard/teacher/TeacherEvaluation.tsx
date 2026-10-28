@@ -497,36 +497,58 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {classrooms.map(cls => (
-            <button
-              key={cls.id}
-              onClick={() => {
-                setSelectedClassId(cls.id);
-                router.push(`/dashboard/teacher/evaluation/${cls.id}`);
-              }}
-              className="bg-white border border-slate-200/80 rounded-xl p-4 text-left hover:border-slate-400 hover:shadow-xs transition-all group space-y-2.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">
-                  {cls.code}
-                </span>
-                <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                  {cls.batch}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors leading-snug">
-                  {cls.name}
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5 font-medium">{cls.students.length} Enrolled</p>
-              </div>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-emerald-700 font-bold">
-                <span>View & Configure Grades</span>
-                <span>→</span>
-              </div>
-            </button>
-          ))}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Course Code</th>
+                  <th className="py-3 px-4 min-w-[200px]">Course Title</th>
+                  <th className="py-3 px-4">Academic Batch</th>
+                  <th className="py-3 px-4">Enrolled Students</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {classrooms.map((cls) => (
+                  <tr
+                    key={cls.id}
+                    onClick={() => {
+                      setSelectedClassId(cls.id);
+                      router.push(`/dashboard/teacher/evaluation/${cls.id}`);
+                    }}
+                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-slate-100 text-slate-800 uppercase tracking-wider">
+                        {cls.code}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                      {cls.name}
+                    </td>
+                    <td className="py-3.5 px-4 font-medium text-slate-600">
+                      <span className="px-2 py-0.5 rounded bg-slate-50 border border-slate-200 text-[11px]">
+                        {cls.batch}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-medium text-slate-600">
+                      <span className="font-bold text-slate-800">{cls.students.length}</span> Students
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                      >
+                        <span>Configure & Grade</span>
+                        <span>→</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {classrooms.length === 0 && (

@@ -2164,40 +2164,83 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               </div>
             </div>
 
-            {/* Quick Student Attendance Roster Grid */}
-            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto">
-              {students.map((student) => {
-                const status = attendanceMap[student.id] || "present";
-                return (
-                  <div
-                    key={student.id}
-                    onClick={() => toggleStudentAttendance(student.id)}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between select-none ${
-                      status === "present"
-                        ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                        : status === "late"
-                        ? "bg-amber-50/60 border-amber-200 text-amber-950"
-                        : "bg-red-50/60 border-red-200 text-red-950"
-                    }`}
-                  >
-                    <div className="truncate pr-2">
-                      <p className="text-xs font-bold truncate">{student.name}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">{student.rollNo}</p>
-                    </div>
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
-                        status === "present"
-                          ? "bg-emerald-200 text-emerald-900"
-                          : status === "late"
-                          ? "bg-amber-200 text-amber-900"
-                          : "bg-red-200 text-red-900"
-                      }`}
-                    >
-                      {status}
-                    </span>
-                  </div>
-                );
-              })}
+            {/* Quick Student Attendance Roster Table */}
+            <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-slate-50 z-10">
+                    <th className="px-5 py-3">Student Name</th>
+                    <th className="px-5 py-3">Roll Number</th>
+                    <th className="px-5 py-3">Current Status</th>
+                    <th className="px-5 py-3 text-right">Quick Toggle</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {students.map((student) => {
+                    const status = attendanceMap[student.id] || "present";
+                    return (
+                      <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-5 py-3 font-bold text-slate-900">
+                          {student.name}
+                        </td>
+                        <td className="px-5 py-3 font-mono text-[11px] text-slate-500">
+                          {student.rollNo}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span
+                            className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                              status === "present"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : status === "late"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : "bg-red-100 text-red-800 border border-red-200"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceMap((p) => ({ ...p, [student.id]: "present" }))}
+                              className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${
+                                status === "present"
+                                  ? "bg-emerald-600 text-white shadow-2xs"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceMap((p) => ({ ...p, [student.id]: "late" }))}
+                              className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${
+                                status === "late"
+                                  ? "bg-amber-500 text-white shadow-2xs"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              Late
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceMap((p) => ({ ...p, [student.id]: "absent" }))}
+                              className={`px-2 py-1 rounded text-[11px] font-bold transition-all ${
+                                status === "absent"
+                                  ? "bg-red-600 text-white shadow-2xs"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -2451,48 +2494,73 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              {availableMaterials.map((mat) => (
-                <div key={mat.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-300 transition-all space-y-3 group shadow-2xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                      <Presentation className="w-4 h-4" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
-                      {mat.type}
-                    </span>
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-900 truncate" title={mat.title}>{mat.title}</h5>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">{mat.fileName || "Presentation File"}</p>
-                  </div>
-                  <button
-                    onClick={() => {
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="px-5 py-3.5">Material / Deck Title</th>
+                      <th className="px-5 py-3.5">Source Filename</th>
+                      <th className="px-5 py-3.5">Format</th>
+                      <th className="px-5 py-3.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {availableMaterials.map((mat) => {
                       const isMatPdf =
                         mat.type === "PDF" ||
                         Boolean(mat.fileName && mat.fileName.toLowerCase().endsWith(".pdf")) ||
                         mat.title.toLowerCase().endsWith(".pdf");
                       const resolvedUrl = mat.fileUrl || mat.fileData;
-                      setPresenterMaterial({
-                        id: mat.id,
-                        title: mat.title,
-                        fileName: mat.fileName,
-                        fileType: isMatPdf ? "PDF" : mat.type,
-                        fileUrl: resolvedUrl,
-                        fileData: mat.fileData,
-                        parsedSlides: mat.parsedSlides,
-                        pdfUrl: isMatPdf
-                          ? (resolvedUrl ? resolveFileUrl(resolvedUrl) : (mat.fileName?.toLowerCase().includes("uml") ? "/UML Diagram - Library System.pdf" : `${backendBase}/uploads/${mat.fileName}`))
-                          : undefined,
-                      });
-                      setIsPresenterOpen(true);
-                    }}
-                    className="w-full py-2 bg-slate-900 group-hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
-                  >
-                    <Tv className="w-3.5 h-3.5 text-indigo-300" /> Run {mat.type === "PDF" ? "PDF Document" : "Presentation"}
-                  </button>
-                </div>
-              ))}
+                      return (
+                        <tr key={mat.id} className="hover:bg-slate-50/80 transition-colors group">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
+                                <Presentation className="w-4 h-4" />
+                              </div>
+                              <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                {mat.title}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 font-mono text-[11px] text-slate-500">
+                            {mat.fileName || "Presentation File"}
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
+                              {mat.type}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                setPresenterMaterial({
+                                  id: mat.id,
+                                  title: mat.title,
+                                  fileName: mat.fileName,
+                                  fileType: isMatPdf ? "PDF" : mat.type,
+                                  fileUrl: resolvedUrl,
+                                  fileData: mat.fileData,
+                                  parsedSlides: mat.parsedSlides,
+                                  pdfUrl: isMatPdf
+                                    ? (resolvedUrl ? resolveFileUrl(resolvedUrl) : (mat.fileName?.toLowerCase().includes("uml") ? "/UML Diagram - Library System.pdf" : `${backendBase}/uploads/${mat.fileName}`))
+                                    : undefined,
+                                });
+                                setIsPresenterOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs"
+                            >
+                              <Tv className="w-3.5 h-3.5 text-indigo-300" />
+                              <span>Run {mat.type === "PDF" ? "PDF Document" : "Presentation"}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
