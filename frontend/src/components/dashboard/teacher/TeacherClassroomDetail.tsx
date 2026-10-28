@@ -1303,7 +1303,21 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             <span className="text-slate-300">/</span>
             <span className="text-slate-600 font-medium">{batch.name}</span>
             <span className="text-slate-300">/</span>
-            <span className="font-bold text-slate-900">{course.code}</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab(null)}
+              className={`font-bold transition-colors ${activeTab ? "text-slate-600 hover:text-slate-900 hover:underline cursor-pointer" : "text-slate-900 cursor-default"}`}
+            >
+              {course.code}
+            </button>
+            {activeTab && (
+              <>
+                <span className="text-slate-300">/</span>
+                <span className="font-extrabold text-brand-dark">
+                  {activeTab === "live" ? "Live Class" : activeTab === "outline" ? "Course Outline & Slides" : activeTab === "attendance" ? "Attendance & Sessions" : activeTab === "assignments" ? "Assignments" : "Class Tests (CT)"}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -1342,6 +1356,15 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
         {/* Primary Header Action */}
         <div className="flex items-center gap-2 shrink-0">
+          {activeTab && (
+            <button
+              type="button"
+              onClick={() => setActiveTab(null)}
+              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Modules
+            </button>
+          )}
           <button
             onClick={() => setShowEvaluationPolicyModal(true)}
             className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
@@ -1366,8 +1389,8 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         </div>
       </div>
 
-      {/* ── CLASSROOM MODULES MENU OR ACTIVE MODULE HEADER ── */}
-      {!activeTab ? (
+      {/* ── CLASSROOM MODULES MENU (Box View) ── */}
+      {!activeTab && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
             <div>
@@ -1555,59 +1578,6 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
-          </div>
-        </div>
-      ) : (
-        /* ── Active Module Navigation Bar with Back Button ── */
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <button
-            onClick={() => setActiveTab(null)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-brand-dark hover:bg-slate-100/90 transition-all border border-slate-200/70 w-fit"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-            <span>← Back to Modules</span>
-          </button>
-
-          {/* Quick-switch pill tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {[
-              { id: "live", label: "Live Class", icon: Presentation, badge: "LIVE" },
-              { id: "outline", label: "Outline & Slides", icon: BookOpen, count: courseSyllabus.length },
-              { id: "attendance", label: "Attendance", icon: ClipboardCheck, count: classroomSessions.length },
-              { id: "assignments", label: "Assignments", icon: ListTodo, count: assignments.length },
-              { id: "tests", label: "Class Tests (CT)", icon: FileText, count: tests.length },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-                    isActive
-                      ? "bg-slate-900 text-white shadow-xs font-extrabold"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                  {tab.badge && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-emerald-500 text-white tracking-wider animate-pulse">
-                      {tab.badge}
-                    </span>
-                  )}
-                  {typeof tab.count === "number" && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[9px] ${
-                        isActive ? "bg-white/20 text-white font-extrabold" : "bg-slate-200 text-slate-600 font-bold"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
           </div>
         </div>
       )}

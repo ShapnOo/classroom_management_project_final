@@ -17,7 +17,9 @@ import {
   ArrowLeft,
   Presentation,
   Tv,
-  Database
+  Database,
+  LayoutGrid,
+  List as ListIcon
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
