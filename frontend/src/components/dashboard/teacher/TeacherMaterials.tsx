@@ -55,6 +55,7 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
 
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -87,15 +88,14 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
   // Helper for file icons based on type
   const getFileIcon = (type: string) => {
     switch(type) {
-      case "PDF": return <FileText className="w-6 h-6 text-red-500" />;
-      case "Slides": return <MonitorPlay className="w-6 h-6 text-orange-500" />;
-      case "Practical": return <Code className="w-6 h-6 text-blue-500" />;
-      case "Video": return <Video className="w-6 h-6 text-purple-500" />;
-      case "Lecture Notes": return <FileText className="w-6 h-6 text-blue-500" />;
-      default: return <FileDown className="w-6 h-6 text-slate-500" />;
+      case "PDF": return <FileText className="w-5 h-5 text-red-500" />;
+      case "Slides": return <MonitorPlay className="w-5 h-5 text-orange-500" />;
+      case "Practical": return <Code className="w-5 h-5 text-blue-500" />;
+      case "Video": return <Video className="w-5 h-5 text-purple-500" />;
+      case "Lecture Notes": return <FileText className="w-5 h-5 text-blue-500" />;
+      default: return <FileDown className="w-5 h-5 text-slate-500" />;
     }
   };
-
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -113,6 +113,10 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
     setDragActive(false);
     // handle files here
   };
+
+  const filteredMaterials = formattedMaterials
+    .filter(mat => selectedFilter === "All" || mat.type === selectedFilter)
+    .filter(mat => mat.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -134,16 +138,16 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
                 {code} • {batch}
               </span>
             </div>
-            
+            <h1 className="text-base font-bold text-slate-900">{courseName}</h1>
           </div>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-dark text-white rounded-lg text-[13px] font-medium hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-dark text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm shrink-0"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5" />
             Upload Material
           </button>
         </div>
@@ -169,112 +173,233 @@ export default function TeacherMaterials({ courseId }: TeacherMaterialsProps) {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full xl:w-72 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search materials..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-sm"
-          />
+        {/* Search & View Switcher */}
+        <div className="flex items-center gap-2 w-full xl:w-auto justify-between xl:justify-end">
+          <div className="relative w-full xl:w-64 shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search materials..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-xs"
+            />
+          </div>
+
+          <div className="flex items-center border border-slate-200 rounded-lg bg-white p-0.5 shrink-0 shadow-xs">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === "list" ? "bg-slate-100 text-slate-900 font-bold" : "text-slate-400 hover:text-slate-600"
+              }`}
+              title="List View (Default)"
+            >
+              <ListIcon className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === "grid" ? "bg-slate-100 text-slate-900 font-bold" : "text-slate-400 hover:text-slate-600"
+              }`}
+              title="Card Grid View"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-        
       </div>
 
-      {/* Material List Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {formattedMaterials.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-[11px] text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            No course materials uploaded yet. Click "Upload Material" to share slides, PDFs, or lecture notes.
+      {/* Materials List View or Grid View */}
+      {filteredMaterials.length === 0 ? (
+        <div className="py-12 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          No course materials uploaded yet. Click &quot;Upload Material&quot; to share slides, PDFs, or lecture notes.
+        </div>
+      ) : viewMode === "list" ? (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">Material Name</th>
+                  <th className="px-5 py-3.5">Category</th>
+                  <th className="px-5 py-3.5">File Size</th>
+                  <th className="px-5 py-3.5">Upload Date</th>
+                  <th className="px-5 py-3.5">Slide Position</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredMaterials.map((mat) => {
+                  const dbSaved = slideStates[mat.id];
+                  const localSaved = getSavedSlideState(mat.id);
+                  const lastSlide = dbSaved?.lastSlide ?? (mat as any).lastSlide ?? localSaved?.lastSlide ?? 1;
+                  const totalSlides = dbSaved?.totalSlides ?? (mat as any).totalSlides ?? localSaved?.totalSlides ?? 8;
+                  const isResumable = lastSlide > 1;
+
+                  return (
+                    <tr key={mat.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
+                            {getFileIcon(mat.type)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 group-hover:text-brand-dark transition-colors">
+                              {mat.name}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">{mat.classNo}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
+                          {mat.type}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-500">
+                        {mat.size}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-500">
+                        {mat.date}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {isResumable ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded text-[10.5px] font-bold">
+                            <Database className="w-3 h-3 text-emerald-600" />
+                            Slide {lastSlide} / {totalSlides}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPresenterMaterial({
+                                id: mat.id,
+                                title: mat.name,
+                                fileType: mat.type,
+                                date: mat.date,
+                                lastSlide,
+                                totalSlides,
+                              });
+                              setIsPresenterOpen(true);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs ${
+                              isResumable
+                                ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                                : "bg-brand-dark hover:bg-slate-800 text-white"
+                            }`}
+                          >
+                            <Presentation className="w-3.5 h-3.5" />
+                            <span>{isResumable ? `Resume (${lastSlide})` : "Present"}</span>
+                          </button>
+                          <button
+                            onClick={() => deleteMaterial(mat.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Material"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ) : formattedMaterials.filter(mat => selectedFilter === "All" || mat.type === selectedFilter).filter(mat => mat.name.toLowerCase().includes(searchQuery.toLowerCase())).map((mat) => (
-          <div key={mat.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 group flex flex-col">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                {getFileIcon(mat.type)}
-              </div>
-              <div className="relative group/menu">
-                <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                {/* Dropdown menu */}
-                <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 shadow-lg rounded-lg overflow-hidden opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
-                  <button onClick={() => deleteMaterial(mat.id)} className="w-full text-left px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" /> Delete
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredMaterials.map((mat) => (
+            <div key={mat.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 group flex flex-col">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                  {getFileIcon(mat.type)}
+                </div>
+                <div className="relative group/menu">
+                  <button className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                    <MoreVertical className="w-4 h-4" />
                   </button>
+                  <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 shadow-lg rounded-lg overflow-hidden opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
+                    <button onClick={() => deleteMaterial(mat.id)} className="w-full text-left px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" /> Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="mb-4 flex-1">
-              <h3 className="text-[13px] font-medium text-slate-900 line-clamp-2 mb-1 group-hover:text-brand-dark transition-colors" title={mat.name}>
-                {mat.name}
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
-                  {mat.type}
-                </span>
-                <span className="text-[10px] font-medium text-slate-400">
-                  {mat.size}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-[11px] font-medium text-slate-500 mb-3">
-              <span className="text-brand-dark font-medium">{mat.classNo}</span>
-              <span>{mat.date}</span>
-            </div>
-
-            {/* Slide Memory State & Present Button */}
-            {(() => {
-              const dbSaved = slideStates[mat.id];
-              const localSaved = getSavedSlideState(mat.id);
-              const lastSlide = dbSaved?.lastSlide ?? (mat as any).lastSlide ?? localSaved?.lastSlide ?? 1;
-              const totalSlides = dbSaved?.totalSlides ?? (mat as any).totalSlides ?? localSaved?.totalSlides ?? 8;
-              const isResumable = lastSlide > 1;
-
-              return (
-                <div className="space-y-2 pt-1">
-                  {isResumable && (
-                    <div className="flex items-center justify-between px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[10.5px]">
-                      <span className="text-emerald-800 font-bold flex items-center gap-1">
-                        <Database className="w-3 h-3 text-emerald-600" />
-                        Slide {lastSlide} / {totalSlides}
-                      </span>
-                      <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-[9.5px]">PostgreSQL Synced</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPresenterMaterial({
-                        id: mat.id,
-                        title: mat.name,
-                        fileType: mat.type,
-                        date: mat.date,
-                        lastSlide,
-                        totalSlides,
-                      });
-                      setIsPresenterOpen(true);
-                    }}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
-                      isResumable
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
-                        : "bg-slate-900 hover:bg-slate-800 text-white"
-                    }`}
-                  >
-                    <Presentation className="w-3.5 h-3.5" />
-                    <span>{isResumable ? `Resume from Slide ${lastSlide}` : "Present Deck"}</span>
-                  </button>
+              
+              <div className="mb-4 flex-1">
+                <h3 className="text-[13px] font-medium text-slate-900 line-clamp-2 mb-1 group-hover:text-brand-dark transition-colors" title={mat.name}>
+                  {mat.name}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
+                    {mat.type}
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-400">
+                    {mat.size}
+                  </span>
                 </div>
-              );
-            })()}
-          </div>
-        ))}
-      </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-[11px] font-medium text-slate-500 mb-3">
+                <span className="text-brand-dark font-medium">{mat.classNo}</span>
+                <span>{mat.date}</span>
+              </div>
+
+              {/* Slide Memory State & Present Button */}
+              {(() => {
+                const dbSaved = slideStates[mat.id];
+                const localSaved = getSavedSlideState(mat.id);
+                const lastSlide = dbSaved?.lastSlide ?? (mat as any).lastSlide ?? localSaved?.lastSlide ?? 1;
+                const totalSlides = dbSaved?.totalSlides ?? (mat as any).totalSlides ?? localSaved?.totalSlides ?? 8;
+                const isResumable = lastSlide > 1;
+
+                return (
+                  <div className="space-y-2 pt-1">
+                    {isResumable && (
+                      <div className="flex items-center justify-between px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[10.5px]">
+                        <span className="text-emerald-800 font-bold flex items-center gap-1">
+                          <Database className="w-3 h-3 text-emerald-600" />
+                          Slide {lastSlide} / {totalSlides}
+                        </span>
+                        <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-[9.5px]">PostgreSQL Synced</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPresenterMaterial({
+                          id: mat.id,
+                          title: mat.name,
+                          fileType: mat.type,
+                          date: mat.date,
+                          lastSlide,
+                          totalSlides,
+                        });
+                        setIsPresenterOpen(true);
+                      }}
+                      className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                        isResumable
+                          ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100"
+                          : "bg-slate-900 hover:bg-slate-800 text-white"
+                      }`}
+                    >
+                      <Presentation className="w-3.5 h-3.5" />
+                      <span>{isResumable ? `Resume from Slide ${lastSlide}` : "Present Deck"}</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Upload Modal */}
       {isModalOpen && (

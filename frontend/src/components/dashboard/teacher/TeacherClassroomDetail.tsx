@@ -148,6 +148,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
 
   // Filter & Search states
   const [studentSearch, setStudentSearch] = useState("");
+  const [attendanceSearch, setAttendanceSearch] = useState("");
   const [syllabusFilter, setSyllabusFilter] = useState<"all" | "done" | "current" | "pending">("all");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
 
@@ -703,12 +704,13 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
   // Submit Quick Attendance
   const handleSaveAttendance = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sessionTopic) return;
+    const finalTopic = sessionTopic || `Class Lecture - ${new Date().toLocaleDateString("en-GB")}`;
+    const finalDate = sessionDate || new Date().toISOString().split("T")[0];
 
     setConfirmDialog({
       isOpen: true,
-      title: "Are you sure?",
-      message: `Are you sure you want to finalize and save class session & attendance for "${sessionTopic}"?`,
+      title: "Save Attendance?",
+      message: `Are you sure you want to finalize and save attendance for this class (${presentCount} Present, ${absentCount} Absent)?`,
       type: "confirm",
       confirmLabel: "Yes, Save Attendance",
       onConfirm: async () => {
@@ -718,9 +720,9 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         // 1. Add Class Session record
         addClassSession({
           classroomId: cls.id,
-          date: sessionDate,
-          topicCovered: sessionTopic,
-          notes: sessionNotes,
+          date: finalDate,
+          topicCovered: finalTopic,
+          notes: sessionNotes || "",
           duration: sessionDuration,
           conductedAt: new Date().toISOString(),
         });
@@ -736,7 +738,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
         });
 
         // 4. If matched a syllabus topic, update status
-        const matchedTopic = courseSyllabus.find((t) => t.topic.toLowerCase() === sessionTopic.toLowerCase());
+        const matchedTopic = courseSyllabus.find((t) => t.topic.toLowerCase() === finalTopic.toLowerCase());
         if (matchedTopic && matchedTopic.teacherStatus !== "done") {
           updateSyllabusTopic(matchedTopic.id, { teacherStatus: "done" });
         }
@@ -752,9 +754,65 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
     });
   };
 
-  // Syllabus Status toggle
+  const getTodayDateStr = () => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Syllabus Status toggle with auto-dating
   const handleMarkTopicStatus = (topicId: string, status: "pending" | "current" | "done") => {
-    updateSyllabusTopic(topicId, { teacherStatus: status });
+    const today = getTodayDateStr();
+    const target = courseSyllabus.find((t) => t.id === topicId);
+    if (status === "current") {
+      updateSyllabusTopic(topicId, {
+        teacherStatus: status,
+        startDate: target?.startDate || today,
+      });
+    } else if (status === "done") {
+      updateSyllabusTopic(topicId, {
+        teacherStatus: status,
+        finishDate: target?.finishDate || today,
+        completedSlides: target?.totalSlides || 20,
+      });
+    } else {
+      updateSyllabusTopic(topicId, { teacherStatus: status });
+    }
+  };
+
+  const handleStartTopic = (top: SyllabusTopic) => {
+    const today = getTodayDateStr();
+    setSelectedTopicId(top.id);
+    updateSyllabusTopic(top.id, {
+      teacherStatus: "current",
+      startDate: top.startDate || today,
+    });
+  };
+
+  const handleFinishTopic = (top: SyllabusTopic) => {
+    const today = getTodayDateStr();
+    const total = top.totalSlides || 20;
+    updateSyllabusTopic(top.id, {
+      teacherStatus: "done",
+      finishDate: today,
+      completedSlides: total,
+    });
+    // Auto advance to next pending topic if available
+    const nextPending = courseSyllabus.find((t) => t.id !== top.id && t.teacherStatus !== "done");
+    if (nextPending) {
+      setSelectedTopicId(nextPending.id);
+      updateSyllabusTopic(nextPending.id, {
+        teacherStatus: "current",
+        startDate: nextPending.startDate || today,
+      });
+    }
+    setSuccessModal({
+      isOpen: true,
+      title: "Topic Completed! 🎉",
+      message: `Week ${top.week}: "${top.topic}" marked complete with finish date ${today}.`,
+    });
   };
 
   const handleSyllabusSlideFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1587,70 +1645,267 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
       {/* ── TAB 1: LIVE CLASS (Slide View + Memory + Live Attendance) ── */}
       {activeTab === "live" && (
         <div className="space-y-6">
-          {/* Active Topic Switcher & Semester Roadmap Pill Bar */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <Presentation className="w-4 h-4 text-indigo-600" /> Live Class & Lecture Room
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Conduct interactive lectures with native PPTX/PDF slide view, slide position memory, and rapid attendance logging.
-                </p>
+          {/* ── Lecture Topics Roadmap Table (List View) ── */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Header & Overall Progress Summary */}
+            <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 shadow-2xs">
+                  <Presentation className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                      Live Class & Lecture Topics Roadmap
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700">
+                      Table List View
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Structured roadmap with real-time progress bars and automated start/finish timestamps.
+                  </p>
+                </div>
               </div>
 
-              {/* Active Topic Dropdown Selector */}
-              <div className="flex items-center gap-2 shrink-0">
-                <label className="text-xs font-bold text-slate-600">Active Topic:</label>
-                <select
-                  value={currentTopic?.id || ""}
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
-                    setSelectedTopicId(selectedId);
-                    updateSyllabusTopic(selectedId, { teacherStatus: "current" });
-                  }}
-                  className="px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 text-slate-900"
-                >
-                  {courseSyllabus.map((top) => (
-                    <option key={top.id} value={top.id}>
-                      Week {top.week}: {top.topic} ({top.teacherStatus})
-                    </option>
-                  ))}
-                </select>
+              {/* Progress Summary Pill */}
+              <div className="flex items-center gap-3 shrink-0 bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="text-right">
+                  <div className="text-xs font-black text-slate-900">
+                    {courseSyllabus.filter((t) => t.teacherStatus === "done").length} / {courseSyllabus.length} Topics Finished
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-semibold">
+                    {Math.round(
+                      (courseSyllabus.filter((t) => t.teacherStatus === "done").length / (courseSyllabus.length || 1)) * 100
+                    )}% Syllabus Covered
+                  </div>
+                </div>
+                <div className="w-20 bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.round(
+                        (courseSyllabus.filter((t) => t.teacherStatus === "done").length / (courseSyllabus.length || 1)) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Topic Roadmap Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-              {courseSyllabus.map((top) => {
-                const isSel = currentTopic?.id === top.id;
-                const isDone = top.teacherStatus === "done";
-                return (
-                  <button
-                    key={top.id}
-                    onClick={() => {
-                      setSelectedTopicId(top.id);
-                      if (top.teacherStatus !== "done") {
-                        updateSyllabusTopic(top.id, { teacherStatus: "current" });
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
-                      isSel
-                        ? "bg-slate-900 text-white shadow-md ring-2 ring-indigo-400"
-                        : isDone
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {isDone ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : isSel ? (
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    ) : null}
-                    <span>W{top.week}: {top.topic}</span>
-                  </button>
-                );
-              })}
+            {/* Table View */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-600">
+                    <th className="py-3 px-4 w-16 text-center">Week</th>
+                    <th className="py-3 px-4 min-w-[240px]">Lecture Topic</th>
+                    <th className="py-3 px-4 min-w-[130px]">Status</th>
+                    <th className="py-3 px-4 min-w-[190px]">Progress</th>
+                    <th className="py-3 px-4 min-w-[130px]">Start Date</th>
+                    <th className="py-3 px-4 min-w-[130px]">Finish Date</th>
+                    <th className="py-3 px-4 text-right min-w-[180px]">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {courseSyllabus.map((top) => {
+                    const isSel = currentTopic?.id === top.id;
+                    const isDone = top.teacherStatus === "done";
+                    const isCurrent = top.teacherStatus === "current";
+                    const isPending = top.teacherStatus === "pending";
+                    const totalSlides = top.totalSlides || 20;
+                    const completedSlides = isDone ? totalSlides : (top.completedSlides || 0);
+                    const progressPercent = isDone
+                      ? 100
+                      : isCurrent
+                      ? Math.max(10, Math.round((completedSlides / totalSlides) * 100))
+                      : 0;
+
+                    return (
+                      <tr
+                        key={top.id}
+                        onClick={() => setSelectedTopicId(top.id)}
+                        className={`transition-colors cursor-pointer group ${
+                          isSel
+                            ? "bg-indigo-50/40 border-l-4 border-l-indigo-600"
+                            : isDone
+                            ? "hover:bg-slate-50/70"
+                            : "hover:bg-slate-50/70"
+                        }`}
+                      >
+                        {/* Week Badge */}
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center justify-center font-black rounded-lg text-xs w-8 h-8 ${
+                              isDone
+                                ? "bg-emerald-100 text-emerald-800"
+                                : isCurrent
+                                ? "bg-indigo-600 text-white shadow-xs"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            W{top.week}
+                          </span>
+                        </td>
+
+                        {/* Lecture Topic */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                {top.topic}
+                              </span>
+                              {isSel && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+                                  Active in Presenter
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                              <span className="font-medium">{totalSlides} Slides</span>
+                              {top.subTopics && top.subTopics.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="line-clamp-1">{top.subTopics.slice(0, 2).join(", ")}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4">
+                          {isDone ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Completed
+                            </span>
+                          ) : isCurrent ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                              Teaching Now
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              Upcoming
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Progress Bar */}
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1.5 max-w-[170px]">
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className={isDone ? "text-emerald-700" : isCurrent ? "text-indigo-600" : "text-slate-400"}>
+                                {isDone ? "100%" : `${progressPercent}%`}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {isDone
+                                  ? `${totalSlides}/${totalSlides} Slides`
+                                  : isCurrent
+                                  ? `${completedSlides}/${totalSlides} Slides`
+                                  : "0%"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  isDone
+                                    ? "bg-emerald-500"
+                                    : isCurrent
+                                    ? "bg-indigo-600"
+                                    : "bg-slate-200"
+                                }`}
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Start Date */}
+                        <td className="py-3.5 px-4">
+                          {top.startDate ? (
+                            <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
+                              <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                              <span>{top.startDate}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic font-medium">—</span>
+                          )}
+                        </td>
+
+                        {/* Finish Date */}
+                        <td className="py-3.5 px-4">
+                          {top.finishDate ? (
+                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span>{top.finishDate}</span>
+                            </div>
+                          ) : isCurrent ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200 animate-pulse">
+                              In Progress...
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic font-medium">—</span>
+                          )}
+                        </td>
+
+                        {/* Action Buttons */}
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            {isCurrent ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedTopicId(top.id);
+                                    handleOpenSlidePresenter(top);
+                                  }}
+                                  className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                                  title="Present Slides"
+                                >
+                                  <Tv className="w-3.5 h-3.5" /> Present
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleFinishTopic(top)}
+                                  className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                                  title="Finish Topic (Auto-sets finish date to today)"
+                                >
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Finish ✓
+                                </button>
+                              </>
+                            ) : isPending ? (
+                              <button
+                                type="button"
+                                onClick={() => handleStartTopic(top)}
+                                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                                title="Start Teaching (Auto-sets start date to today)"
+                              >
+                                <Play className="w-3 h-3 text-emerald-400 fill-emerald-400" /> Start Teaching
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTopicId(top.id);
+                                  handleOpenSlidePresenter(top);
+                                }}
+                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                                title="Review Slides"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> Review Deck
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1664,6 +1919,11 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                       TEACHING NOW • WEEK {currentTopic.week}
                     </span>
+                    {currentTopic.startDate && (
+                      <span className="text-xs font-semibold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-md flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-indigo-300" /> Started: {currentTopic.startDate}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-indigo-300 bg-indigo-950 border border-indigo-800 px-2.5 py-0.5 rounded-md">
                       {topicSessions.length} {topicSessions.length === 1 ? "Session" : "Sessions"} Conducted
                     </span>
@@ -1691,19 +1951,7 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                   </button>
                   {currentTopic.teacherStatus !== "done" ? (
                     <button
-                      onClick={() => {
-                        handleMarkTopicStatus(currentTopic.id, "done");
-                        const nextPending = courseSyllabus.find((t) => t.id !== currentTopic.id && t.teacherStatus !== "done");
-                        if (nextPending) {
-                          setSelectedTopicId(nextPending.id);
-                          updateSyllabusTopic(nextPending.id, { teacherStatus: "current" });
-                        }
-                        setSuccessModal({
-                          isOpen: true,
-                          title: "Topic Completed!",
-                          message: `Topic "${currentTopic.topic}" is marked complete. Advanced to next topic.`,
-                        });
-                      }}
+                      onClick={() => handleFinishTopic(currentTopic)}
                       className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-white/20"
                     >
                       <Check className="w-4 h-4 text-emerald-400" /> Finish Topic ✓
@@ -2437,44 +2685,62 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {assignments.length === 0 ? (
-              <div className="col-span-2 py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
-                No assignments created yet.
+          {assignments.length === 0 ? (
+            <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+              No assignments created yet.
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="px-5 py-3.5">Assignment Details</th>
+                      <th className="px-5 py-3.5">Due Date</th>
+                      <th className="px-5 py-3.5">Total Marks</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {assignments.map((asg) => (
+                      <tr key={asg.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-5 py-4">
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{asg.title}</h4>
+                          {asg.description && (
+                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 max-w-md">{asg.description}</p>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="flex items-center gap-1.5 font-medium text-slate-600">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" /> {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="text-xs font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md">
+                            {asg.totalMarks} Marks
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                            {asg.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <Link
+                            href={`/dashboard/teacher/assignments/${classroomId}/evaluate/${asg.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs"
+                          >
+                            <span>Evaluate Submissions</span> <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              assignments.map((asg) => (
-                <div key={asg.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-sm transition-all space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                        {asg.status}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 mt-1.5">{asg.title}</h4>
-                      {asg.description && (
-                        <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{asg.description}</p>
-                      )}
-                    </div>
-                    <span className="text-xs font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg shrink-0">
-                      {asg.totalMarks} Marks
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Due: {new Date(asg.dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                    <Link
-                      href={`/dashboard/teacher/assignments/${classroomId}/evaluate/${asg.id}`}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-2xs"
-                    >
-                      Evaluate Submissions <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2498,157 +2764,159 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tests.length === 0 ? (
-              <div className="col-span-2 py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
-                No class tests scheduled yet.
+          {tests.length === 0 ? (
+            <div className="py-16 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
+              No class tests scheduled yet.
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="px-5 py-3.5">Test / Quiz Title</th>
+                      <th className="px-5 py-3.5">Date & Duration</th>
+                      <th className="px-5 py-3.5">Total Marks</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {tests.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-5 py-4">
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-600 transition-colors">{t.title}</h4>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="space-y-0.5">
+                            <span className="flex items-center gap-1.5 font-medium text-slate-600">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" /> {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                            {t.duration && (
+                              <p className="text-[10.5px] text-slate-400 font-medium">Duration: {t.duration}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="text-xs font-black text-purple-900 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200/60">
+                            {t.totalMarks} Marks
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-purple-50 text-purple-700 border border-purple-200/60">
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <button
+                            onClick={() => openEvaluationModal("test", t)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs"
+                          >
+                            <span>Enter / Manage CT Marks</span> <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              tests.map((t) => (
-                <div key={t.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-sm transition-all space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md uppercase bg-purple-50 text-purple-700 border border-purple-200/60">
-                        {t.status}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 mt-1.5">{t.title}</h4>
-                      {t.duration && (
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">Duration: {t.duration}</p>
-                      )}
-                    </div>
-                    <span className="text-xs font-black text-purple-900 bg-purple-50 px-2.5 py-1 rounded-lg shrink-0 border border-purple-200/60">
-                      {t.totalMarks} Marks
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Date: {new Date(t.testDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                    <button
-                      onClick={() => openEvaluationModal("test", t)}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shadow-2xs"
-                    >
-                      Enter / Manage CT Marks <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ── MODAL: 1-CLICK QUICK ATTENDANCE & CONDUCT CLASS ── */}
       {showAttendanceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-6 md:p-8 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-4xl w-full h-[88vh] max-h-[92vh] flex flex-col overflow-hidden">
             
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                  <ClipboardCheck className="w-5 h-5" />
+            <div className="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-2xs">
+                  <ClipboardCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Take Attendance & Conduct Class</h3>
-                  <p className="text-xs text-slate-500">{course.code} • {batch.name}</p>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">Take Attendance & Conduct Class</h3>
+                  <p className="text-xs text-slate-500 font-medium">{course.code} • {course.title} — {batch.name}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAttendanceModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-700 p-2.5 rounded-xl hover:bg-slate-100 transition-colors"
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSaveAttendance} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+            <form onSubmit={handleSaveAttendance} className="flex-1 overflow-hidden flex flex-col p-5 sm:p-7 space-y-4 text-xs">
               
-              {/* Session Meta Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Topic Covered Today *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={sessionTopic}
-                    onChange={(e) => setSessionTopic(e.target.value)}
-                    placeholder="e.g. Normalization & 3NF Forms"
-                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
-                  />
+              {/* Roster Controls & Stats Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 shrink-0">
+                <div className="flex items-center flex-wrap gap-2">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Student Register ({students.length})
+                  </span>
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-1 rounded-lg border border-emerald-200/70">
+                    {presentCount} Present
+                  </span>
+                  {absentCount > 0 && (
+                    <span className="text-xs font-bold text-red-800 bg-red-100/90 px-2.5 py-1 rounded-lg border border-red-200/70">
+                      {absentCount} Absent
+                    </span>
+                  )}
+                  {students.length - presentCount - absentCount > 0 && (
+                    <span className="text-xs font-bold text-amber-800 bg-amber-100/90 px-2.5 py-1 rounded-lg border border-amber-200/70">
+                      {students.length - presentCount - absentCount} Late
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Lecture Date
-                  </label>
-                  <input
-                    type="date"
-                    value={sessionDate}
-                    onChange={(e) => setSessionDate(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-3">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Teacher Lesson Notes (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={sessionNotes}
-                    onChange={(e) => setSessionNotes(e.target.value)}
-                    placeholder="e.g. Completed ER modeling exercises, assigned lab code..."
-                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 bg-white"
-                  />
+
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <div className="relative w-full sm:w-56 shrink-0">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search student or roll..."
+                      value={attendanceSearch}
+                      onChange={(e) => setAttendanceSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAllAttendance("present")}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs whitespace-nowrap"
+                  >
+                    All Present
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllAttendance("absent")}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs whitespace-nowrap"
+                  >
+                    All Absent
+                  </button>
                 </div>
               </div>
 
-              {/* Roster Controls */}
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                      Student Register ({students.length})
-                    </h4>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                      {presentCount} Present
-                    </span>
-                    {absentCount > 0 && (
-                      <span className="text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md">
-                        {absentCount} Absent
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setAllAttendance("present")}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-colors"
-                    >
-                      All Present
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAllAttendance("absent")}
-                      className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-800 rounded-lg text-[11px] font-bold transition-colors"
-                    >
-                      All Absent
-                    </button>
-                  </div>
-                </div>
-
-                {/* Students Toggle List */}
-                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                  {students.map((stud) => {
+              {/* Students Toggle List - Expanded full height & spacious */}
+              <div className="flex-1 border border-slate-200 rounded-2xl overflow-y-auto divide-y divide-slate-100 bg-white shadow-2xs">
+                {students
+                  .filter((s) => {
+                    if (!attendanceSearch.trim()) return true;
+                    const q = attendanceSearch.toLowerCase();
+                    return s.name.toLowerCase().includes(q) || s.rollNo.toLowerCase().includes(q);
+                  })
+                  .map((stud) => {
                     const status = attendanceMap[stud.id] || "present";
                     return (
                       <div
                         key={stud.id}
                         onClick={() => toggleStudentAttendance(stud.id)}
-                        className={`p-3 flex items-center justify-between cursor-pointer select-none transition-colors ${
+                        className={`px-5 py-3.5 flex items-center justify-between cursor-pointer select-none transition-colors ${
                           status === "present"
                             ? "hover:bg-emerald-50/30"
                             : status === "absent"
@@ -2656,27 +2924,33 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                             : "bg-amber-50/30 hover:bg-amber-50/50"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[10px] text-slate-800">
+                        <div className="flex items-center gap-3.5">
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border ${
+                            status === "present"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : status === "absent"
+                              ? "bg-red-100 text-red-800 border-red-200"
+                              : "bg-amber-100 text-amber-800 border-amber-200"
+                          }`}>
                             {stud.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-xs">{stud.name}</p>
-                            <p className="text-[10px] text-slate-400 font-medium">{stud.rollNo}</p>
+                            <p className="font-bold text-slate-900 text-xs sm:text-sm">{stud.name}</p>
+                            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{stud.rollNo}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setAttendanceMap((p) => ({ ...p, [stud.id]: "present" }));
                             }}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                               status === "present"
                                 ? "bg-emerald-600 text-white shadow-xs"
-                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                           >
                             Present
@@ -2687,10 +2961,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                               e.stopPropagation();
                               setAttendanceMap((p) => ({ ...p, [stud.id]: "absent" }));
                             }}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                               status === "absent"
                                 ? "bg-red-600 text-white shadow-xs"
-                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                           >
                             Absent
@@ -2701,10 +2975,10 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                               e.stopPropagation();
                               setAttendanceMap((p) => ({ ...p, [stud.id]: "late" }));
                             }}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                               status === "late"
                                 ? "bg-amber-500 text-white shadow-xs"
-                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                           >
                             Late
@@ -2713,21 +2987,20 @@ export default function TeacherClassroomDetail({ classroomId }: TeacherClassroom
                       </div>
                     );
                   })}
-                </div>
               </div>
 
               {/* Submit Action */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAttendanceModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-colors flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4 text-white" /> Complete & Save Attendance
                 </button>

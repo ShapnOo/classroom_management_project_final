@@ -299,20 +299,6 @@ export default function TeacherTests({ courseId }: TeacherTestsProps) {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Total Tests", value: clsTests.length, color: "text-slate-700", bg: "bg-slate-50" },
-          { label: "Upcoming", value: clsTests.filter(t => t.status === "Upcoming").length, color: "text-blue-700", bg: "bg-blue-50" },
-          { label: "Active", value: clsTests.filter(t => t.status === "Active").length, color: "text-amber-700", bg: "bg-amber-50" },
-          { label: "Completed", value: clsTests.filter(t => t.status === "Completed").length, color: "text-emerald-700", bg: "bg-emerald-50" },
-        ].map(s => (
-          <div key={s.label} className={`${s.bg} rounded-xl border border-slate-200 p-4 text-center`}>
-            <p className={`text-[18px] font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-slate-500 font-medium">{s.label}</p>
-          </div>
-        ))}
-      </div>
 
       {/* Search and View Mode Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">

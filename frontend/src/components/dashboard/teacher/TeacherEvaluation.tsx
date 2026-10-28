@@ -489,7 +489,7 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
 
   if (!selectedClassId) {
     return (
-      <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto">
+      <div className="space-y-4 animate-in fade-in duration-300 pb-12 w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
           <div>
             <h1 className="text-base font-bold text-slate-900 tracking-tight">Course Evaluation & Grading</h1>
@@ -542,7 +542,7 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-300 pb-12 max-w-7xl mx-auto text-xs">
+    <div className="space-y-4 animate-in fade-in duration-300 pb-12 w-full text-xs">
       
       {/* Policy Saved Toast */}
       {policySavedToast && (
@@ -589,50 +589,6 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
-        </div>
-      </div>
-
-      {/* Current Policy Overview Banner */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-3.5 h-3.5 text-slate-600" />
-            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Active Evaluation Policy & Weight Distribution
-            </h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
-              totalWeightSum === 100
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
-                : "bg-amber-50 text-amber-700 border-amber-200/60"
-            }`}>
-              Total Weight: {totalWeightSum}% {totalWeightSum === 100 ? "✓ Validated" : "⚠️ Warning: Not 100%"}
-            </span>
-            <button
-              onClick={() => setShowPolicyModal(true)}
-              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
-            >
-              Edit Breakdown
-            </button>
-          </div>
-        </div>
-
-        {/* Enabled Component Weight Chips */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {componentKeys.map((key) => {
-            const item = policy[key];
-            if (!item || !item.enabled) return null;
-            const ruleText = item.rule === "best_n" ? `(Best ${item.bestCount} of ${item.totalConducted})` : item.rule === "best_1" ? "(Best 1)" : item.totalConducted ? `(Avg of ${item.totalConducted})` : "";
-            return (
-              <div key={key} className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5 font-medium text-slate-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-900 shrink-0" />
-                <span>{item.label}:</span>
-                <span className="font-extrabold text-slate-900">{item.weight}%</span>
-                {ruleText && <span className="text-[9px] text-blue-700 bg-blue-50 px-1 py-0.5 rounded font-bold">{ruleText}</span>}
-              </div>
-            );
-          })}
         </div>
       </div>
 
@@ -814,7 +770,7 @@ function TeacherEvaluationBody({ classrooms, initialClassroomId }: { classrooms:
 
       {/* TAB 2: POLICY CONFIGURATION FORM */}
       {activeTab === "policy" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 shadow-sm space-y-7 max-w-4xl">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 shadow-sm space-y-7 w-full">
           {/* Header & Description */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>

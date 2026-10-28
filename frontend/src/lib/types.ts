@@ -108,6 +108,8 @@ export type SyllabusTopic = {
   materialId?: string;
   materialTitle?: string;
   materialFileName?: string;
+  startDate?: string;
+  finishDate?: string;
 };
 
 /**
