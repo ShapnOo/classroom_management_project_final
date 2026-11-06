@@ -173,6 +173,9 @@ export async function initDatabase() {
       console.log("Existing GUID data detected in scholaris_db.");
       await seedStudentTranscripts();
     }
+
+    // Ensure student demo data is up-to-date and rich for SP26-A
+    await ensureStudentDemoData();
   } catch (error) {
     console.error("Database initialization error:", error);
     throw error;
@@ -705,6 +708,373 @@ export async function seedStudentTranscripts(clientOrPool: any = pool) {
           grade_point = EXCLUDED.grade_point
       `, [trId, studentId, courseInfo.id, courseInfo.semester, ctMark, assnMark, projMark, attMark, midtermMark, finalExamMark, totalScore, grade, gpa]);
     }
+  }
+}
+
+export async function ensureStudentDemoData() {
+  try {
+    const cls6Id = "66666666-0000-4000-8000-000000000006";
+    const cls7Id = "77777777-0000-4000-8000-000000000007";
+
+    // 1. Add CLS_6 (CSE-412 for SP26-A) and CLS_7 (CSE-301 for SP26-A) if not exists
+    await pool.query(`
+      INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index)
+      VALUES 
+      ('${cls6Id}', '${SEED_IDS.COURSE_412}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_1}', 'Room 305, Bldg A', '2026-01-16', '2026-05-22', 'ongoing', 12, 24, 1),
+      ('${cls7Id}', '${SEED_IDS.COURSE_301}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_3}', 'Room 202, Bldg B', '2026-01-15', '2026-05-20', 'ongoing', 14, 24, 4)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 2. Class schedules for Monday through Friday
+    const schedSlots = [
+      { id: "sched-sp26a-mon-1", cls: SEED_IDS.CLS_1, day: "Monday", start: "10:00 AM", end: "11:30 AM", room: "Room 402" },
+      { id: "sched-sp26a-mon-2", cls: SEED_IDS.CLS_4, day: "Monday", start: "12:00 PM", end: "01:30 PM", room: "Lab 2" },
+      { id: "sched-sp26a-tue-1", cls: cls6Id, day: "Tuesday", start: "10:00 AM", end: "11:30 AM", room: "Room 305" },
+      { id: "sched-sp26a-tue-2", cls: cls7Id, day: "Tuesday", start: "02:00 PM", end: "03:30 PM", room: "Room 202" },
+      { id: "sched-sp26a-wed-1", cls: SEED_IDS.CLS_1, day: "Wednesday", start: "10:00 AM", end: "11:30 AM", room: "Room 402" },
+      { id: "sched-sp26a-wed-2", cls: SEED_IDS.CLS_4, day: "Wednesday", start: "12:00 PM", end: "01:30 PM", room: "Lab 2" },
+      { id: "sched-sp26a-thu-1", cls: cls6Id, day: "Thursday", start: "10:00 AM", end: "11:30 AM", room: "Room 305" },
+      { id: "sched-sp26a-fri-1", cls: cls7Id, day: "Friday", start: "09:30 AM", end: "11:00 AM", room: "Room 202" },
+    ];
+
+    for (const slot of schedSlots) {
+      await pool.query(`
+        INSERT INTO class_schedules (id, classroom_id, day, start_time, end_time, room)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (id) DO UPDATE SET day = EXCLUDED.day, start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, room = EXCLUDED.room;
+      `, [slot.id, slot.cls, slot.day, slot.start, slot.end, slot.room]);
+    }
+
+    // 3. Ensure assignments for SP26-A
+    const asgn6Id = "88888888-0000-4000-8000-000000000006";
+    await pool.query(`
+      INSERT INTO assignments (id, classroom_id, title, description, due_date, total_marks, status, submissions)
+      VALUES 
+      ('${asgn6Id}', '${cls7Id}', 'Dynamic Programming Matrix Chain Multiplication', 'Implement dynamic programming bottom-up table and parenthesization recovery in C++ or Python', '2026-11-28', 25, 'Active', 14),
+      ('asgn-se-sp26a-1', '${cls6Id}', 'Software Architecture Design Document', 'Design microservices communication matrix and deployment topology', '2026-11-18', 20, 'Active', 22),
+      ('asgn-ai-sp26a-1', '${SEED_IDS.CLS_4}', 'A* Search & 8-Puzzle Solver', 'Formulate admissible Manhattan distance heuristics and implement state-space tree traversal', '2026-11-20', 25, 'Active', 19),
+      ('asgn-db-sp26a-1', '${SEED_IDS.CLS_1}', 'Relational Database Schema Design & Normalization', 'Design 3NF / BCNF relational schema with composite foreign keys and constraints', '2026-11-22', 20, 'Active', 28)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 4. Ensure upcoming & completed tests for SP26-A
+    await pool.query(`
+      INSERT INTO tests (id, classroom_id, title, description, test_date, duration, total_marks, status, submissions)
+      VALUES 
+      ('tst-se-sp26a-1', '${cls6Id}', 'Class Test 2: Software Architecture Patterns', 'Multiple choice and diagram synthesis on Clean Architecture and Event-Driven systems', '2026-11-16', '45m', 25, 'Upcoming', 0),
+      ('tst-algo-sp26a-1', '${cls7Id}', 'Class Test 1: Greedy Algorithms & Huffman Coding', 'Written test on greedy choice property and prefix tree compression', '2026-11-24', '40m', 20, 'Upcoming', 0),
+      ('tst-ai-sp26a-1', '${SEED_IDS.CLS_4}', 'Midterm Exam: Machine Learning & State Search', 'Comprehensive theoretical and mathematical formulation exam on gradient descent and heuristics', '2026-11-30', '1h 30m', 50, 'Upcoming', 0),
+      ('tst-db-sp26a-1', '${SEED_IDS.CLS_1}', 'Class Test 1: SQL Window Functions & Relational Algebra', 'Practical and conceptual test on partition by and relational operators', '2026-10-20', '45m', 25, 'Completed', 42)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 5. Ensure comprehensive course materials for Abdur Rahman and SP26-A across all 4 courses
+    const materialsData = [
+      // CSE-412 (Software Engineering)
+      {
+        id: "mat-se-pptx-1",
+        cls: cls6Id,
+        course: SEED_IDS.COURSE_412,
+        title: "Enterprise Architecture & Cloud Systems (Lecture 4)",
+        desc: "Detailed slide deck on enterprise microservices, API Gateway, and PostgreSQL distributed storage.",
+        file: "Presentation1.pptx",
+        type: "Slides",
+        size: "6.2 MB",
+        lastSlide: 14,
+        totalSlides: 20
+      },
+      {
+        id: "mat-se-inception-pptx",
+        cls: cls6Id,
+        course: SEED_IDS.COURSE_412,
+        title: "Software Inception & Sprint Planning Methodology",
+        desc: "Interactive lecture slides covering Agile sprint ceremonies, user story mapping, and CI/CD pipelines.",
+        file: "Inception_and_Sprint_Planning.pptx",
+        type: "Slides",
+        size: "4.8 MB",
+        lastSlide: 8,
+        totalSlides: 18
+      },
+      {
+        id: "mat-se-micro-pdf",
+        cls: cls6Id,
+        course: SEED_IDS.COURSE_412,
+        title: "Microservices Design Patterns & Event-Driven Topology",
+        desc: "Technical specification for CQRS, event sourcing, and resilience with circuit breaker patterns.",
+        file: "Microservices_Patterns_Guide.pdf",
+        type: "application/pdf",
+        size: "3.4 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-se-uml-pdf",
+        cls: cls6Id,
+        course: SEED_IDS.COURSE_412,
+        title: "UML 2.5 Structural & Behavioral Diagrams Specification",
+        desc: "Comprehensive reference manual for class diagrams, sequence interactions, and state machines.",
+        file: "UML_Class_Sequence_Design.pdf",
+        type: "application/pdf",
+        size: "2.1 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+
+      // CSE-305 (Database Management Systems)
+      {
+        id: "mat-db-norm-pptx",
+        cls: SEED_IDS.CLS_1,
+        course: SEED_IDS.COURSE_305,
+        title: "Relational Database Normalization & BCNF Decomposition",
+        desc: "Slide presentation detailing functional dependency closure, lossless joins, 3NF, and Boyce-Codd Normal Form.",
+        file: "Database_Normalization_BCNF.pptx",
+        type: "Slides",
+        size: "5.5 MB",
+        lastSlide: 16,
+        totalSlides: 24
+      },
+      {
+        id: "mat-db-er-pdf",
+        cls: SEED_IDS.CLS_1,
+        course: SEED_IDS.COURSE_305,
+        title: "Comprehensive ER & EER Modeling Guide",
+        desc: "Complete guide on conceptual entity-relationship modeling, cardinalities, weak entity sets, and SQL DDL conversion.",
+        file: "ER_Modeling_and_Relational_Mapping.pdf",
+        type: "application/pdf",
+        size: "1.8 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-db-sql-1",
+        cls: SEED_IDS.CLS_1,
+        course: SEED_IDS.COURSE_305,
+        title: "SQL Window Functions & Analytical Queries Lab",
+        desc: "Complete lab exercise with solutions for PARTITION BY, RANK, DENSE_RANK, and CTE recursion.",
+        file: "SQL_Analytics_Lab.sql",
+        type: "text/plain",
+        size: "240 KB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-db-acid-pdf",
+        cls: SEED_IDS.CLS_1,
+        course: SEED_IDS.COURSE_305,
+        title: "Transactions, ACID Properties & Concurrency Control",
+        desc: "Rigorous theoretical monograph on 2-Phase Locking (2PL), deadlock prevention, and WAL recovery.",
+        file: "ACID_Concurrency_Control.pdf",
+        type: "application/pdf",
+        size: "2.5 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+
+      // CSE-301 (Algorithm Analysis & Design)
+      {
+        id: "mat-algo-dp-pptx",
+        cls: cls7Id,
+        course: SEED_IDS.COURSE_301,
+        title: "Dynamic Programming & Bellman-Ford Recurrences",
+        desc: "Slide presentation explaining subproblem overlapping, memoization tables, and shortest path relaxations.",
+        file: "Dynamic_Programming_Advanced.pptx",
+        type: "Slides",
+        size: "4.2 MB",
+        lastSlide: 10,
+        totalSlides: 22
+      },
+      {
+        id: "mat-algo-pdf-1",
+        cls: cls7Id,
+        course: SEED_IDS.COURSE_301,
+        title: "Divide and Conquer & Dynamic Programming Mastery",
+        desc: "Complete lecture monograph with recurrence relation proofs, Master theorem, and DP optimization.",
+        file: "Greedy_and_DP_Algorithms.pdf",
+        type: "application/pdf",
+        size: "3.1 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-algo-np-pdf",
+        cls: cls7Id,
+        course: SEED_IDS.COURSE_301,
+        title: "NP-Completeness, Reductions & Approximation Algorithms",
+        desc: "Cook-Levin theorem, polynomial time reductions (3-SAT to Vertex Cover), and vertex cover 2-approximation.",
+        file: "NP_Completeness_and_Reductions.pdf",
+        type: "application/pdf",
+        size: "2.7 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-algo-cpp",
+        cls: cls7Id,
+        course: SEED_IDS.COURSE_301,
+        title: "Graph Shortest Path & Flow Network Implementations",
+        desc: "Clean C++20 implementations of Dijkstra with priority queues and Edmonds-Karp maximum bipartite matching.",
+        file: "Dijkstra_Ford_Fulkerson.cpp",
+        type: "text/x-c++src",
+        size: "95 KB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+
+      // CSE-425 (Artificial Intelligence & Machine Learning)
+      {
+        id: "mat-ai-deep-pptx",
+        cls: SEED_IDS.CLS_4,
+        course: SEED_IDS.COURSE_425,
+        title: "Deep Learning, Convolutional & Transformer Architectures",
+        desc: "Visual presentation detailing CNN kernels, pooling layers, multi-head self-attention, and Positional Encodings.",
+        file: "Deep_Learning_Transformers.pptx",
+        type: "Slides",
+        size: "7.8 MB",
+        lastSlide: 12,
+        totalSlides: 30
+      },
+      {
+        id: "mat-ai-astar-pdf",
+        cls: SEED_IDS.CLS_4,
+        course: SEED_IDS.COURSE_425,
+        title: "Informed Search Strategies: A*, IDA* and Heuristic Admissibility",
+        desc: "Mathematical proofs of admissibility and consistency (monotonicity) for heuristic graph searches.",
+        file: "A_Star_Heuristics_Manual.pdf",
+        type: "application/pdf",
+        size: "2.8 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-ai-ml-pdf",
+        cls: SEED_IDS.CLS_4,
+        course: SEED_IDS.COURSE_425,
+        title: "Supervised Learning, Loss Functions & Gradient Descent",
+        desc: "Foundational mathematics for linear regression, cross-entropy loss, and stochastic gradient descent convergence.",
+        file: "Supervised_Learning_Foundations.pdf",
+        type: "application/pdf",
+        size: "3.9 MB",
+        lastSlide: 1,
+        totalSlides: 1
+      },
+      {
+        id: "mat-ai-lab-py",
+        cls: SEED_IDS.CLS_4,
+        course: SEED_IDS.COURSE_425,
+        title: "Neural Network Backpropagation Implementation from Scratch",
+        desc: "Pure Python & NumPy matrix calculation for forward propagation, ReLU activations, and backprop weight updates.",
+        file: "Neural_Network_From_Scratch.py",
+        type: "text/x-python",
+        size: "120 KB",
+        lastSlide: 1,
+        totalSlides: 1
+      }
+    ];
+
+    for (const mat of materialsData) {
+      await pool.query(`
+        INSERT INTO course_materials (id, classroom_id, course_id, title, description, file_name, file_type, file_size, last_slide, total_slides)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          description = EXCLUDED.description,
+          file_name = EXCLUDED.file_name,
+          file_type = EXCLUDED.file_type,
+          file_size = EXCLUDED.file_size,
+          last_slide = EXCLUDED.last_slide,
+          total_slides = EXCLUDED.total_slides;
+      `, [mat.id, mat.cls, mat.course, mat.title, mat.desc, mat.file, mat.type, mat.size, mat.lastSlide, mat.totalSlides]);
+
+      // If it's a slide deck, record slide state
+      if (mat.type === "Slides") {
+        await pool.query(`
+          INSERT INTO material_slide_states (id, material_id, classroom_id, teacher_id, last_slide, total_slides, material_title, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+          ON CONFLICT (material_id) DO UPDATE SET
+            last_slide = EXCLUDED.last_slide,
+            total_slides = EXCLUDED.total_slides,
+            material_title = EXCLUDED.material_title,
+            updated_at = CURRENT_TIMESTAMP;
+        `, [`slide-state-${mat.id}`, mat.id, mat.cls, SEED_IDS.TEACHER_1, mat.lastSlide, mat.totalSlides, mat.title]);
+      }
+    }
+
+    // 6. Ensure Abdur Rahman exists and has complete academic records
+    let abdurId: string | null = null;
+    const { rows: abdurRows } = await pool.query(
+      "SELECT id FROM students WHERE roll_no = 'SP26A001' OR email = 'sp26a1@edu' LIMIT 1"
+    );
+
+    if (abdurRows.length > 0) {
+      abdurId = abdurRows[0].id;
+    } else {
+      // Create Abdur Rahman if missing
+      abdurId = crypto.randomUUID();
+      await pool.query(`
+        INSERT INTO users (id, name, email, password_hash, role)
+        VALUES ($1, 'Abdur Rahman', 'sp26a1@edu', 'student123', 'student')
+        ON CONFLICT (id) DO NOTHING;
+      `, [abdurId]);
+
+      await pool.query(`
+        INSERT INTO students (id, roll_no, name, email, batch_id, phone)
+        VALUES ($1, 'SP26A001', 'Abdur Rahman', 'sp26a1@edu', '${SEED_IDS.BATCH_SP26_A}', '+880 1711234567')
+        ON CONFLICT (id) DO NOTHING;
+      `, [abdurId]);
+    }
+
+    if (abdurId) {
+      // Ensure submissions for assignments
+      await pool.query(`
+        INSERT INTO assignment_submissions (id, assignment_id, student_id, submission_text, attachment_urls, github_url, status, submitted_at, obtained_marks, feedback)
+        VALUES 
+        ('sub-demo-asgn-1', '${SEED_IDS.ASGN_1}', '${abdurId}', 'Submitted comprehensive ER diagram modeling residential hall seat allocation with weak entities and cardinalities.', '[{"name":"Hall_ER_Diagram.pdf","url":"/uploads/sample.pdf","size":"1.2 MB","type":"application/pdf"}]', 'https://github.com/student/hall-er-diagram', 'Graded', '2026-10-24 14:00:00Z', 19.5, 'Outstanding relational design with full 3NF compliance.'),
+        ('sub-demo-asgn-2', 'asgn-se-sp26a-1', '${abdurId}', 'Detailed software architecture design document covering event-driven broker, CQRS projection, and Kubernetes deployment manifest.', '[{"name":"Architecture_Design_Doc.pdf","url":"/uploads/sample.pdf","size":"2.4 MB","type":"application/pdf"}]', 'https://github.com/student/cloud-architecture', 'Graded', '2026-10-28 16:30:00Z', 19.0, 'Superb microservice decoupling and robust API gateway security architecture.')
+        ON CONFLICT (student_id, assignment_id) DO UPDATE SET
+          obtained_marks = EXCLUDED.obtained_marks,
+          feedback = EXCLUDED.feedback,
+          status = EXCLUDED.status;
+      `);
+
+      // Ensure grade records for tests
+      await pool.query(`
+        INSERT INTO grade_records (id, classroom_id, student_id, test_id, obtained_marks, total_marks, remarks)
+        VALUES 
+        ('grd-demo-tst-1', '${SEED_IDS.CLS_1}', '${abdurId}', '${SEED_IDS.TST_1}', 47.5, 50, 'Excellent score on functional dependencies and BCNF synthesis.'),
+        ('grd-demo-tst-2', '${SEED_IDS.CLS_1}', '${abdurId}', 'tst-db-sp26a-1', 24.0, 25, 'Mastery demonstrated in SQL window analytical framing.')
+        ON CONFLICT (id) DO UPDATE SET
+          obtained_marks = EXCLUDED.obtained_marks,
+          remarks = EXCLUDED.remarks;
+      `);
+
+      // Ensure class sessions and attendance records for Abdur Rahman
+      const demoSessions = [
+        { id: "sess-db-1", cls: SEED_IDS.CLS_1, topic: "Relational Algebra & Relational Calculus", date: "2026-11-02", duration: "1h 30m" },
+        { id: "sess-db-2", cls: SEED_IDS.CLS_1, topic: "Normalization: 1NF, 2NF, 3NF & BCNF", date: "2026-11-04", duration: "1h 30m" },
+        { id: "sess-se-1", cls: cls6Id, topic: "Microservices & Distributed Transactions", date: "2026-11-03", duration: "1h 30m" },
+        { id: "sess-se-2", cls: cls6Id, topic: "CI/CD Automation & Docker Containerization", date: "2026-11-05", duration: "1h 30m" },
+        { id: "sess-ai-1", cls: SEED_IDS.CLS_4, topic: "Heuristic Search & Admissible Cost Functions", date: "2026-11-02", duration: "1h 30m" },
+        { id: "sess-algo-1", cls: cls7Id, topic: "Greedy Choice Property & Minimum Spanning Trees", date: "2026-11-03", duration: "1h 30m" }
+      ];
+
+      for (const sess of demoSessions) {
+        await pool.query(`
+          INSERT INTO class_sessions (id, classroom_id, topic_covered, conducted_at, duration, status, date)
+          VALUES ($1, $2, $3, $4::timestamp, $5, 'completed', $4::date)
+          ON CONFLICT (id) DO NOTHING;
+        `, [sess.id, sess.cls, sess.topic, `${sess.date} 10:00:00`, sess.duration]);
+
+        await pool.query(`
+          INSERT INTO attendance_records (id, session_id, student_id, classroom_id, status)
+          VALUES ($1, $2, $3, $4, 'present')
+          ON CONFLICT (id) DO NOTHING;
+        `, [`att-${sess.id}-${abdurId.substring(0, 8)}`, sess.id, abdurId, sess.cls]);
+      }
+    }
+
+    console.log("Student demo data ensured for Abdur Rahman (SP26A001) in BATCH_SP26_A.");
+  } catch (err: any) {
+    console.warn("Notice in ensureStudentDemoData:", err.message);
   }
 }
 

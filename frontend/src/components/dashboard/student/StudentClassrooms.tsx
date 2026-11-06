@@ -7,215 +7,242 @@ import {
   GraduationCap,
   Clock,
   MapPin,
-  User
+  User,
+  ListTodo,
+  FileText,
+  Calendar,
+  ExternalLink,
+  ChevronRight,
+  RefreshCw,
+  Sparkles
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { useStore } from "@/lib/store";
-import { CURRENT_STUDENT_BATCH_ID } from "@/lib/seedData";
+import { api } from "@/lib/api";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import Link from "next/link";
 
 export default function StudentClassrooms() {
-  const {
-    classrooms, courses, batches, teachers, schedules,
-    fetchClassrooms, fetchCourses, fetchBatches, fetchTeachers, fetchSchedules
-  } = useStore();
-
+  const [classrooms, setClassrooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"running" | "completed" | "all">("running");
+  const [statusFilter, setStatusFilter] = useState<"all" | "ongoing" | "upcoming" | "completed">("all");
 
   useEffect(() => {
-    fetchClassrooms();
-    fetchCourses();
-    fetchBatches();
-    fetchTeachers();
-    fetchSchedules();
+    loadClassrooms();
   }, []);
 
-  // Filter classrooms for student's batch
-  const studentBatchId = CURRENT_STUDENT_BATCH_ID;
-  const myClassrooms = classrooms.filter((c) => c.batchId === studentBatchId || !studentBatchId);
-
-  const formattedClassrooms = useMemo(() => {
-    return myClassrooms.map((cls) => {
-      const course = courses.find((co) => co.id === cls.courseId);
-      const batch = batches.find((ba) => ba.id === cls.batchId);
-      const teacher = teachers.find((t) => t.id === cls.teacherId);
-      const classroomSchedules = schedules.filter((s) => s.classroomId === cls.id);
-      const scheduleLabel = classroomSchedules.length > 0
-        ? classroomSchedules.map((s) => `${s.day.slice(0, 3)} ${s.startTime}-${s.endTime}`).join(" • ")
-        : "Scheduled";
-
-      const progress = cls.totalClasses > 0 ? Math.round((cls.classesCompleted / cls.totalClasses) * 100) : 35;
-
-      return {
-        id: cls.id,
-        status: cls.status,
-        room: cls.room,
-        classesCompleted: cls.classesCompleted,
-        totalClasses: cls.totalClasses,
-        progress,
-        courseCode: course?.code || "Course",
-        courseTitle: course?.title || "Classroom Course",
-        batchName: batch?.name || "Academic Batch",
-        teacherName: teacher?.name || "Faculty Member",
-        teacherDesignation: teacher?.designation || "Lecturer",
-        scheduleLabel,
-      };
-    });
-  }, [myClassrooms, courses, batches, teachers, schedules]);
+  const loadClassrooms = () => {
+    setLoading(true);
+    api.getStudentClassrooms()
+      .then((data) => {
+        setClassrooms(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.warn("Could not load student classrooms API:", err);
+      })
+      .finally(() => setLoading(false));
+  };
 
   const filtered = useMemo(() => {
-    return formattedClassrooms.filter((c) => {
-      if (statusFilter === "running" && c.status === "completed") return false;
-      if (statusFilter === "completed" && c.status !== "completed") return false;
-
+    return classrooms.filter((cls) => {
+      if (statusFilter !== "all" && cls.status?.toLowerCase() !== statusFilter) return false;
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
-        c.courseTitle.toLowerCase().includes(q) ||
-        c.courseCode.toLowerCase().includes(q) ||
-        c.teacherName.toLowerCase().includes(q) ||
-        c.batchName.toLowerCase().includes(q)
+        cls.course_title?.toLowerCase().includes(q) ||
+        cls.course_code?.toLowerCase().includes(q) ||
+        cls.teacher_name?.toLowerCase().includes(q) ||
+        cls.room?.toLowerCase().includes(q)
       );
     });
-  }, [formattedClassrooms, statusFilter, searchQuery]);
+  }, [classrooms, statusFilter, searchQuery]);
+
+  if (loading && classrooms.length === 0) {
+    return <TableSkeleton rows={6} cols={5} />;
+  }
 
   return (
-    <div className="w-full mx-auto space-y-5 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
       
-      {/* Header Bar */}
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <MonitorPlay className="w-4 h-4 text-brand-dark" />
-            My Enrolled Classrooms
-          </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            View course details, faculty assignment, class schedule timings, and syllabus completion
+          <h1 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <MonitorPlay className="w-5 h-5 text-brand-dark" />
+            My Enrolled Classrooms ({classrooms.length})
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Active course sections, designated lecture halls, faculty contacts, and syllabus progression
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-72 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by course code, title, faculty..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-xs"
-          />
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
+          {/* Search Bar */}
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search course or faculty..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 shadow-xs"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={loadClassrooms}
+            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-xs"
+            title="Refresh Classrooms"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded-xl border border-slate-200">
-        <button
-          onClick={() => setStatusFilter("running")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            statusFilter === "running"
-              ? "bg-brand-dark text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          Running Courses ({formattedClassrooms.filter((c) => c.status !== "completed").length})
-        </button>
-        <button
-          onClick={() => setStatusFilter("completed")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            statusFilter === "completed"
-              ? "bg-brand-dark text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          Completed Courses ({formattedClassrooms.filter((c) => c.status === "completed").length})
-        </button>
-        <button
-          onClick={() => setStatusFilter("all")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            statusFilter === "all"
-              ? "bg-brand-dark text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          All Courses ({formattedClassrooms.length})
-        </button>
+      {/* ── Filter Pills ───────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2">
+        {(["all", "ongoing", "upcoming", "completed"] as const).map((st) => (
+          <button
+            key={st}
+            type="button"
+            onClick={() => setStatusFilter(st)}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all capitalize ${
+              statusFilter === st
+                ? "bg-brand-dark text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+            }`}
+          >
+            {st} ({st === "all" ? classrooms.length : classrooms.filter((c) => c.status?.toLowerCase() === st).length})
+          </button>
+        ))}
       </div>
 
-      {/* Table View */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="px-5 py-3.5">Course Code</th>
-                <th className="px-5 py-3.5">Course Title</th>
-                <th className="px-5 py-3.5">Faculty Instructor</th>
-                <th className="px-5 py-3.5">Schedule & Location</th>
-                <th className="px-5 py-3.5">Syllabus Progress</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500">
-                    <MonitorPlay className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="font-semibold text-slate-700">No enrolled classrooms found</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">No classrooms match the selected filter or search query.</p>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((cls) => (
-                  <tr key={cls.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-5 py-4 font-bold text-slate-900">
-                      <span className="inline-block px-2.5 py-1 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700">
-                        {cls.courseCode}
+      {/* ── High-Density Classrooms List ───────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map((cls) => {
+          const progress = cls.progress || 50;
+          const schedules = cls.schedules || [];
+
+          return (
+            <div 
+              key={cls.id}
+              className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-brand-dark/40 transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                
+                {/* Course Header & Badges */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-brand-dark bg-brand-dark/10 px-2 py-0.5 rounded">
+                        {cls.course_code}
                       </span>
-                    </td>
+                      {cls.course_credits && (
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                          {cls.course_credits} Credits
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                        cls.status === 'ongoing' 
+                          ? 'bg-emerald-100 text-emerald-800' 
+                          : cls.status === 'completed'
+                            ? 'bg-slate-100 text-slate-700'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {cls.status}
+                      </span>
+                    </div>
 
-                    <td className="px-5 py-4 font-semibold text-slate-900">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-slate-400 group-hover:text-brand-dark transition-colors" />
-                        <span className="group-hover:text-brand-dark transition-colors">{cls.courseTitle}</span>
-                      </div>
-                    </td>
+                    <h2 className="text-sm font-bold text-slate-900 leading-snug">
+                      {cls.course_title}
+                    </h2>
+                  </div>
+                </div>
 
-                    <td className="px-5 py-4 font-medium text-slate-700">
-                      <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        <div>
-                          <p className="font-bold text-slate-900">{cls.teacherName}</p>
-                          <p className="text-[10px] text-slate-400">{cls.teacherDesignation}</p>
-                        </div>
-                      </div>
-                    </td>
+                {/* Faculty & Room Details */}
+                <div className="p-3 bg-slate-50 rounded-lg space-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Instructor:</span>
+                    <strong className="text-slate-800 font-bold">{cls.teacher_name}</strong>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 font-medium">Designation:</span>
+                    <span className="text-slate-600">{cls.teacher_designation || "Faculty Member"}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 font-medium">Location:</span>
+                    <span className="text-slate-700 font-semibold flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      {cls.room}
+                    </span>
+                  </div>
+                </div>
 
-                    <td className="px-5 py-4 font-medium text-slate-600">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-slate-700">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{cls.scheduleLabel}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-slate-500 text-[11px]">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>Room: {cls.room}</span>
-                        </div>
-                      </div>
-                    </td>
+                {/* Schedule Timings */}
+                {schedules.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Weekly Timetable Slots</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {schedules.map((s: any, idx: number) => (
+                        <span key={idx} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {s.day.slice(0, 3)}: {s.start_time} - {s.end_time}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                    <td className="px-5 py-4 font-medium text-slate-700">
-                      <div className="flex items-center gap-2.5 max-w-[150px]">
-                        <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${cls.progress}%` }} />
-                        </div>
-                        <span className="text-[11px] font-bold text-emerald-600">{cls.progress}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                {/* Syllabus Progress */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-[11px] font-semibold">
+                    <span className="text-slate-500">Syllabus Completion</span>
+                    <span className="text-brand-dark font-bold">{progress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  {cls.current_topic && (
+                    <p className="text-[10px] text-slate-500">
+                      Current Focus: <strong className="text-slate-700">{cls.current_topic}</strong>
+                    </p>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-5 pt-3.5 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                <Link
+                  href="/dashboard/student/materials"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Course Materials</span>
+                </Link>
+
+                <Link
+                  href="/dashboard/student/assignments"
+                  className="px-3 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+                >
+                  <ListTodo className="w-3.5 h-3.5" />
+                  <span>Assignments</span>
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+
+        {filtered.length === 0 && (
+          <div className="col-span-full py-16 text-center bg-white rounded-xl border border-slate-200">
+            <p className="text-sm font-semibold text-slate-700">No matching classrooms found</p>
+            <p className="text-xs text-slate-500 mt-1">Try adjusting your search query or status filter.</p>
+          </div>
+        )}
       </div>
 
     </div>

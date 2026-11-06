@@ -206,7 +206,26 @@ CREATE TABLE IF NOT EXISTS announcements (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. Application Settings
+-- 8. Course Materials
+CREATE TABLE IF NOT EXISTS course_materials (
+  id VARCHAR(64) PRIMARY KEY,
+  classroom_id VARCHAR(64) REFERENCES classrooms(id) ON DELETE CASCADE,
+  course_id VARCHAR(64) REFERENCES courses(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  file_name VARCHAR(255) NOT NULL,
+  file_type VARCHAR(50) DEFAULT 'PDF',
+  file_data TEXT,
+  file_size VARCHAR(50) DEFAULT '1.0 MB',
+  last_slide INT DEFAULT 1,
+  total_slides INT DEFAULT 1,
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_course_materials_classroom ON course_materials(classroom_id);
+CREATE INDEX IF NOT EXISTS idx_course_materials_course ON course_materials(course_id);
+
+-- 9. Application Settings
 CREATE TABLE IF NOT EXISTS app_settings (
   id VARCHAR(64) PRIMARY KEY DEFAULT 'default',
   school_name VARCHAR(255) NOT NULL DEFAULT 'Jahangirnagar University',

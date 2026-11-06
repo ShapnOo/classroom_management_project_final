@@ -664,6 +664,7 @@ export const api = {
 
   // ── Student Portal Dedicated APIs ──
   getStudentClassrooms: () => request<any[]>("/student/classrooms"),
+  getStudentSchedules: () => request<any[]>("/student/schedules"),
   getStudentMaterials: () => request<any[]>("/student/materials"),
   getStudentAssignments: () => request<any[]>("/student/assignments"),
   submitStudentAssignment: (
@@ -803,14 +804,26 @@ export interface StudentDashboardData {
     roll_no: string;
     email: string;
     batch_name?: string;
+    batch_code?: string;
+    program_name?: string;
     program_code?: string;
+    phone?: string;
+    cgpa?: number;
+    total_credits?: number;
   };
   metrics: {
     enrolledClassroomsCount: number;
     upcomingAssignmentsCount: number;
     upcomingTestsCount: number;
     todayClassesCount: number;
+    weeklyClassesCount?: number;
     avgAttendanceRate: number;
+    totalSessions?: number;
+    presentCount?: number;
+    lateCount?: number;
+    absentCount?: number;
+    cgpa?: number;
+    totalCredits?: number;
   };
   enrolledClassrooms: Array<{
     id: string;
@@ -820,9 +833,13 @@ export interface StudentDashboardData {
     total_classes: number;
     course_title: string;
     course_code: string;
+    credits?: number;
     batch_name: string;
     teacher_name: string;
     student_count: number;
+    total_topics?: number;
+    completed_topics?: number;
+    progress?: number;
   }>;
   todaySchedules: Array<{
     id: string;
@@ -830,9 +847,23 @@ export interface StudentDashboardData {
     start_time: string;
     end_time: string;
     room: string;
+    classroom_room?: string;
     course_title: string;
     course_code: string;
     teacher_name: string;
+    color_index?: number;
+  }>;
+  weeklySchedules?: Array<{
+    id: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+    room: string;
+    classroom_room?: string;
+    course_title: string;
+    course_code: string;
+    teacher_name: string;
+    color_index?: number;
   }>;
   upcomingAssignments: Array<{
     id: string;
@@ -841,14 +872,21 @@ export interface StudentDashboardData {
     total_marks: number;
     course_code: string;
     course_title: string;
+    submission_id?: string;
+    submission_status?: string;
+    obtained_marks?: number;
   }>;
   upcomingTests: Array<{
     id: string;
     title: string;
     test_date: string;
+    duration?: string;
+    room?: string;
     total_marks: number;
     course_code: string;
     course_title: string;
+    obtained_marks?: number;
+    feedback?: string;
   }>;
   recentSessions: Array<{
     id: string;
@@ -857,5 +895,14 @@ export interface StudentDashboardData {
     course_code: string;
     course_title: string;
     teacher_name: string;
+    my_attendance_status?: string;
+  }>;
+  announcements?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    date: string;
+    author_name: string;
+    priority: string;
   }>;
 }

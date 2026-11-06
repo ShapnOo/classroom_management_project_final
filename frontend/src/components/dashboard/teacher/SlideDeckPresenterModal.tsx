@@ -182,22 +182,25 @@ export default function SlideDeckPresenterModal({
   const isInitialLoadedRef = useRef<boolean>(false);
 
   // Check if material is a PDF
-  const titleLower = (material.title || "").toLowerCase();
-  const fileNameLower = (material.fileName || "").toLowerCase();
+  const titleLower = (material?.title || "").toLowerCase();
+  const fileNameLower = (material?.fileName || "").toLowerCase();
 
-  const isPdf =
-    material.fileType?.toUpperCase() === "PDF" ||
-    fileNameLower.endsWith(".pdf") ||
-    titleLower.endsWith(".pdf") ||
-    titleLower.includes("uml diagram") ||
-    (Boolean(material.pdfUrl) && !fileNameLower.endsWith(".pptx") && !fileNameLower.endsWith(".ppt"));
+  const isPdf = Boolean(
+    material && (
+      material.fileType?.toUpperCase() === "PDF" ||
+      fileNameLower.endsWith(".pdf") ||
+      titleLower.endsWith(".pdf") ||
+      titleLower.includes("uml diagram") ||
+      (Boolean(material.pdfUrl) && !fileNameLower.endsWith(".pptx") && !fileNameLower.endsWith(".ppt"))
+    )
+  );
 
   const backendBase =
     typeof window !== "undefined"
       ? (process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5001")
       : "http://localhost:5001";
 
-  const rawPdfUrl = material.pdfUrl || material.fileUrl || material.fileData;
+  const rawPdfUrl = material ? (material.pdfUrl || material.fileUrl || material.fileData) : "";
   const resolveTargetUrl = (url?: string) => {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
@@ -213,11 +216,11 @@ export default function SlideDeckPresenterModal({
     resolveTargetUrl(rawPdfUrl) ||
     (fileNameLower.includes("uml") || titleLower.includes("uml")
       ? "/UML Diagram - Library System.pdf"
-      : fileNameLower.endsWith(".pdf")
+      : fileNameLower.endsWith(".pdf") && material?.fileName
       ? `${backendBase}/uploads/${material.fileName}`
       : "/assignment_mockup.pdf");
 
-  const [dynamicSlides, setDynamicSlides] = useState<SlideData[] | null>(material.parsedSlides || null);
+  const [dynamicSlides, setDynamicSlides] = useState<SlideData[] | null>(material?.parsedSlides || null);
   const [isParsingPptx, setIsParsingPptx] = useState<boolean>(false);
 
   // Annotation & Whiteboard States
@@ -479,7 +482,7 @@ export default function SlideDeckPresenterModal({
         };
       }
     }
-  }, [isOpen, material.id, material.fileUrl, material.fileData, material.fileName, material.parsedSlides, isPdf, fileNameLower, titleLower, backendBase]);
+  }, [isOpen, material?.id, material?.fileUrl, material?.fileData, material?.fileName, material?.parsedSlides, isPdf, fileNameLower, titleLower, backendBase]);
 
   // Generate authentic presentation slides tailored to the material
   const slides: SlideData[] = React.useMemo(() => {
@@ -796,7 +799,7 @@ export default function SlideDeckPresenterModal({
 
   // Initialize and Resume from Database (Cross-Device) & LocalStorage
   useEffect(() => {
-    if (!isOpen || !material.id) return;
+    if (!isOpen || !material?.id) return;
     let isMounted = true;
     isInitialLoadedRef.current = false;
 
@@ -835,11 +838,11 @@ export default function SlideDeckPresenterModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, material.id, totalSlides, initialSlide]);
+  }, [isOpen, material?.id, totalSlides, initialSlide]);
 
   // Persist Current Slide on every change to both LocalStorage & PostgreSQL Database
   useEffect(() => {
-    if (!isOpen || !material.id || !isInitialLoadedRef.current) return;
+    if (!isOpen || !material?.id || !isInitialLoadedRef.current) return;
     saveSlideState(material.id, currentSlide, totalSlides, material.title, classroomId);
 
     const timer = setTimeout(() => {
@@ -856,7 +859,7 @@ export default function SlideDeckPresenterModal({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [isOpen, material.id, currentSlide, totalSlides, material.title, classroomId]);
+  }, [isOpen, material?.id, currentSlide, totalSlides, material?.title, classroomId]);
 
   // Lecture Stopwatch Timer
   useEffect(() => {
@@ -970,7 +973,7 @@ export default function SlideDeckPresenterModal({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !material) return null;
 
   const activeSlideData = slides[currentSlide - 1] || slides[0];
 

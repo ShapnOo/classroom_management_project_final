@@ -47,6 +47,7 @@ export default function StudentAssignments() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedDataMap, setSubmittedDataMap] = useState<Record<string, any>>({});
+  const [remoteAssignments, setRemoteAssignments] = useState<any[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +62,8 @@ export default function StudentAssignments() {
   const loadStudentSubmissions = async () => {
     try {
       const remoteData = await api.getStudentAssignments();
-      if (Array.isArray(remoteData)) {
+      if (Array.isArray(remoteData) && remoteData.length > 0) {
+        setRemoteAssignments(remoteData);
         const map: Record<string, any> = {};
         remoteData.forEach((item: any) => {
           if (item.student_submission_status && item.student_submission_status !== "Active") {
@@ -82,6 +84,30 @@ export default function StudentAssignments() {
   );
 
   const formattedAssignments = useMemo(() => {
+    if (remoteAssignments.length > 0) {
+      return remoteAssignments.map((a) => {
+        const dueDateObj = new Date(a.due_date || a.dueDate);
+        const subRecord = submittedDataMap[a.id] || (a.submission_id ? a : null);
+        const status = a.student_submission_status || (subRecord?.obtained_marks ? "Graded" : subRecord?.id ? "Submitted" : dueDateObj < new Date() ? "Overdue" : "Active");
+
+        return {
+          id: a.id,
+          classroomId: a.classroom_id || a.classroomId,
+          title: a.title,
+          description: a.description || "Complete the assigned tasks following instructions and submit document files.",
+          dueDate: dueDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }),
+          dueDateObj,
+          totalMarks: Number(a.total_marks || a.totalMarks) || 20,
+          submissions: a.submissions || 0,
+          status,
+          courseCode: a.course_code || "CSE",
+          courseTitle: a.course_title || "Academic Course",
+          teacherName: a.teacher_name || "Faculty Member",
+          submissionDetails: subRecord || null,
+        };
+      });
+    }
+
     return studentAssignments.map((a) => {
       const classroom = classrooms.find((c) => c.id === a.classroomId);
       const course = courses.find((co) => co.id === classroom?.courseId);
@@ -111,10 +137,11 @@ export default function StudentAssignments() {
         status,
         courseCode: course?.code || "CSE-301",
         courseTitle: course?.title || "Database System & Web Development",
+        teacherName: "Faculty Member",
         submissionDetails: subRecord || null,
       };
     });
-  }, [studentAssignments, classrooms, courses, submittedDataMap]);
+  }, [remoteAssignments, studentAssignments, classrooms, courses, submittedDataMap]);
 
   const filtered = useMemo(() => {
     return formattedAssignments.filter((a) => {
