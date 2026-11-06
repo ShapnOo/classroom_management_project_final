@@ -7,7 +7,7 @@ const genId = () => crypto.randomUUID();
 
 export const getClassrooms = async (req: Request, res: Response) => {
   try {
-    const { batchId, status } = req.query;
+    const { batchId, status, programId, semester } = req.query;
     let teacherId = req.query.teacherId as string | undefined;
 
     // Token-based tenant isolation for teachers
@@ -21,8 +21,9 @@ export const getClassrooms = async (req: Request, res: Response) => {
 
     let queryText = `
       SELECT c.*,
+             COALESCE(c.semester, cr.semester, 'Semester 1') as semester,
              cr.title as course_title, cr.code as course_code, cr.credits as course_credits,
-             b.name as batch_name, b.code as batch_code,
+             b.name as batch_name, b.code as batch_code, b.program_id,
              t.name as teacher_name, t.email as teacher_email, t.designation as teacher_designation,
              s.name as session_name,
              p.name as program_name, p.code as program_code,
@@ -52,6 +53,14 @@ export const getClassrooms = async (req: Request, res: Response) => {
     if (batchId) {
       params.push(batchId);
       conditions.push(`c.batch_id = $${params.length}`);
+    }
+    if (programId) {
+      params.push(programId);
+      conditions.push(`b.program_id = $${params.length}`);
+    }
+    if (semester) {
+      params.push(semester);
+      conditions.push(`(COALESCE(c.semester, cr.semester) = $${params.length})`);
     }
     if (teacherId) {
       params.push(teacherId);
@@ -131,15 +140,23 @@ export const getClassroomById = async (req: Request, res: Response) => {
 export const createClassroom = async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
-    const { id: reqId, courseId, batchId, teacherId, room, startDate, endDate, status, totalClasses, colorIndex, schedules } = req.body;
+    const { id: reqId, courseId, batchId, teacherId, room, startDate, endDate, status, totalClasses, colorIndex, schedules, semester } = req.body;
     if (!courseId || !batchId || !teacherId || !room) {
       return sendError(res, "Course, batch, teacher, and room are required", 400);
     }
     const id = reqId || genId();
     await client.query("BEGIN");
+
+    // Resolve semester if omitted
+    let resolvedSemester = semester;
+    if (!resolvedSemester) {
+      const { rows: crRows } = await client.query("SELECT semester FROM courses WHERE id = $1", [courseId]);
+      resolvedSemester = crRows[0]?.semester || "Semester 1";
+    }
+
     const { rows } = await client.query(`
-      INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *
+      INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index, semester)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
     `, [
       id,
       courseId,
@@ -152,6 +169,7 @@ export const createClassroom = async (req: Request, res: Response) => {
       0,
       totalClasses || 24,
       colorIndex || 0,
+      resolvedSemester,
     ]);
 
     if (schedules && Array.isArray(schedules) && schedules.length > 0) {
@@ -176,7 +194,7 @@ export const createClassroom = async (req: Request, res: Response) => {
 export const updateClassroom = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { courseId, batchId, teacherId, room, startDate, endDate, status, classesCompleted, totalClasses, colorIndex } = req.body;
+    const { courseId, batchId, teacherId, room, startDate, endDate, status, classesCompleted, totalClasses, colorIndex, semester } = req.body;
     const { rows } = await pool.query(`
       UPDATE classrooms 
       SET course_id = COALESCE($1, course_id),
@@ -188,9 +206,10 @@ export const updateClassroom = async (req: Request, res: Response) => {
           status = COALESCE($7, status),
           classes_completed = COALESCE($8, classes_completed),
           total_classes = COALESCE($9, total_classes),
-          color_index = COALESCE($10, color_index)
-      WHERE id = $11 RETURNING *
-    `, [courseId, batchId, teacherId, room, startDate, endDate, status, classesCompleted, totalClasses, colorIndex, id]);
+          color_index = COALESCE($10, color_index),
+          semester = COALESCE($11, semester)
+      WHERE id = $12 RETURNING *
+    `, [courseId, batchId, teacherId, room, startDate, endDate, status, classesCompleted, totalClasses, colorIndex, semester, id]);
     if (rows.length === 0) return sendError(res, "Classroom not found", 404);
     sendSuccess(res, rows[0], "Classroom updated successfully");
   } catch (err: any) {

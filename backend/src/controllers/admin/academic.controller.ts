@@ -270,14 +270,14 @@ export const getCourses = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
   try {
-    const { code, title, programId, credits } = req.body;
+    const { code, title, programId, credits, semester } = req.body;
     if (!code || !title || !programId) {
       return sendError(res, "Code, title, and programId are required", 400);
     }
     const id = genId();
     const { rows } = await pool.query(
-      "INSERT INTO courses (id, code, title, program_id, credits) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [id, code, title, programId, credits || 3]
+      "INSERT INTO courses (id, code, title, program_id, credits, semester) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [id, code, title, programId, credits || 3, semester || "Semester 1"]
     );
     sendSuccess(res, rows[0], "Course created successfully", 201);
   } catch (err: any) {
@@ -288,15 +288,16 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { code, title, programId, credits } = req.body;
+    const { code, title, programId, credits, semester } = req.body;
     const { rows } = await pool.query(`
       UPDATE courses 
       SET code = COALESCE($1, code),
           title = COALESCE($2, title),
           program_id = COALESCE($3, program_id),
-          credits = COALESCE($4, credits)
-      WHERE id = $5 RETURNING *
-    `, [code, title, programId, credits, id]);
+          credits = COALESCE($4, credits),
+          semester = COALESCE($5, semester)
+      WHERE id = $6 RETURNING *
+    `, [code, title, programId, credits, semester, id]);
     if (rows.length === 0) return sendError(res, "Course not found", 404);
     sendSuccess(res, rows[0], "Course updated successfully");
   } catch (err: any) {

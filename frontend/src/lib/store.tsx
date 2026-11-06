@@ -889,10 +889,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const colors = CLASSROOM_COLORS[cls.colorIndex % CLASSROOM_COLORS.length];
 
+    const semester = cls.semester || course.semester || (
+      course.code.includes("-1") ? "Semester 1" :
+      course.code.includes("-2") ? "Semester 2" :
+      course.code.includes("-3") ? "Semester 5" :
+      course.code.includes("-4") ? "Semester 7" : "Semester 1"
+    );
+
     return {
       classroom: cls, course, batch, teacher, session, program,
       schedules, syllabusTopics, students, assignments, tests,
       scheduleLabel, progress, studentCount: students.length, colors,
+      semester,
     };
   }, [state]);
 

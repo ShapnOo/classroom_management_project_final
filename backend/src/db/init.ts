@@ -160,6 +160,25 @@ export async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_classrooms_batch ON classrooms(batch_id);
       CREATE INDEX IF NOT EXISTS idx_grade_records_student ON grade_records(student_id);
       CREATE INDEX IF NOT EXISTS idx_attendance_records_student ON attendance_records(student_id);
+
+      -- Hierarchical flow migration: Program -> Batch -> Semester -> Course
+      ALTER TABLE courses ADD COLUMN IF NOT EXISTS semester VARCHAR(50) DEFAULT 'Semester 1';
+      ALTER TABLE classrooms ADD COLUMN IF NOT EXISTS semester VARCHAR(50);
+
+      UPDATE courses SET semester = 'Semester 1' WHERE code IN ('CSE-101', 'CSE-102', 'CSE-103', 'CSE-104') AND (semester IS NULL OR semester = 'Semester 1');
+      UPDATE courses SET semester = 'Semester 2' WHERE code IN ('CSE-201', 'CSE-202', 'CSE-203', 'CSE-204');
+      UPDATE courses SET semester = 'Semester 3' WHERE code IN ('CSE-301', 'CSE-302');
+      UPDATE courses SET semester = 'Semester 4' WHERE code IN ('CSE-303', 'CSE-304');
+      UPDATE courses SET semester = 'Semester 5' WHERE code IN ('CSE-305', 'CSE-306');
+      UPDATE courses SET semester = 'Semester 6' WHERE code IN ('CSE-401', 'CSE-402');
+      UPDATE courses SET semester = 'Semester 7' WHERE code IN ('CSE-412', 'CSE-425');
+      UPDATE courses SET semester = 'Semester 8' WHERE code IN ('CSE-426', 'CSE-499');
+
+      UPDATE classrooms SET semester = 'Semester 5' WHERE course_id = '${SEED_IDS.COURSE_305}' OR id = '${SEED_IDS.CLS_1}';
+      UPDATE classrooms SET semester = 'Semester 7' WHERE course_id IN ('${SEED_IDS.COURSE_412}', '${SEED_IDS.COURSE_425}');
+      UPDATE classrooms SET semester = 'Semester 1' WHERE course_id = '${SEED_IDS.COURSE_101}';
+      UPDATE classrooms SET semester = 'Semester 2' WHERE course_id = '${SEED_IDS.COURSE_201}';
+      UPDATE classrooms SET semester = COALESCE(classrooms.semester, (SELECT cr.semester FROM courses cr WHERE cr.id = classrooms.course_id), 'Semester 1') WHERE classrooms.semester IS NULL;
     `);
     console.log("Database schema & performance indexes initialized successfully.");
 
@@ -718,11 +737,11 @@ export async function ensureStudentDemoData() {
 
     // 1. Add CLS_6 (CSE-412 for SP26-A) and CLS_7 (CSE-301 for SP26-A) if not exists
     await pool.query(`
-      INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index)
+      INSERT INTO classrooms (id, course_id, batch_id, teacher_id, room, start_date, end_date, status, classes_completed, total_classes, color_index, semester)
       VALUES 
-      ('${cls6Id}', '${SEED_IDS.COURSE_412}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_1}', 'Room 305, Bldg A', '2026-01-16', '2026-05-22', 'ongoing', 12, 24, 1),
-      ('${cls7Id}', '${SEED_IDS.COURSE_301}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_3}', 'Room 202, Bldg B', '2026-01-15', '2026-05-20', 'ongoing', 14, 24, 4)
-      ON CONFLICT (id) DO NOTHING;
+      ('${cls6Id}', '${SEED_IDS.COURSE_412}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_1}', 'Room 305, Bldg A', '2026-01-16', '2026-05-22', 'ongoing', 12, 24, 1, 'Semester 7'),
+      ('${cls7Id}', '${SEED_IDS.COURSE_301}', '${SEED_IDS.BATCH_SP26_A}', '${SEED_IDS.TEACHER_3}', 'Room 202, Bldg B', '2026-01-15', '2026-05-20', 'ongoing', 14, 24, 4, 'Semester 5')
+      ON CONFLICT (id) DO UPDATE SET semester = EXCLUDED.semester;
     `);
 
     // 2. Class schedules for Monday through Friday

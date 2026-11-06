@@ -162,19 +162,19 @@ export const seedStudents: Student[] = [
 ];
 
 export const seedCourses: Course[] = [
-  { id: SEED_IDS.COURSE_305, code: "CSE-305", title: "Database Management Systems", programId: SEED_IDS.PROG_BSC_CS, credits: 3 },
-  { id: SEED_IDS.COURSE_412, code: "CSE-412", title: "Software Engineering & System Design", programId: SEED_IDS.PROG_BSC_CS, credits: 3 },
-  { id: SEED_IDS.COURSE_101, code: "CSE-101", title: "Structured Programming Language", programId: SEED_IDS.PROG_BSC_CS, credits: 3 },
-  { id: SEED_IDS.COURSE_425, code: "CSE-425", title: "Artificial Intelligence & Machine Learning", programId: SEED_IDS.PROG_BSC_CS, credits: 3 },
-  { id: SEED_IDS.COURSE_201, code: "CSE-201", title: "Data Structures & Algorithms", programId: SEED_IDS.PROG_BSC_CS, credits: 3 },
+  { id: SEED_IDS.COURSE_305, code: "CSE-305", title: "Database Management Systems", programId: SEED_IDS.PROG_BSC_CS, credits: 3, semester: "Semester 5" },
+  { id: SEED_IDS.COURSE_412, code: "CSE-412", title: "Software Engineering & System Design", programId: SEED_IDS.PROG_BSC_CS, credits: 3, semester: "Semester 7" },
+  { id: SEED_IDS.COURSE_101, code: "CSE-101", title: "Structured Programming Language", programId: SEED_IDS.PROG_BSC_CS, credits: 3, semester: "Semester 1" },
+  { id: SEED_IDS.COURSE_425, code: "CSE-425", title: "Artificial Intelligence & Machine Learning", programId: SEED_IDS.PROG_BSC_CS, credits: 3, semester: "Semester 7" },
+  { id: SEED_IDS.COURSE_201, code: "CSE-201", title: "Data Structures & Algorithms", programId: SEED_IDS.PROG_BSC_CS, credits: 3, semester: "Semester 2" },
 ];
 
 export const seedClassrooms: Classroom[] = [
-  { id: SEED_IDS.CLS_1, courseId: SEED_IDS.COURSE_305, batchId: SEED_IDS.BATCH_SP26_A, teacherId: SEED_IDS.TEACHER_1, room: "Room 402, Bldg C", startDate: "2026-01-15", endDate: "2026-05-20", status: "ongoing",   classesCompleted: 18, totalClasses: 26, colorIndex: 0 },
-  { id: SEED_IDS.CLS_2, courseId: SEED_IDS.COURSE_412, batchId: SEED_IDS.BATCH_SP26_B, teacherId: SEED_IDS.TEACHER_1, room: "Room 305, Bldg A", startDate: "2026-01-16", endDate: "2026-05-22", status: "ongoing",   classesCompleted: 15, totalClasses: 20, colorIndex: 1 },
-  { id: SEED_IDS.CLS_3, courseId: SEED_IDS.COURSE_101, batchId: SEED_IDS.BATCH_FA25_A, teacherId: SEED_IDS.TEACHER_4, room: "Room 201, Bldg B", startDate: "2025-08-15", endDate: "2025-12-20", status: "completed", classesCompleted: 24, totalClasses: 24, colorIndex: 2 },
-  { id: SEED_IDS.CLS_4, courseId: SEED_IDS.COURSE_425, batchId: SEED_IDS.BATCH_SP26_A, teacherId: SEED_IDS.TEACHER_1, room: "Lab 2, Bldg D",    startDate: "2026-01-15", endDate: "2026-05-20", status: "ongoing",   classesCompleted: 8,  totalClasses: 24, colorIndex: 2 },
-  { id: SEED_IDS.CLS_5, courseId: SEED_IDS.COURSE_201, batchId: SEED_IDS.BATCH_FA26_C, teacherId: SEED_IDS.TEACHER_2, room: "Room 101, Bldg B", startDate: "2026-08-15", endDate: "2026-12-20", status: "upcoming",  classesCompleted: 0,  totalClasses: 24, colorIndex: 3 },
+  { id: SEED_IDS.CLS_1, courseId: SEED_IDS.COURSE_305, batchId: SEED_IDS.BATCH_SP26_A, teacherId: SEED_IDS.TEACHER_1, room: "Room 402, Bldg C", startDate: "2026-01-15", endDate: "2026-05-20", status: "ongoing",   classesCompleted: 18, totalClasses: 26, colorIndex: 0, semester: "Semester 5" },
+  { id: SEED_IDS.CLS_2, courseId: SEED_IDS.COURSE_412, batchId: SEED_IDS.BATCH_SP26_B, teacherId: SEED_IDS.TEACHER_1, room: "Room 305, Bldg A", startDate: "2026-01-16", endDate: "2026-05-22", status: "ongoing",   classesCompleted: 15, totalClasses: 20, colorIndex: 1, semester: "Semester 7" },
+  { id: SEED_IDS.CLS_3, courseId: SEED_IDS.COURSE_101, batchId: SEED_IDS.BATCH_FA25_A, teacherId: SEED_IDS.TEACHER_4, room: "Room 201, Bldg B", startDate: "2025-08-15", endDate: "2025-12-20", status: "completed", classesCompleted: 24, totalClasses: 24, colorIndex: 2, semester: "Semester 1" },
+  { id: SEED_IDS.CLS_4, courseId: SEED_IDS.COURSE_425, batchId: SEED_IDS.BATCH_SP26_A, teacherId: SEED_IDS.TEACHER_1, room: "Lab 2, Bldg D",    startDate: "2026-01-15", endDate: "2026-05-20", status: "ongoing",   classesCompleted: 8,  totalClasses: 24, colorIndex: 2, semester: "Semester 7" },
+  { id: SEED_IDS.CLS_5, courseId: SEED_IDS.COURSE_201, batchId: SEED_IDS.BATCH_FA26_C, teacherId: SEED_IDS.TEACHER_2, room: "Room 101, Bldg B", startDate: "2026-08-15", endDate: "2026-12-20", status: "upcoming",  classesCompleted: 0,  totalClasses: 24, colorIndex: 3, semester: "Semester 2" },
 ];
 
 export const seedSchedules: ClassSchedule[] = [

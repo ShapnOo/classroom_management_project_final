@@ -130,6 +130,7 @@ export type Classroom = {
   classesCompleted: number;
   totalClasses: number;
   colorIndex: number; // 0-5, maps to CLASSROOM_COLORS
+  semester?: string;
 };
 
 export type ClassSchedule = {
@@ -222,6 +223,7 @@ export type ClassroomView = {
   progress: number;
   studentCount: number;
   colors: { color: string; light: string; text: string };
+  semester: string;
 };
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
