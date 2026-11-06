@@ -7,16 +7,29 @@ import { Modal } from "@/components/ui/Modal";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import {
   Plus, Search, Edit2, Trash2, Mail, Users, Phone, FileText,
-  Download, Upload, AlertTriangle, CheckCircle, FileSpreadsheet
+  Download, Upload, AlertTriangle, CheckCircle, FileSpreadsheet,
+  ShieldCheck, Clock, XCircle, CheckCircle2, Eye, ExternalLink,
+  UserCheck, AlertCircle, FileCheck
 } from "lucide-react";
 
 export default function AdminStudents() {
-  const { students, batches, programs, addStudent, updateStudent, deleteStudent, fetchStudents, fetchBatches, fetchPrograms } = useStore();
+  const { 
+    students, batches, programs, 
+    addStudent, updateStudent, deleteStudent, approveStudent, rejectStudent,
+    fetchStudents, fetchBatches, fetchPrograms 
+  } = useStore();
   
   const [search, setSearch] = useState("");
   const [programFilter, setProgramFilter] = useState("all");
   const [batchFilter, setBatchFilter] = useState("all");
   const [docFilter, setDocFilter] = useState<"all" | "with_doc" | "without_doc">("all");
+  const [approvalTab, setApprovalTab] = useState<"all" | "pending" | "approved">("all");
+
+  const [reviewingStudent, setReviewingStudent] = useState<Student | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectInput, setShowRejectInput] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -62,8 +75,58 @@ export default function AdminStudents() {
                        (docFilter === "with_doc" && hasDoc) || 
                        (docFilter === "without_doc" && !hasDoc);
 
-    return matchesSearch && matchesProgram && matchesBatch && matchesDoc;
+    const isPending = s.verificationStatus === "Pending Approval" || (hasDoc && s.verificationStatus !== "Approved");
+    const isApproved = s.verificationStatus === "Approved";
+
+    const matchesApproval = 
+      approvalTab === "all" ? true :
+      approvalTab === "pending" ? isPending :
+      approvalTab === "approved" ? isApproved : true;
+
+    return matchesSearch && matchesProgram && matchesBatch && matchesDoc && matchesApproval;
   });
+
+  const handleApprove = async (studentId: string) => {
+    setActionLoading(true);
+    try {
+      await approveStudent(studentId);
+      setActionMessage({
+        type: "success",
+        text: "Candidate approved successfully! Their Student Portal login has been activated."
+      });
+      setReviewingStudent(prev => prev && prev.id === studentId ? { ...prev, verificationStatus: "Approved", status: "Active" } : prev);
+      setTimeout(() => setActionMessage(null), 3500);
+    } catch (err: any) {
+      setActionMessage({
+        type: "error",
+        text: err?.message || "Failed to approve student."
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async (studentId: string) => {
+    setActionLoading(true);
+    try {
+      await rejectStudent(studentId, rejectReason);
+      setActionMessage({
+        type: "success",
+        text: "Candidate has been rejected and marked for resubmission."
+      });
+      setReviewingStudent(prev => prev && prev.id === studentId ? { ...prev, verificationStatus: "Rejected", status: "Inactive" } : prev);
+      setShowRejectInput(false);
+      setRejectReason("");
+      setTimeout(() => setActionMessage(null), 3500);
+    } catch (err: any) {
+      setActionMessage({
+        type: "error",
+        text: err?.message || "Failed to reject candidate."
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -221,6 +284,10 @@ export default function AdminStudents() {
   };
 
   const missingDocsCount = students.filter(s => !s.documents || s.documents.length === 0).length;
+  const pendingCount = students.filter(
+    s => s.verificationStatus === "Pending Approval" || ((s.documents && s.documents.length > 0) && s.verificationStatus !== "Approved")
+  ).length;
+  const approvedCount = students.filter(s => s.verificationStatus === "Approved").length;
 
   return (
     <div className="w-full mx-auto space-y-4 pb-8 text-xs font-normal text-slate-800">
@@ -230,7 +297,7 @@ export default function AdminStudents() {
         <div>
           <h1 className="text-sm font-semibold text-slate-900">Student Directory</h1>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Manage enrolled students ({students.length} Total • <strong className="text-amber-700 font-semibold">{missingDocsCount} Missing Documents</strong>).
+            Manage enrolled students ({students.length} Total • <strong className="text-amber-700 font-semibold">{pendingCount} Pending Review</strong> • <strong className="text-emerald-700 font-semibold">{approvedCount} Approved</strong>).
           </p>
         </div>
 
@@ -260,6 +327,61 @@ export default function AdminStudents() {
             <Plus className="w-3.5 h-3.5" /> Add Student
           </button>
         </div>
+      </div>
+
+      {/* Verification Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setApprovalTab("all")}
+          className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+            approvalTab === "all"
+              ? "bg-slate-900 text-white shadow-2xs"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <span>All Students</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+            approvalTab === "all" ? "bg-slate-800 text-slate-200" : "bg-slate-200 text-slate-700"
+          }`}>
+            {students.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setApprovalTab("pending")}
+          className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+            approvalTab === "pending"
+              ? "bg-amber-700 text-white shadow-2xs"
+              : "text-amber-900 hover:bg-amber-50"
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>Pending Document Clearance</span>
+          {pendingCount > 0 && (
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              approvalTab === "pending" ? "bg-amber-900 text-amber-100" : "bg-amber-200 text-amber-950"
+            }`}>
+              {pendingCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setApprovalTab("approved")}
+          className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+            approvalTab === "approved"
+              ? "bg-emerald-800 text-white shadow-2xs"
+              : "text-emerald-800 hover:bg-emerald-50"
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Approved & Active</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+            approvalTab === "approved" ? "bg-emerald-950 text-emerald-100" : "bg-emerald-100 text-emerald-800"
+          }`}>
+            {approvedCount}
+          </span>
+        </button>
       </div>
 
       {/* Filter Toolbar */}
@@ -326,7 +448,7 @@ export default function AdminStudents() {
                 <th className="py-2.5 px-3.5 border-r border-slate-200">Email Address</th>
                 <th className="py-2.5 px-3.5 border-r border-slate-200 text-center">Batch</th>
                 <th className="py-2.5 px-3.5 border-r border-slate-200">Phone</th>
-                <th className="py-2.5 px-3.5 border-r border-slate-200 text-center">Document Status</th>
+                <th className="py-2.5 px-3.5 border-r border-slate-200 text-center">Verification & Clearance</th>
                 <th className="py-2.5 px-3.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -334,13 +456,17 @@ export default function AdminStudents() {
               {filtered.map((s, idx) => {
                 const batch = batches.find(b => b.id === s.batchId);
                 const hasDocs = s.documents && s.documents.length > 0;
+                const isPending = s.verificationStatus === "Pending Approval";
+                const isApproved = s.verificationStatus === "Approved";
 
                 return (
                   <tr
                     key={s.id}
                     className={`transition-colors ${
-                      !hasDocs
-                        ? "bg-amber-50/80 border-l-4 border-l-amber-400 hover:bg-amber-100/70"
+                      isPending
+                        ? "bg-amber-50/70 border-l-4 border-l-amber-500 hover:bg-amber-100/60"
+                        : !hasDocs && !isApproved
+                        ? "bg-slate-50/50 hover:bg-slate-100/60"
                         : "bg-white hover:bg-slate-50/80"
                     }`}
                   >
@@ -357,23 +483,56 @@ export default function AdminStudents() {
                     <td className="py-2.5 px-3.5 text-slate-700 border-r border-slate-200/60">{s.email}</td>
                     <td className="py-2.5 px-3.5 text-center border-r border-slate-200/60">
                       <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                        {batch?.code || "FA26-C"}
+                        {batch?.code || s.batchCode || "FA26-C"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3.5 text-slate-600 border-r border-slate-200/60">{s.phone || "—"}</td>
                     <td className="py-2.5 px-3.5 text-center border-r border-slate-200/60">
-                      {hasDocs ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle className="w-3 h-3 text-emerald-600" /> {s.documents?.length || 0} File(s)
+                      {isApproved ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Approved
+                        </span>
+                      ) : isPending ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                          <Clock className="w-3 h-3 text-amber-700" /> Pending Approval
+                        </span>
+                      ) : s.verificationStatus === "Rejected" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-300">
+                          <XCircle className="w-3 h-3 text-rose-600" /> Rejected
+                        </span>
+                      ) : hasDocs ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          <FileText className="w-3 h-3 text-slate-500" /> {s.documents?.length || 0} File(s)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                          <AlertTriangle className="w-3 h-3 text-amber-600" /> Document Missing
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          <AlertTriangle className="w-3 h-3 text-slate-400" /> Not Submitted
                         </span>
                       )}
                     </td>
                     <td className="py-2.5 px-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {(hasDocs || isPending || isApproved) && (
+                          <button
+                            onClick={() => {
+                              setReviewingStudent(s);
+                              setShowRejectInput(false);
+                              setRejectReason("");
+                              setActionMessage(null);
+                            }}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-2xs ${
+                              isPending
+                                ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                : isApproved
+                                ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300"
+                                : "bg-emerald-700 hover:bg-emerald-800 text-white"
+                            }`}
+                            title="Review Statutory Documents & Approval Clearance"
+                          >
+                            <ShieldCheck className="w-3 h-3" />
+                            <span>{isApproved ? "Clearance" : "Review & Approve"}</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => openEdit(s)}
                           title="Edit / Manage Documents"
@@ -607,6 +766,252 @@ export default function AdminStudents() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* MODAL 3: REVIEW CANDIDATE DOCUMENTS & ADMISSION APPROVAL */}
+      <Modal
+        isOpen={!!reviewingStudent}
+        onClose={() => {
+          setReviewingStudent(null);
+          setShowRejectInput(false);
+          setRejectReason("");
+          setActionMessage(null);
+        }}
+        title="Candidate Statutory Verification & Admission Clearance"
+        maxWidth="max-w-3xl"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <button
+              onClick={() => {
+                setReviewingStudent(null);
+                setShowRejectInput(false);
+                setRejectReason("");
+                setActionMessage(null);
+              }}
+              className="px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+
+            {reviewingStudent && (
+              <div className="flex items-center gap-2">
+                {reviewingStudent.verificationStatus === "Approved" ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                    <span>Candidate Account Cleared & Active</span>
+                  </div>
+                ) : (
+                  <>
+                    {!showRejectInput ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowRejectInput(true)}
+                        disabled={actionLoading}
+                        className="px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Reject / Request Resubmission
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Reason for rejection..."
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          className="px-2.5 py-1.5 text-xs border border-rose-300 rounded-lg focus:outline-none focus:border-rose-500 w-48"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleReject(reviewingStudent.id)}
+                          disabled={actionLoading}
+                          className="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Confirm Reject
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowRejectInput(false)}
+                          className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {!showRejectInput && (
+                      <button
+                        type="button"
+                        onClick={() => handleApprove(reviewingStudent.id)}
+                        disabled={actionLoading}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>{actionLoading ? "Processing..." : "Approve & Clear Admission"}</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        }
+      >
+        {reviewingStudent && (
+          <div className="space-y-4 text-xs font-normal">
+            
+            {/* Action Feedback Banner */}
+            {actionMessage && (
+              <div className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+                actionMessage.type === "success"
+                  ? "bg-emerald-50 text-emerald-900 border-emerald-300"
+                  : "bg-rose-50 text-rose-900 border-rose-300"
+              }`}>
+                {actionMessage.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>{actionMessage.text}</span>
+              </div>
+            )}
+
+            {/* Candidate Header Profile Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-xs">
+                  {reviewingStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{reviewingStudent.name}</h3>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 mt-0.5">
+                    <span className="font-mono font-medium text-slate-800">Roll: {reviewingStudent.rollNo}</span>
+                    <span>•</span>
+                    <span>{reviewingStudent.email}</span>
+                    <span>•</span>
+                    <span>{reviewingStudent.phone || "No phone"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                {reviewingStudent.verificationStatus === "Approved" ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Approved & Cleared</span>
+                  </span>
+                ) : reviewingStudent.verificationStatus === "Rejected" ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                    <XCircle className="w-3.5 h-3.5 text-rose-700" />
+                    <span>Rejected</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                    <Clock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Awaiting Clearance</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Candidate Statutory Bio-Data & Personal Identity */}
+            <div className="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-emerald-700" />
+                <span>Candidate Statutory Bio-Data</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1 text-xs">
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Father's Name</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.fatherName || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Mother's Name</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.motherName || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Date of Birth</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.dob || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Blood Group</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.bloodGroup || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">NID / Digital Birth Reg.</span>
+                  <span className="font-medium text-slate-800 font-mono">{reviewingStudent.nidBirthCert || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Emergency Contact</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.emergencyContact || "—"}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 sm:col-span-2 md:col-span-3">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Permanent & Present Address</span>
+                  <span className="font-medium text-slate-800">{reviewingStudent.address || "—"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Statutory Uploaded Documents (6 files) */}
+            <div className="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileCheck className="w-4 h-4 text-emerald-700" />
+                  <span>Submitted Documents ({reviewingStudent.documents?.length || 0} Files)</span>
+                </h4>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  Submitted: {reviewingStudent.onboardedAt ? new Date(reviewingStudent.onboardedAt).toLocaleDateString() : "Online Portal"}
+                </span>
+              </div>
+
+              {(!reviewingStudent.documents || reviewingStudent.documents.length === 0) ? (
+                <div className="text-center py-6 bg-amber-50/50 border border-amber-200 border-dashed rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 mx-auto mb-1" />
+                  <p className="text-xs font-semibold text-amber-900">No verification documents uploaded yet.</p>
+                  <p className="text-[11px] text-amber-700 mt-0.5">The candidate has not completed online e-onboarding.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {reviewingStudent.documents.map((doc, idx) => (
+                    <div 
+                      key={doc.id || idx}
+                      className="p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl flex items-center justify-between gap-2 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">{doc.title || `Document #${idx + 1}`}</p>
+                          <p className="text-[10px] text-slate-500 font-mono truncate">{doc.fileName || "document.pdf"}</p>
+                        </div>
+                      </div>
+
+                      <a
+                        href={doc.fileData || doc.fileUrl || "/uploads/sample_lecture.pdf"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg shadow-2xs shrink-0 cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3 text-slate-500" />
+                        <span>View</span>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Administrative Advisory Note */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+              <p>
+                <strong>Admission Clearance Statutory Policy:</strong> Approving this student marks their admission as formally cleared. Their password set during onboarding becomes immediately active for student LMS login.
+              </p>
+            </div>
+
+          </div>
+        )}
       </Modal>
     </div>
   );
