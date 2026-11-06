@@ -38,7 +38,7 @@ export const lookupStudentAdmission = async (req: Request, res: Response) => {
     if (rows.length === 0) {
       return sendError(
         res,
-        "No matching admission record found. Please verify your Student ID/Roll and Registered Email, or contact the JU CSE Academic Office.",
+        "No matching admission record found. Please verify your Student ID/Roll and Registered Email, or contact the Central Admission Office.",
         404
       );
     }
@@ -89,8 +89,8 @@ export const lookupStudentAdmission = async (req: Request, res: Response) => {
       maskedPhone,
       maskedEmail,
       demoOtp, // Surfaced for seamless examination & user testing!
-      programName: student.program_name || "B.Sc. in Computer Science & Engineering",
-      programCode: student.program_code || "CSE",
+      programName: student.program_name || "Academic Degree Program",
+      programCode: student.program_code || "JU",
       batchName: student.batch_name || "Spring 2026",
       batchCode: student.batch_code || "SP26-A",
       section: student.batch_section || "A",
@@ -194,7 +194,8 @@ export const submitStudentOnboarding = async (req: Request, res: Response) => {
       emergencyContact,
       nidBirthCert,
       documents,
-      additionalInfo
+      additionalInfo,
+      password
     } = req.body;
 
     if (!rollNo) {
@@ -214,6 +215,14 @@ export const submitStudentOnboarding = async (req: Request, res: Response) => {
     }
 
     const student = studentRows[0];
+
+    // If password provided, update user credentials
+    if (password && typeof password === "string" && password.trim().length >= 6) {
+      await pool.query(
+        `UPDATE users SET password_hash = $1 WHERE id = $2 OR LOWER(email) = LOWER($3)`,
+        [password.trim(), student.id, student.email]
+      );
+    }
 
     // Format documents array
     const docList = Array.isArray(documents) ? documents : [];
@@ -237,7 +246,7 @@ export const submitStudentOnboarding = async (req: Request, res: Response) => {
       emergencyContact: emergencyContact || student.emergency_contact,
       nidBirthCert: nidBirthCert || student.nid_birth_cert,
       additionalInfo: additionalInfo || {},
-      onboardedVia: "JU CSE Public Web E-Recruitment Portal",
+      onboardedVia: "JU Central Public Web E-Recruitment Portal",
       clientIp: req.ip || "127.0.0.1",
     };
 
@@ -253,9 +262,8 @@ export const submitStudentOnboarding = async (req: Request, res: Response) => {
            nid_birth_cert = COALESCE($7, nid_birth_cert),
            documents = $8::jsonb,
            profile_info = $9::jsonb,
-           verification_status = 'Verified',
-           status = 'Active',
-           verified_at = CURRENT_TIMESTAMP,
+           verification_status = 'Pending Approval',
+           status = 'Pending',
            onboarded_at = CURRENT_TIMESTAMP
        WHERE id = $10
        RETURNING *`,
@@ -278,12 +286,12 @@ export const submitStudentOnboarding = async (req: Request, res: Response) => {
     return sendSuccess(res, {
       student: updatedRows[0],
       trackingNumber,
-      verificationStatus: "Verified",
+      verificationStatus: "Pending Approval",
       onboardedAt: new Date().toISOString(),
       studentPortalUrl: "/dashboard/student",
       credentials: {
         email: student.email,
-        temporaryPassword: "student123",
+        passwordCreated: true,
       }
     }, "Student E-Recruitment documents and information uploaded and verified successfully! Official registration slip generated.");
   } catch (err: any) {
@@ -313,11 +321,11 @@ export const getPublicLandingData = async (req: Request, res: Response) => {
     return sendSuccess(res, {
       university: {
         name: "Jahangirnagar University",
-        department: "Department of Computer Science & Engineering",
+        department: "Central Academic Directorate",
         established: "1970",
         campus: "Savar, Dhaka-1342, Bangladesh",
         logo: "/JU_logo.png",
-        motto: "Excellence in Computing, Innovation & Research",
+        motto: "Excellence in Higher Education & Research",
       },
       stats: {
         totalStudents: studentCountRows[0]?.count || 1280,

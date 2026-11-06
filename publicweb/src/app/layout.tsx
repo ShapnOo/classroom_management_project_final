@@ -1,18 +1,12 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { PublicFooter } from "@/components/PublicFooter";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Jahangirnagar University — Department of Computer Science & Engineering",
-  description: "Official Academic Public Portal & Admitted Student E-Onboarding Verification for Jahangirnagar University Department of CSE.",
+  title: "Jahangirnagar University — Central Academic & Student E-Onboarding Portal",
+  description: "Official Central Academic Public Portal & Admitted Student E-Onboarding Verification for Jahangirnagar University.",
 };
 
 export default function RootLayout({
@@ -21,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900 selection:bg-brand-dark selection:text-white" suppressHydrationWarning>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900 selection:bg-emerald-900 selection:text-white" suppressHydrationWarning>
         <PublicNavbar />
         <main className="flex-1 w-full">
           {children}
@@ -32,4 +26,3 @@ export default function RootLayout({
     </html>
   );
 }
-
