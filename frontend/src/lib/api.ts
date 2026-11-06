@@ -686,6 +686,15 @@ export const api = {
   getStudentTranscript: (studentId: string) => request<any>(`/admin/reports/transcripts/${studentId}`),
   getSessionSemesterResults: (sessionId: string, batchId: string, semester: string) =>
     request<any>(`/admin/reports/session-semester-results?sessionId=${sessionId}&batchId=${batchId}&semester=${encodeURIComponent(semester)}`),
+
+  // ── Public Web & E-Recruitment / Student Onboarding ──
+  getPublicLandingData: () => request<any>("/public/landing-data"),
+  lookupStudentAdmission: (data: { rollNo: string; email: string; phone?: string }) =>
+    request<any>("/public/onboarding/lookup", { method: "POST", body: JSON.stringify(data) }),
+  verifyStudentOtp: (data: { rollNo: string; otp: string }) =>
+    request<any>("/public/onboarding/verify-otp", { method: "POST", body: JSON.stringify(data) }),
+  submitStudentOnboarding: (data: any) =>
+    request<any>("/public/onboarding/submit", { method: "POST", body: JSON.stringify(data) }),
 };
 
 

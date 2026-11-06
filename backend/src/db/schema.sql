@@ -77,6 +77,28 @@ CREATE TABLE IF NOT EXISTS students (
   status VARCHAR(50) DEFAULT 'Active',
   phone VARCHAR(50),
   documents JSONB DEFAULT '[]'::jsonb,
+  profile_info JSONB DEFAULT '{}'::jsonb,
+  verification_status VARCHAR(50) DEFAULT 'Pending Verification', -- 'Pending Verification', 'Verified', 'Rejected'
+  verified_at TIMESTAMP WITH TIME ZONE,
+  onboarded_at TIMESTAMP WITH TIME ZONE,
+  father_name VARCHAR(255),
+  mother_name VARCHAR(255),
+  blood_group VARCHAR(10),
+  dob DATE,
+  address TEXT,
+  emergency_contact VARCHAR(50),
+  nid_birth_cert VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS student_otps (
+  id VARCHAR(64) PRIMARY KEY,
+  student_id VARCHAR(64) REFERENCES students(id) ON DELETE CASCADE,
+  otp VARCHAR(10) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  is_verified BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

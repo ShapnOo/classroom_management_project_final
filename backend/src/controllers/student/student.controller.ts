@@ -85,6 +85,7 @@ export const getStudentDashboard = async (req: Request, res: Response) => {
     // 1. Enrolled Classrooms with syllabus completion
     const { rows: classrooms } = await pool.query(
       `SELECT c.*,
+              COALESCE(c.semester, cr.semester, 'Semester 1') as semester,
               cr.title as course_title, cr.code as course_code, cr.credits as course_credits,
               b.name as batch_name, b.code as batch_code,
               t.name as teacher_name, t.email as teacher_email, t.designation as teacher_designation,
@@ -297,6 +298,7 @@ export const getStudentClassrooms = async (req: Request, res: Response) => {
 
     const { rows } = await pool.query(
       `SELECT c.*,
+              COALESCE(c.semester, cr.semester, 'Semester 1') as semester,
               cr.title as course_title, cr.code as course_code, cr.credits as course_credits,
               b.name as batch_name, b.code as batch_code,
               t.name as teacher_name, t.email as teacher_email, t.designation as teacher_designation,

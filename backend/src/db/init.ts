@@ -121,6 +121,28 @@ export async function initDatabase() {
       ALTER TABLE syllabus_topics ADD COLUMN IF NOT EXISTS completed_slides INT DEFAULT 0;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS documents JSONB DEFAULT '[]'::jsonb;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS profile_info JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS verification_status VARCHAR(50) DEFAULT 'Pending Verification';
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS onboarded_at TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS father_name VARCHAR(255);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_name VARCHAR(255);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS blood_group VARCHAR(10);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS dob DATE;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS address TEXT;
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(50);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS nid_birth_cert VARCHAR(100);
+
+      CREATE TABLE IF NOT EXISTS student_otps (
+        id VARCHAR(64) PRIMARY KEY,
+        student_id VARCHAR(64) REFERENCES students(id) ON DELETE CASCADE,
+        otp VARCHAR(10) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        is_verified BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
       ALTER TABLE course_materials ADD COLUMN IF NOT EXISTS last_slide INT DEFAULT 1;
       ALTER TABLE course_materials ADD COLUMN IF NOT EXISTS total_slides INT DEFAULT 1;
 

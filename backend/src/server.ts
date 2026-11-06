@@ -13,6 +13,7 @@ import teacherRoutes from "./routes/teacher/index.js";
 import studentRoutes from "./routes/student/index.js";
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import publicRoutes from "./routes/public/index.js";
 import { sendError, sendSuccess } from "./utils/response.js";
 
 dotenv.config();
@@ -79,6 +80,9 @@ app.use("/api/student", studentRoutes);
 
 // File Uploads API (PPTX, PDF, Images saved to backend/uploads)
 app.use("/api/upload", uploadRoutes);
+
+// Public Web & E-Recruitment / Student Onboarding API
+app.use("/api/public", publicRoutes);
 
 // Root API Welcome & Endpoint Discovery
 app.get("/", (req: Request, res: Response) => {
