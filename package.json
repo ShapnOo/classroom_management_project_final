@@ -1,15 +1,24 @@
 {
   "name": "classroom-management-monorepo",
   "version": "1.0.0",
-  "description": "Scholaris Classroom Management System - Monorepo (Next.js Frontend + Express.js/PostgreSQL Backend)",
+  "description": "Scholaris Classroom Management System - Monorepo (Next.js Frontend + Next.js Public Web + Express.js/PostgreSQL Backend)",
   "scripts": {
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
+    "dev:publicweb": "npm run dev --prefix publicweb",
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "npm run build --prefix backend",
+    "build:publicweb": "npm run build --prefix publicweb",
     "install:all": "npm install --prefix frontend && npm install --prefix backend"
   },
-  "keywords": ["classroom-management", "nextjs", "express", "postgresql"],
+  "keywords": [
+    "classroom-management",
+    "nextjs",
+    "express",
+    "postgresql",
+    "publicweb",
+    "onboarding"
+  ],
   "author": "",
   "license": "ISC"
 }

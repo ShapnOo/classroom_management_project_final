@@ -361,3 +361,4 @@ export const getPublicLandingData = async (req: Request, res: Response) => {
     return sendError(res, "Failed to load public landing data", 500, err.message);
   }
 };
+

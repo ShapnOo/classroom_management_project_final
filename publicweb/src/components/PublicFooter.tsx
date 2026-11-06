@@ -57,27 +57,27 @@ export function PublicFooter() {
             </h4>
             <ul className="space-y-2 text-[11px]">
               <li>
-                <Link href="/publicweb#programs" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#programs" className="hover:text-emerald-400 transition-colors">
                   B.Sc. (Engg.) in CSE (4 Years)
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#programs" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#programs" className="hover:text-emerald-400 transition-colors">
                   M.Sc. in Computer Science
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#programs" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#programs" className="hover:text-emerald-400 transition-colors">
                   PGDIT (Post Graduate Diploma)
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#programs" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#programs" className="hover:text-emerald-400 transition-colors">
                   Master in Information Technology (MIT)
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#programs" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#programs" className="hover:text-emerald-400 transition-colors">
                   Ph.D. & M.Phil in Computing & AI
                 </Link>
               </li>
@@ -91,30 +91,30 @@ export function PublicFooter() {
             </h4>
             <ul className="space-y-2 text-[11px]">
               <li>
-                <Link href="/publicweb/onboarding" className="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                <Link href="/onboarding" className="text-emerald-400 font-bold hover:underline flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" />
                   <span>Student ID Verification</span>
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb/onboarding" className="hover:text-emerald-400 transition-colors">
+                <Link href="/onboarding" className="hover:text-emerald-400 transition-colors">
                   Upload Required Documents
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#onboarding-guide" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#onboarding-guide" className="hover:text-emerald-400 transition-colors">
                   Document Checklist & Guidelines
                 </Link>
               </li>
               <li>
-                <Link href="/auth/login" className="hover:text-emerald-400 transition-colors">
+                <a href="http://localhost:3000/auth/login" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
                   Student Portal LMS Login
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/auth/login" className="hover:text-emerald-400 transition-colors">
+                <a href="http://localhost:3000/auth/login" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
                   Faculty & Admin Sign In
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -131,12 +131,12 @@ export function PublicFooter() {
                 </a>
               </li>
               <li>
-                <Link href="/publicweb#notices" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#notices" className="hover:text-emerald-400 transition-colors">
                   Academic Calendar 2026
                 </Link>
               </li>
               <li>
-                <Link href="/publicweb#faculty" className="hover:text-emerald-400 transition-colors">
+                <Link href="/#faculty" className="hover:text-emerald-400 transition-colors">
                   Faculty Profiles & Research
                 </Link>
               </li>
@@ -164,3 +164,4 @@ export function PublicFooter() {
     </footer>
   );
 }
+

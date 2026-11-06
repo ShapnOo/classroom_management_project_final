@@ -17,3 +17,4 @@ router.post("/onboarding/verify-otp", verifyStudentOtp);
 router.post("/onboarding/submit", submitStudentOnboarding);
 
 export default router;
+

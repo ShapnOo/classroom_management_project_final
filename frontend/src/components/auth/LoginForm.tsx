@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GraduationCap, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { GraduationCap, Mail, Lock, AlertCircle, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api, authStorage } from "@/lib/api";
 
 const demoCredentials = {
@@ -66,12 +67,15 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col justify-center items-center w-full max-w-md mx-auto p-8">
-      <div className="flex flex-col items-center mb-8">
-        <div className="bg-brand-dark p-3 rounded-xl mb-4 shadow-sm">
-          <GraduationCap className="w-8 h-8 text-white" />
-        </div>
+      <div className="flex flex-col items-center mb-6">
+        <Link href="/publicweb" className="w-16 h-16 rounded-2xl p-1 mb-3 hover:scale-105 transition-transform" title="Go to JU Public Web">
+          <img src="/JU_logo.png" alt="Jahangirnagar University" className="w-full h-full object-contain" />
+        </Link>
+        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full mb-1">
+          Jahangirnagar University • Department of CSE
+        </span>
         <h1 className="text-base font-bold text-foreground text-center">Academic & Classroom Management System</h1>
-        <p className="text-[13px] text-slate-500 mt-1 text-center">
+        <p className="text-[12px] text-slate-500 mt-0.5 text-center">
           Sign in to your Academic Workspace
         </p>
       </div>
@@ -158,6 +162,25 @@ export default function LoginForm() {
             )}
           </button>
         </form>
+
+        <div className="mt-4 pt-3 border-t border-slate-100 text-center">
+          <Link
+            href="/publicweb/onboarding"
+            className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Newly Admitted? Verify Student ID & Onboard &rarr;</span>
+          </Link>
+          <div className="mt-2">
+            <Link
+              href="/publicweb"
+              className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              <span>Back to JU Public Web Portal</span>
+            </Link>
+          </div>
+        </div>
       </div>
       
       <p className="text-[11px] text-slate-500 mt-8 text-center px-4">
