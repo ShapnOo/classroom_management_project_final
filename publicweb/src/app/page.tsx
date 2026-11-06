@@ -33,10 +33,6 @@ export default function PublicWebLandingPage() {
     router.push(`/onboarding?rollNo=${encodeURIComponent(quickRollNo.trim())}`);
   };
 
-  const handleFillDemo = (id: string) => {
-    setQuickRollNo(id);
-  };
-
   const notices = [
     {
       id: "NTC-ADM-01",
@@ -202,13 +198,6 @@ export default function PublicWebLandingPage() {
                     <Fingerprint className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Enter Admission Roll / Student ID</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => handleFillDemo("SP26A001")}
-                    className="text-[10px] font-mono font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30 transition-colors cursor-pointer"
-                  >
-                    Use SP26A001
-                  </button>
                 </div>
 
                 <form onSubmit={handleQuickVerify} className="space-y-3">
@@ -217,7 +206,7 @@ export default function PublicWebLandingPage() {
                       type="text"
                       value={quickRollNo}
                       onChange={(e) => setQuickRollNo(e.target.value)}
-                      placeholder="E.G. SP26A001"
+                      placeholder="e.g. SP26A001"
                       className="w-full px-4 py-3 bg-white/5 border border-emerald-500/40 focus:border-emerald-400 rounded-2xl text-xs sm:text-sm font-mono font-bold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/20 transition-all uppercase tracking-wider backdrop-blur-sm shadow-inner"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-emerald-400/80 bg-emerald-900/40 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -253,10 +242,10 @@ export default function PublicWebLandingPage() {
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white leading-tight">
-                        {quickRollNo ? "Abdur Rahman" : "Candidate Identity"}
+                        {quickRollNo ? "Candidate Record" : "Student Verification"}
                       </h4>
                       <p className="text-[10px] font-mono text-emerald-400">
-                        Roll: {quickRollNo || "SP26A001"}
+                        {quickRollNo ? `Roll: ${quickRollNo}` : "Enter ID to authenticate"}
                       </p>
                     </div>
                   </div>

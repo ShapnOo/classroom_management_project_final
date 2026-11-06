@@ -11,7 +11,6 @@ interface OtpVerificationModalProps {
   maskedEmail: string;
   otp: string;
   setOtp: (val: string) => void;
-  demoOtpHint: string;
   loading: boolean;
   onVerify: (e: React.FormEvent) => void;
   errorMsg?: string;
@@ -25,7 +24,6 @@ export function OtpVerificationModal({
   maskedEmail,
   otp,
   setOtp,
-  demoOtpHint,
   loading,
   onVerify,
   errorMsg,
@@ -98,23 +96,11 @@ export function OtpVerificationModal({
               maxLength={6}
               required
               autoFocus
-              placeholder="123456"
+              placeholder="••••••"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               className="w-full text-center text-2xl tracking-[0.4em] font-mono font-black px-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-emerald-700 focus:bg-white rounded-2xl text-slate-900 focus:outline-none transition-all shadow-inner"
             />
-          </div>
-
-          {/* Quick Demo Helper */}
-          <div className="flex items-center justify-between text-[11px] text-slate-500 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200/60">
-            <span>Evaluation Code: <strong className="font-mono text-emerald-800">123456</strong></span>
-            <button
-              type="button"
-              onClick={() => setOtp(demoOtpHint || "123456")}
-              className="font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
-            >
-              Fill 123456
-            </button>
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-2">

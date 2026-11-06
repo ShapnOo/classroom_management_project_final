@@ -17,14 +17,12 @@ import {
   CreditCard,
   Receipt,
   FileCheck,
-  Sparkles,
 } from "lucide-react";
 import { DocumentUploadState } from "./types";
 
 interface StepDocumentsProps {
   documents: DocumentUploadState[];
   onFileUpload: (docId: string, e: React.ChangeEvent<HTMLInputElement>) => void;
-  onFillSampleFiles: () => void;
   onPreviewModal: (title: string, url: string) => void;
   password: string;
   setPassword: (val: string) => void;
@@ -42,7 +40,6 @@ interface StepDocumentsProps {
 export function StepDocuments({
   documents,
   onFileUpload,
-  onFillSampleFiles,
   onPreviewModal,
   password,
   setPassword,
@@ -104,15 +101,6 @@ export function StepDocuments({
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
             <span>{uploadedCount} of {documents.length} Uploaded</span>
           </span>
-
-          <button
-            type="button"
-            onClick={onFillSampleFiles}
-            className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Quick-Fill Files (Demo)</span>
-          </button>
         </div>
       </div>
 

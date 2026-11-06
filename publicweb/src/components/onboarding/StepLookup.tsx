@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, RefreshCw, ShieldCheck, UserCheck, KeyRound } from "lucide-react";
+import { ArrowRight, RefreshCw, ShieldCheck, KeyRound } from "lucide-react";
 
 interface StepLookupProps {
   rollNo: string;
@@ -11,7 +11,6 @@ interface StepLookupProps {
   setPhone: (val: string) => void;
   loading: boolean;
   onSubmit: (e: React.FormEvent) => void;
-  onFillDemo: () => void;
 }
 
 export function StepLookup({
@@ -23,31 +22,19 @@ export function StepLookup({
   setPhone,
   loading,
   onSubmit,
-  onFillDemo,
 }: StepLookupProps) {
   return (
     <div className="p-6 sm:p-8 space-y-6">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-700" />
-            <span>1. Candidate Identification & Verification</span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Authenticate your student roll number and registered contact details to begin statutory onboarding.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={onFillDemo}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
-        >
-          <UserCheck className="w-3.5 h-3.5" />
-          <span>Auto-Fill Demo (SP26A001)</span>
-        </button>
+      <div className="pb-4 border-b border-slate-100">
+        <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-emerald-700" />
+          <span>1. Candidate Identification & Verification</span>
+        </h2>
+        <p className="text-xs text-slate-500 mt-1">
+          Authenticate your student roll number and registered contact details to begin statutory onboarding.
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-5">

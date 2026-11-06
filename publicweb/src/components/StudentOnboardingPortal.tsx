@@ -26,49 +26,49 @@ export function StudentOnboardingPortal() {
   const [successMsg, setSuccessMsg] = useState("");
   const [previewModalFile, setPreviewModalFile] = useState<{ title: string; url: string } | null>(null);
 
-  // Step 1: Lookup Form
-  const [rollNo, setRollNo] = useState("SP26A001");
-  const [email, setEmail] = useState("sp26a1@edu");
-  const [phone, setPhone] = useState("01711223344");
+  // Step 1: Lookup Form (Clean / Blank)
+  const [rollNo, setRollNo] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
-  // In-Place 2FA OTP Modal
+  // In-Place 2FA OTP Modal (Clean / Blank)
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [otp, setOtp] = useState("123456");
-  const [demoOtpHint, setDemoOtpHint] = useState("123456");
+  const [otp, setOtp] = useState("");
+  const [demoOtpHint, setDemoOtpHint] = useState("");
   const [maskedPhone, setMaskedPhone] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [otpError, setOtpError] = useState("");
 
-  // Step 3: Password Creation
-  const [password, setPassword] = useState("student123");
-  const [confirmPassword, setConfirmPassword] = useState("student123");
+  // Step 3: Password Creation (Clean / Blank)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Student Profile Context
+  // Student Profile Context (Clean / Blank)
   const [studentData, setStudentData] = useState<StudentProfileData>({
-    name: "Abdur Rahman",
-    rollNo: "SP26A001",
-    programName: "Academic Degree Program",
-    batchName: "Academic Batch",
+    name: "",
+    rollNo: "",
+    programName: "",
+    batchName: "",
   });
 
-  // Step 2: Candidate Bio-Data
+  // Step 2: Candidate Bio-Data (Clean / Blank)
   const [bioData, setBioData] = useState<StudentBioData>({
-    fatherName: "Md. Mustafizur Rahman",
-    fatherOccupation: "Government Official",
-    motherName: "Razia Sultana",
-    motherOccupation: "Educator",
-    bloodGroup: "B+",
-    dob: "2003-04-18",
+    fatherName: "",
+    fatherOccupation: "",
+    motherName: "",
+    motherOccupation: "",
+    bloodGroup: "A+",
+    dob: "",
     gender: "Male",
-    nidBirthCert: "19982691234567890",
-    emergencyContact: "01819223344",
-    emergencyRelation: "Father",
-    presentAddress: "House 14, Road 5, Sector 11, Uttara, Dhaka-1230",
-    permanentAddress: "Vill: Joypur, P.O: Savar, Dist: Dhaka-1340",
+    nidBirthCert: "",
+    emergencyContact: "",
+    emergencyRelation: "",
+    presentAddress: "",
+    permanentAddress: "",
   });
 
-  // Step 3: Required Academic Documents
+  // Step 3: Required Academic Documents (Clean / Blank)
   const [documents, setDocuments] = useState<DocumentUploadState[]>([
     {
       id: "photo",
@@ -76,11 +76,7 @@ export function StudentOnboardingPortal() {
       description: "Formal studio portrait with plain white background (Max 2MB, JPEG/PNG)",
       type: "image/jpeg,image/png",
       required: true,
-      fileName: "passport_photo_abdur.jpg",
-      fileSize: "245 KB",
-      fileUrl: "/JU_logo.png",
-      uploaded: true,
-      previewUrl: "/JU_logo.png",
+      uploaded: false,
     },
     {
       id: "signature",
@@ -88,11 +84,7 @@ export function StudentOnboardingPortal() {
       description: "Clear scanned signature on plain white paper (Max 1MB, JPEG/PNG)",
       type: "image/jpeg,image/png",
       required: true,
-      fileName: "signature_specimen.png",
-      fileSize: "84 KB",
-      fileUrl: "/JU_logo.png",
-      uploaded: true,
-      previewUrl: "/JU_logo.png",
+      uploaded: false,
     },
     {
       id: "ssc",
@@ -100,10 +92,7 @@ export function StudentOnboardingPortal() {
       description: "Original board certificate and academic transcript (Max 5MB, PDF/JPEG)",
       type: "application/pdf,image/jpeg",
       required: true,
-      fileName: "ssc_certificate_transcripts.pdf",
-      fileSize: "1.2 MB",
-      fileUrl: "/uploads/sample_lecture.pdf",
-      uploaded: true,
+      uploaded: false,
     },
     {
       id: "hsc",
@@ -111,10 +100,7 @@ export function StudentOnboardingPortal() {
       description: "Original board certificate and academic transcript (Max 5MB, PDF/JPEG)",
       type: "application/pdf,image/jpeg",
       required: true,
-      fileName: "hsc_certificate_transcripts.pdf",
-      fileSize: "1.4 MB",
-      fileUrl: "/uploads/sample_lecture.pdf",
-      uploaded: true,
+      uploaded: false,
     },
     {
       id: "nid",
@@ -122,10 +108,7 @@ export function StudentOnboardingPortal() {
       description: "Smart National Identity Card or 17-digit online birth certificate (Max 5MB, PDF/JPEG)",
       type: "application/pdf,image/jpeg",
       required: true,
-      fileName: "digital_nid_card.pdf",
-      fileSize: "680 KB",
-      fileUrl: "/uploads/sample_lecture.pdf",
-      uploaded: true,
+      uploaded: false,
     },
     {
       id: "challan",
@@ -133,47 +116,37 @@ export function StudentOnboardingPortal() {
       description: "Official university bank deposit slip or authenticated payment receipt (Max 5MB, PDF/JPEG)",
       type: "application/pdf,image/jpeg",
       required: true,
-      fileName: "ju_admission_bank_challan.pdf",
-      fileSize: "490 KB",
-      fileUrl: "/uploads/sample_lecture.pdf",
-      uploaded: true,
+      uploaded: false,
     },
   ]);
 
-  const [declarationAccepted, setDeclarationAccepted] = useState(true);
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const [confirmedData, setConfirmedData] = useState<ConfirmedRegistrationData | null>(null);
 
   // 1. Lookup & Dispatch OTP Handler
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!rollNo.trim() || !email.trim()) {
+      setErrorMsg("Please enter both your Student ID/Roll and Registered Email.");
+      return;
+    }
+
     setErrorMsg("");
     setLoading(true);
 
     try {
-      const res = await api.lookupStudentAdmission({ rollNo, email, phone });
+      const res = await api.lookupStudentAdmission({ rollNo: rollNo.trim(), email: email.trim(), phone: phone.trim() });
       if (res.data) {
         setStudentData(res.data);
-        setMaskedPhone(res.data.maskedPhone || phone);
-        setMaskedEmail(res.data.maskedEmail || email);
+        setMaskedPhone(res.data.maskedPhone || phone.trim());
+        setMaskedEmail(res.data.maskedEmail || email.trim());
         if (res.data.demoOtp) {
           setDemoOtpHint(res.data.demoOtp);
-          setOtp(res.data.demoOtp);
         }
         setIsOtpModalOpen(true);
       }
     } catch (err: any) {
-      console.warn("API lookup fallback:", err);
-      setStudentData({
-        name: rollNo === "SP26A001" ? "Abdur Rahman" : "Admitted Candidate",
-        rollNo,
-        programName: "Academic Degree Program",
-        batchName: "Academic Batch 2026",
-      });
-      setMaskedPhone(phone.slice(0, 3) + "****" + phone.slice(-4));
-      setMaskedEmail(email.slice(0, 2) + "***@" + email.split("@")[1]);
-      setDemoOtpHint("123456");
-      setOtp("123456");
-      setIsOtpModalOpen(true);
+      setErrorMsg(err.message || "No admission record found for the provided credentials.");
     } finally {
       setLoading(false);
     }
@@ -182,12 +155,17 @@ export function StudentOnboardingPortal() {
   // 2. In-Modal OTP Verification Handler
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!otp.trim()) {
+      setOtpError("Please enter the 6-digit verification code.");
+      return;
+    }
+
     setOtpError("");
     setLoading(true);
 
     try {
       const res = await api.verifyStudentOtp({
-        rollNo: studentData.rollNo,
+        rollNo: studentData.rollNo || rollNo.trim(),
         otp: otp.trim(),
       });
 
@@ -199,12 +177,12 @@ export function StudentOnboardingPortal() {
         throw new Error("Invalid verification code");
       }
     } catch (err: any) {
-      if (otp.trim() === "123456" || otp.trim() === demoOtpHint) {
+      if (demoOtpHint && otp.trim() === demoOtpHint) {
         setSuccessMsg("Two-factor authentication verified successfully.");
         setIsOtpModalOpen(false);
         setCurrentStep("biodata");
       } else {
-        setOtpError("Incorrect code. Please enter valid 6-digit OTP (Evaluation Demo: 123456).");
+        setOtpError(err.message || "Invalid or expired verification code. Please check and try again.");
       }
     } finally {
       setLoading(false);
@@ -214,7 +192,7 @@ export function StudentOnboardingPortal() {
   // 3. Bio-Data Save Handler
   const handleSaveBioData = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bioData.fatherName.trim() || !bioData.motherName.trim() || !bioData.dob || !bioData.nidBirthCert) {
+    if (!bioData.fatherName.trim() || !bioData.motherName.trim() || !bioData.dob || !bioData.nidBirthCert.trim() || !bioData.emergencyContact.trim() || !bioData.presentAddress.trim() || !bioData.permanentAddress.trim()) {
       setErrorMsg("Please complete all required fields marked with *");
       return;
     }
@@ -250,16 +228,6 @@ export function StudentOnboardingPortal() {
     setErrorMsg("");
   };
 
-  const handleFillSampleFiles = () => {
-    const updated = documents.map((d) => ({
-      ...d,
-      uploaded: true,
-      fileName: d.fileName || "sample_certificate.pdf",
-      fileSize: "1.2 MB",
-    }));
-    setDocuments(updated);
-  };
-
   // 5. Final Submission Handler
   const handleSubmitOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,7 +258,7 @@ export function StudentOnboardingPortal() {
     try {
       const payload = {
         studentId: studentData.studentId || studentData.id,
-        rollNo: studentData.rollNo,
+        rollNo: studentData.rollNo || rollNo.trim(),
         password: password.trim(),
         ...bioData,
         documents: documents.map((d) => ({
@@ -308,12 +276,7 @@ export function StudentOnboardingPortal() {
         setCurrentStep("confirmed");
       }
     } catch (err: any) {
-      setConfirmedData({
-        trackingNumber: "JU-ADM-" + Math.floor(100000 + Math.random() * 900000),
-        verificationStatus: "Verified",
-        onboardedAt: new Date().toISOString(),
-      });
-      setCurrentStep("confirmed");
+      setErrorMsg(err.message || "Failed to submit onboarding documents. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -350,11 +313,6 @@ export function StudentOnboardingPortal() {
             setPhone={setPhone}
             loading={loading}
             onSubmit={handleLookup}
-            onFillDemo={() => {
-              setRollNo("SP26A001");
-              setEmail("sp26a1@edu");
-              setPhone("01711223344");
-            }}
           />
         )}
 
@@ -371,7 +329,6 @@ export function StudentOnboardingPortal() {
           <StepDocuments
             documents={documents}
             onFileUpload={handleFileUpload}
-            onFillSampleFiles={handleFillSampleFiles}
             onPreviewModal={(title, url) => setPreviewModalFile({ title, url })}
             password={password}
             setPassword={setPassword}
@@ -406,7 +363,6 @@ export function StudentOnboardingPortal() {
         maskedEmail={maskedEmail}
         otp={otp}
         setOtp={setOtp}
-        demoOtpHint={demoOtpHint}
         loading={loading}
         onVerify={handleVerifyOtp}
         errorMsg={otpError}
