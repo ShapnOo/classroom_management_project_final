@@ -4,12 +4,12 @@ import {
   Users, Clock, Play, FolderOpen, ClipboardCheck,
   Search, MoreVertical, CalendarDays, BookOpen, LayoutGrid,
   List as ListIcon, Info, MapPin, ArrowLeft, ArrowRight,
-  TrendingUp, Sparkles, Filter, ChevronRight
+  TrendingUp, Sparkles, Filter, ChevronRight, GraduationCap,
+  Layers, CheckCircle2, Bookmark, Check
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/lib/store";
-
 import { GridSkeleton } from "@/components/ui/Skeleton";
 
 export default function TeacherClassrooms() {
@@ -32,294 +32,546 @@ export default function TeacherClassrooms() {
 
   const myClassrooms = getMyClassroomViews();
 
+  // ── Hierarchical Navigation State: Program -> Batch -> Semester -> Course ──
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showFlatAll, setShowFlatAll] = useState(false);
+
+  // Unique Programs from assigned classrooms
+  const uniquePrograms = useMemo(() => {
+    const pMap = new Map();
+    myClassrooms.forEach((c) => {
+      if (c.program && !pMap.has(c.program.id)) {
+        pMap.set(c.program.id, c.program);
+      }
+    });
+    return Array.from(pMap.values());
+  }, [myClassrooms]);
+
+  // Unique Batches filtered by selected program
+  const uniqueBatches = useMemo(() => {
+    const bMap = new Map();
+    myClassrooms.forEach((c) => {
+      if (c.batch && !bMap.has(c.batch.id)) {
+        if (!selectedProgramId || c.program.id === selectedProgramId) {
+          bMap.set(c.batch.id, c.batch);
+        }
+      }
+    });
+    return Array.from(bMap.values());
+  }, [myClassrooms, selectedProgramId]);
+
+  // Unique Semesters filtered by selected batch
+  const uniqueSemesters = useMemo(() => {
+    if (!selectedBatchId) return [];
+    const sMap = new Set<string>();
+    myClassrooms.forEach((c) => {
+      if (c.batch.id === selectedBatchId) {
+        sMap.add(c.semester || "Semester 1");
+      }
+    });
+    // Sort semesters naturally
+    const sorted = Array.from(sMap).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, "")) || 0;
+      const numB = parseInt(b.replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
+    return sorted;
+  }, [myClassrooms, selectedBatchId]);
+
+  // Selected entities for breadcrumb and header context
+  const currentProgram = uniquePrograms.find((p) => p.id === selectedProgramId);
+  const currentBatch = uniqueBatches.find((b) => b.id === selectedBatchId);
+
+  // Final filtered classrooms for Course list (Tier 4)
+  const filteredClassrooms = useMemo(() => {
+    return myClassrooms.filter((v) => {
+      if (!showFlatAll) {
+        if (selectedProgramId && v.program.id !== selectedProgramId) return false;
+        if (selectedBatchId && v.batch.id !== selectedBatchId) return false;
+        if (selectedSemester && selectedSemester !== "all" && v.semester !== selectedSemester) return false;
+      }
+      const matchSearch =
+        v.course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.batch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.program.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = statusFilter === "all" || v.classroom.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [myClassrooms, selectedProgramId, selectedBatchId, selectedSemester, searchTerm, statusFilter, showFlatAll]);
+
   if (isLoading && myClassrooms.length === 0) {
     return <GridSkeleton count={6} />;
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // TOP BREADCRUMB COMPONENT
+  // ───────────────────────────────────────────────────────────────────────────
+  const renderBreadcrumbs = () => {
+    return (
+      <div className="flex items-center flex-wrap gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedProgramId(null);
+            setSelectedBatchId(null);
+            setSelectedSemester(null);
+            setShowFlatAll(false);
+          }}
+          className={`font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+            !selectedProgramId && !showFlatAll ? "text-brand-dark font-bold" : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <GraduationCap className="w-3.5 h-3.5" />
+          <span>Programs</span>
+        </button>
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+        {selectedProgramId && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBatchId(null);
+                setSelectedSemester(null);
+                setShowFlatAll(false);
+              }}
+              className={`font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                !selectedBatchId && !showFlatAll ? "text-brand-dark font-bold" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>{currentProgram?.code || "Program"}</span>
+            </button>
+          </>
+        )}
 
-  const filtered = myClassrooms.filter((v) => {
-    if (selectedBatchId && selectedBatchId !== "all" && v.batch.id !== selectedBatchId) return false;
-    const matchSearch =
-      v.course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.batch.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === "all" || v.classroom.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+        {selectedBatchId && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSemester(null);
+                setShowFlatAll(false);
+              }}
+              className={`font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                !selectedSemester && !showFlatAll ? "text-brand-dark font-bold" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>{currentBatch?.code || "Batch"}</span>
+            </button>
+          </>
+        )}
 
-  const uniqueBatches = Array.from(new Map(myClassrooms.map((c) => [c.batch.id, c.batch])).values());
+        {selectedSemester && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-bold text-brand-dark flex items-center gap-1">
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>{selectedSemester === "all" ? "All Semesters" : selectedSemester}</span>
+            </span>
+          </>
+        )}
 
-  // Batch-wise initial view: show batch cards first if no specific batch is selected
-  if (selectedBatchId === null) {
+        {showFlatAll && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-bold text-brand-dark">Flat Directory ({myClassrooms.length} Classrooms)</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TIER 1: PROGRAM VIEW (If no program is selected and not in flat view)
+  // ───────────────────────────────────────────────────────────────────────────
+  if (!selectedProgramId && !showFlatAll) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+        {renderBreadcrumbs()}
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark/10 text-brand-dark uppercase tracking-wider">
-                Batch Directory
+                Step 1: Academic Programs
               </span>
             </div>
-            <h2 className="text-base font-bold text-slate-900 mt-1">My Academic Batches</h2>
+            <h2 className="text-base font-bold text-slate-900 mt-1">Select Academic Program</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Select an assigned batch to enter and view its course classrooms and student rosters.
+              Choose a degree program to inspect assigned student batches, curriculum semesters, and course classrooms.
             </p>
           </div>
+
           <div className="flex items-center gap-2.5 self-start md:self-auto">
             {/* View Switcher */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  viewMode === "list" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
-                }`}
-                title="List View"
-              >
-                <ListIcon className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === "grid" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
                 }`}
                 title="Grid / Card View"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "list" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
+                }`}
+                title="List View"
+              >
+                <ListIcon className="w-4 h-4" />
+              </button>
             </div>
 
             <button
-              onClick={() => setSelectedBatchId("all")}
-              className="px-4 py-2 bg-white border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-2"
+              type="button"
+              onClick={() => setShowFlatAll(true)}
+              className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-2 cursor-pointer"
             >
-              <span>View All Classrooms Across Batches ({myClassrooms.length})</span>
+              <span>View Flat All ({myClassrooms.length})</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
           </div>
         </div>
 
-        {viewMode === "list" ? (
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold">
-                    <th className="py-3 px-4">Batch Information</th>
-                    <th className="py-3 px-4">Assigned Courses</th>
-                    <th className="py-3 px-4">Enrolled Students</th>
-                    <th className="py-3 px-4">Classroom Status</th>
-                    <th className="py-3 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {uniqueBatches.map((b) => {
-                    const batchClasses = myClassrooms.filter((c) => c.batch.id === b.id);
-                    const totalStudents = batchClasses[0]?.students.length || 0;
-                    const ongoingCount = batchClasses.filter((c) => c.classroom.status === "ongoing").length;
+        {/* Programs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {uniquePrograms.map((prog) => {
+            const progClassrooms = myClassrooms.filter((c) => c.program.id === prog.id);
+            const progBatches = Array.from(new Set(progClassrooms.map((c) => c.batch.id)));
+            const totalStudents = progClassrooms.reduce((acc, c) => acc + (c.studentCount || 0), 0);
+            const ongoingCount = progClassrooms.filter((c) => c.classroom.status === "ongoing").length;
 
-                    return (
-                      <tr
-                        key={b.id}
-                        onClick={() => setSelectedBatchId(b.id)}
-                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                      >
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-brand-dark/10 text-brand-dark font-extrabold flex items-center justify-center shrink-0 border border-brand-dark/20 text-xs">
-                              {b.code}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900 group-hover:text-brand-dark transition-colors text-sm">
-                                {b.name}
-                              </div>
-                              <span className="text-[11px] text-slate-400 font-medium">Batch Code: {b.code}</span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-bold text-xs">
-                              <BookOpen className="w-3.5 h-3.5 text-brand-dark" />
-                              {batchClasses.length} Course{batchClasses.length > 1 ? "s" : ""}
-                            </span>
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {batchClasses.map(c => (
-                                <span key={c.classroom.id} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-slate-600 font-medium">
-                                  {c.course.code}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="inline-flex items-center gap-1.5 font-bold text-slate-800">
-                            <Users className="w-4 h-4 text-emerald-600" />
-                            <span>{totalStudents} Students</span>
-                          </div>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          {ongoingCount > 0 ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
-                              No Active Class
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedBatchId(b.id);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 rounded-lg text-xs font-bold transition-all shadow-2xs group-hover:bg-slate-900 group-hover:text-white"
-                          >
-                            <span>Enter Batch</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {uniqueBatches.map((b) => {
-              const batchClasses = myClassrooms.filter((c) => c.batch.id === b.id);
-              const totalStudents = batchClasses[0]?.students.length || 0;
-              const ongoingCount = batchClasses.filter((c) => c.classroom.status === "ongoing").length;
-
-              return (
-                <button
-                  key={b.id}
-                  onClick={() => setSelectedBatchId(b.id)}
-                  className="bg-white border border-slate-200 rounded-xl p-6 hover:border-brand-dark hover:shadow-md transition-all group block text-left relative overflow-hidden flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="h-1.5 w-full rounded-full bg-brand-dark/20 group-hover:bg-brand-dark transition-colors mb-4" />
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="inline-block px-2 py-0.5 text-[10px] font-bold text-brand-dark bg-brand-dark/10 rounded uppercase tracking-wider mb-1">
-                          Batch: {b.code}
-                        </span>
-                        <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
-                          {b.name}
-                        </h3>
-                      </div>
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 group-hover:bg-brand-dark group-hover:text-white text-slate-400 flex items-center justify-center transition-all shrink-0">
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                      </div>
+            return (
+              <div
+                key={prog.id}
+                onClick={() => setSelectedProgramId(prog.id)}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-brand-dark/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-3 bg-brand-dark/5 rounded-xl border border-brand-dark/10 group-hover:scale-105 transition-transform">
+                      <GraduationCap className="w-6 h-6 text-brand-dark" />
                     </div>
+                    <span className="text-[10px] font-bold text-brand-dark bg-brand-dark/10 px-2 py-0.5 rounded">
+                      {prog.code}
+                    </span>
                   </div>
 
                   <div>
-                    <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs text-slate-600">
-                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
-                        <BookOpen className="w-4 h-4 text-brand-dark" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 uppercase font-semibold">Assigned Courses</p>
-                          <p className="font-bold text-slate-800">{batchClasses.length} Course{batchClasses.length > 1 ? "s" : ""}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
-                        <Users className="w-4 h-4 text-emerald-600" />
-                        <div>
-                          <p className="text-[10px] text-slate-400 uppercase font-semibold">Total Students</p>
-                          <p className="font-bold text-slate-800">{totalStudents} Enrolled</p>
-                        </div>
-                      </div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-1">
+                      {prog.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {prog.duration || "4 Years (8 Semesters)"} • Academic Degree
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-semibold block uppercase">Enrolled Batches</span>
+                      <strong className="text-slate-800 text-xs font-bold">{progBatches.length} Batch{progBatches.length > 1 ? "es" : ""}</strong>
                     </div>
-
-                    <div className="mt-4 flex items-center justify-between pt-2">
-                      {ongoingCount > 0 ? (
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-medium">Classrooms Active</span>
-                      )}
-
-                      <span className="text-xs font-semibold text-brand-dark group-hover:underline flex items-center gap-1">
-                        Enter Batch <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-semibold block uppercase">Total Courses</span>
+                      <strong className="text-slate-800 text-xs font-bold">{progClassrooms.length} Classroom{progClassrooms.length > 1 ? "s" : ""}</strong>
                     </div>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-xs font-bold text-brand-dark group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    Select Program <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
 
-  const batchInfo = uniqueBatches.find((c) => c.id === selectedBatchId);
+  // ───────────────────────────────────────────────────────────────────────────
+  // TIER 2: BATCH VIEW (If Program selected, but Batch not selected)
+  // ───────────────────────────────────────────────────────────────────────────
+  if (selectedProgramId && !selectedBatchId && !showFlatAll) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+        {renderBreadcrumbs()}
 
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedProgramId(null)}
+              className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors shadow-xs shrink-0 cursor-pointer"
+              title="Back to Programs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark/10 text-brand-dark uppercase tracking-wider">
+                  Step 2: Program Batches
+                </span>
+                <span className="text-xs text-slate-500 font-semibold">• {currentProgram?.name}</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 mt-1">Select Batch in {currentProgram?.code}</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select an academic batch to explore its semesters and assigned subject classrooms.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowFlatAll(true)}
+              className="px-3.5 py-1.5 bg-white border border-slate-200 hover:border-brand-dark/40 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              <span>View All Program Courses</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Batches Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {uniqueBatches.map((batch) => {
+            const batchClasses = myClassrooms.filter((c) => c.batch.id === batch.id);
+            const totalStudents = batchClasses[0]?.studentCount || 42;
+            const ongoingCount = batchClasses.filter((c) => c.classroom.status === "ongoing").length;
+            const batchSemesters = Array.from(new Set(batchClasses.map((c) => c.semester || "Semester 1")));
+
+            return (
+              <div
+                key={batch.id}
+                onClick={() => setSelectedBatchId(batch.id)}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-brand-dark/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 group-hover:scale-105 transition-transform">
+                      <Users className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded">
+                      {batch.code}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-1">
+                      {batch.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Section {batch.section || "A"} • {batch.status || "Active"} Academic Batch
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-semibold block uppercase">Active Semesters</span>
+                      <strong className="text-slate-800 text-xs font-bold">{batchSemesters.length} Semester{batchSemesters.length > 1 ? "s" : ""}</strong>
+                    </div>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-semibold block uppercase">Assigned Courses</span>
+                      <strong className="text-slate-800 text-xs font-bold">{batchClasses.length} Course{batchClasses.length > 1 ? "s" : ""}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-xs font-bold text-brand-dark group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    Select Batch <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TIER 3: SEMESTER VIEW (If Program and Batch selected, but Semester not selected)
+  // ───────────────────────────────────────────────────────────────────────────
+  if (selectedProgramId && selectedBatchId && !selectedSemester && !showFlatAll) {
+    const batchClasses = myClassrooms.filter((c) => c.batch.id === selectedBatchId);
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+        {renderBreadcrumbs()}
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedBatchId(null)}
+              className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors shadow-xs shrink-0 cursor-pointer"
+              title="Back to Batches"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark/10 text-brand-dark uppercase tracking-wider">
+                  Step 3: Curriculum Semesters
+                </span>
+                <span className="text-xs text-slate-500 font-semibold">• {currentBatch?.name}</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 mt-1">Select Academic Semester</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Choose a semester to see assigned subjects, classrooms, schedule slots, and syllabus topics.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <button
+              type="button"
+              onClick={() => setSelectedSemester("all")}
+              className="px-3.5 py-1.5 bg-brand-dark text-white text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-2 cursor-pointer hover:bg-slate-800"
+            >
+              <span>View All Semesters ({batchClasses.length} Courses)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Semesters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {uniqueSemesters.map((sem) => {
+            const semCourses = batchClasses.filter((c) => (c.semester || "Semester 1") === sem);
+            const totalCredits = semCourses.reduce((acc, c) => acc + Number(c.course.credits || 3), 0);
+            const ongoingCount = semCourses.filter((c) => c.classroom.status === "ongoing").length;
+
+            return (
+              <div
+                key={sem}
+                onClick={() => setSelectedSemester(sem)}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-brand-dark/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/60 group-hover:scale-105 transition-transform">
+                      <Bookmark className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                      {totalCredits} Credits
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-dark transition-colors">
+                      {sem}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Curriculum Level • {semCourses.length} Assigned Course{semCourses.length > 1 ? "s" : ""}
+                    </p>
+                  </div>
+
+                  {/* Course Previews in this Semester */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    {semCourses.map((c) => (
+                      <div key={c.classroom.id} className="flex items-center justify-between text-[11px] bg-slate-50 p-1.5 px-2.5 rounded-lg border border-slate-100">
+                        <span className="font-bold text-slate-800">{c.course.code}</span>
+                        <span className="text-slate-500 truncate max-w-[160px]">{c.course.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {ongoingCount} Active Course{ongoingCount > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-xs font-bold text-brand-dark group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    Enter Semester <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TIER 4: COURSES / CLASSROOMS VIEW (Final level under Program -> Batch -> Semester)
+  // ───────────────────────────────────────────────────────────────────────────
   return (
     <div className="w-full mx-auto space-y-4 pb-8 relative animate-in fade-in duration-300">
-      {/* Header */}
+      {renderBreadcrumbs()}
+
+      {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          {selectedBatchId && uniqueBatches.length > 1 && (
+          {!showFlatAll && (
             <button
-              onClick={() => setSelectedBatchId(null)}
-              className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors shadow-xs shrink-0"
-              title="Change Batch"
+              type="button"
+              onClick={() => setSelectedSemester(null)}
+              className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors shadow-xs shrink-0 cursor-pointer"
+              title="Back to Semesters"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
+
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-slate-900">
-                {selectedBatchId === "all" || !selectedBatchId
-                  ? "All My Classrooms"
-                  : `Classrooms in ${batchInfo?.name}`}
-              </h2>
-              {selectedBatchId !== "all" && selectedBatchId && (
-                <button
-                  onClick={() => setSelectedBatchId("all")}
-                  className="text-[10px] font-semibold text-brand-dark hover:underline"
-                >
-                  (Show All)
-                </button>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark/10 text-brand-dark uppercase tracking-wider">
+                Step 4: Assigned Courses ({filteredClassrooms.length})
+              </span>
+              {currentBatch && (
+                <span className="text-xs text-slate-500 font-semibold">• {currentBatch.code}</span>
               )}
             </div>
+            <h2 className="text-sm font-bold text-slate-900 mt-0.5">
+              {showFlatAll
+                ? "All My Assigned Classrooms"
+                : `${selectedSemester === "all" ? "All Semesters" : selectedSemester} Courses in ${currentBatch?.name || "Batch"}`}
+            </h2>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Click &quot;Enter Classroom&quot; to manage syllabus, live sessions, materials, and student grades.
             </p>
           </div>
         </div>
 
-        {/* Filter Controls */}
+        {/* Filter Controls & Search */}
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-48">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search classrooms..."
+              placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-dark/20 focus:border-brand-dark transition-all placeholder:text-slate-400 bg-white"
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-brand-dark placeholder:text-slate-400 shadow-2xs"
             />
           </div>
 
@@ -327,7 +579,7 @@ export default function TeacherClassrooms() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-medium outline-none focus:border-brand-dark w-full sm:w-auto cursor-pointer shadow-xs"
+              className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-brand-dark shadow-2xs cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="ongoing">Ongoing</option>
@@ -335,291 +587,187 @@ export default function TeacherClassrooms() {
               <option value="completed">Completed</option>
             </select>
 
-            <div className="flex items-center border border-slate-200 rounded-lg bg-white p-0.5 shrink-0 shadow-xs">
+            {/* View Switcher */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
               <button
+                type="button"
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "grid" ? "bg-slate-100 text-slate-900 font-bold" : "text-slate-400 hover:text-slate-600"
+                className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "grid" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
                 }`}
-                title="Grid View"
+                title="Grid / Card View"
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "list" ? "bg-slate-100 text-slate-900 font-bold" : "text-slate-400 hover:text-slate-600"
+                className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "list" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
                 }`}
                 title="List View"
               >
-                <ListIcon className="w-3.5 h-3.5" />
+                <ListIcon className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Grid View */}
-      {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(
-            ({ classroom: cls, course, batch, session, schedules, students, colors, progress }) => {
-              const classroomUrl = `/dashboard/teacher/classrooms/${cls.id}`;
+      {/* Grid or List Display */}
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClassrooms.map((v) => {
+            const isOngoing = v.classroom.status === "ongoing";
+            const isCompleted = v.classroom.status === "completed";
 
-              return (
-                <div
-                  key={cls.id}
-                  className={`bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col transition-all group ${
-                    cls.status === "completed"
-                      ? "border-slate-200/70 opacity-90"
-                      : "border-slate-200 hover:border-brand-dark/40 hover:shadow-md"
-                  }`}
-                >
-                  <div className={`h-2 w-full ${cls.status === "completed" ? "bg-slate-300" : colors.color}`} />
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      {/* Top Badges */}
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${
-                              cls.status === "completed"
-                                ? "bg-slate-100 text-slate-600"
-                                : `${colors.light} ${colors.text}`
-                            }`}
-                          >
-                            {course.code}
-                          </span>
-                          <span
-                            className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold capitalize ${
-                              cls.status === "ongoing"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : cls.status === "upcoming"
-                                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                : "bg-slate-100 text-slate-600 border border-slate-200"
-                            }`}
-                          >
-                            {cls.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Course Title (Clickable) */}
-                      <Link href={classroomUrl} className="block group-hover:text-brand-dark transition-colors">
-                        <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                          {course.title}
-                        </h3>
-                      </Link>
-
-                      {/* Progress Bar */}
-                      <div className="my-3">
-                        <div className="flex items-center justify-between text-[10px] font-semibold mb-1">
-                          <span className="text-slate-500">
-                            Progress ({cls.classesCompleted}/{cls.totalClasses} classes)
-                          </span>
-                          <span className={cls.status === "completed" ? "text-slate-600" : colors.text}>
-                            {progress}%
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${
-                              cls.status === "completed" ? "bg-slate-400" : colors.color
-                            } rounded-full transition-all`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Metadata Items */}
-                      <div className="space-y-2 py-2 border-t border-slate-100 text-xs">
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="font-medium truncate">
-                            {batch.name} • <span className="text-slate-500 font-normal">{students.length} Students</span>
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-600 text-[11px]">
-                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">
-                            {schedules.length > 0
-                              ? `${[...new Set(schedules.map((s) => s.day.slice(0, 3)))].join(", ")} • ${
-                                  schedules[0].startTime
-                                }`
-                              : "No routine assigned"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-600 text-[11px]">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{cls.room || "Room TBA"}</span>
-                        </div>
-                      </div>
+            return (
+              <div
+                key={v.classroom.id}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-brand-dark/40 hover:shadow-md transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-brand-dark bg-brand-dark/10 px-2 py-0.5 rounded">
+                        {v.course.code}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {v.semester}
+                      </span>
                     </div>
 
-                    {/* Action Hub Buttons */}
-                    <div className="pt-3 mt-3 border-t border-slate-100 space-y-2">
-                      {/* Primary ENTER CLASSROOM Button */}
-                      <Link
-                        href={classroomUrl}
-                        className="w-full py-2 px-3 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs group/btn"
-                      >
-                        Enter Classroom Hub
-                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </Link>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                        isOngoing
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                          : isCompleted
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-amber-50 text-amber-700 border border-amber-200/60"
+                      }`}
+                    >
+                      {v.classroom.status}
+                    </span>
+                  </div>
 
-                      {/* Secondary Quick Action Row */}
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <Link
-                          href={`/dashboard/teacher/sessions/start?classId=${cls.id}`}
-                          className="py-1.5 px-2 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-md text-[10px] font-semibold border border-slate-200/60 flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <Play className="w-3 h-3 text-emerald-600 fill-emerald-600" />
-                          <span>Start Class</span>
-                        </Link>
-                        <Link
-                          href={`/dashboard/teacher/attendance/${cls.id}`}
-                          className="py-1.5 px-2 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-md text-[10px] font-semibold border border-slate-200/60 flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <ClipboardCheck className="w-3 h-3 text-blue-600" />
-                          <span>Attendance</span>
-                        </Link>
-                        <Link
-                          href={`/dashboard/teacher/continuity/${cls.id}`}
-                          className="py-1.5 px-2 bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 rounded-md text-[10px] font-semibold border border-slate-200/60 flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <TrendingUp className="w-3 h-3 text-purple-600" />
-                          <span>Syllabus</span>
-                        </Link>
-                      </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-dark transition-colors line-clamp-1">
+                      {v.course.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      {v.batch.name} • {v.program.code}
+                    </p>
+                  </div>
+
+                  {/* Room & Schedule */}
+                  <div className="space-y-1.5 pt-1 text-xs text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate">{v.classroom.room}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="truncate font-mono text-[11px]">{v.scheduleLabel || "Mon, Wed • 10:00 AM"}</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 font-medium">Syllabus Covered</span>
+                      <strong className="text-slate-800 font-bold">{v.progress}%</strong>
+                    </div>
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-brand-dark h-full rounded-full transition-all duration-300"
+                        style={{ width: `${v.progress}%` }}
+                      />
                     </div>
                   </div>
                 </div>
-              );
-            }
-          )}
-        </div>
-      )}
 
-      {/* List View */}
-      {viewMode === "list" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                {/* Card Action Buttons */}
+                <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{v.studentCount} Students</span>
+                  </div>
+
+                  <Link
+                    href={`/dashboard/teacher/classrooms/${v.classroom.id}`}
+                    className="px-3.5 py-1.5 bg-brand-dark hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                  >
+                    <span>Enter Classroom</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-                  <th className="px-5 py-3">Course</th>
-                  <th className="px-5 py-3">Batch / Session</th>
-                  <th className="px-5 py-3">Students</th>
-                  <th className="px-5 py-3">Schedule</th>
-                  <th className="px-5 py-3">Progress</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold">
+                  <th className="py-3 px-4">Course Info</th>
+                  <th className="py-3 px-4">Semester & Batch</th>
+                  <th className="py-3 px-4">Room & Timetable</th>
+                  <th className="py-3 px-4">Syllabus Progress</th>
+                  <th className="py-3 px-4">Students</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filtered.map(
-                  ({ classroom: cls, course, batch, session, students, schedules, colors, progress }) => (
-                    <tr
-                      key={cls.id}
-                      className={`hover:bg-slate-50 transition-colors ${
-                        cls.status === "completed" ? "opacity-75" : ""
-                      }`}
-                    >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-1.5 h-10 rounded-full shrink-0 ${
-                              cls.status === "completed" ? "bg-slate-300" : colors.color
-                            }`}
-                          />
-                          <div>
-                            <Link
-                              href={`/dashboard/teacher/classrooms/${cls.id}`}
-                              className="font-bold text-slate-900 hover:text-brand-dark transition-colors"
-                            >
-                              {course.title}
-                            </Link>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span
-                                className={`text-[8px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                                  cls.status === "completed"
-                                    ? "bg-slate-200 text-slate-600"
-                                    : `${colors.light} ${colors.text}`
-                                }`}
-                              >
-                                {course.code}
-                              </span>
-                              <span className="text-[10px] text-slate-400 capitalize">• {cls.status}</span>
-                            </div>
-                          </div>
+              <tbody className="divide-y divide-slate-100">
+                {filteredClassrooms.map((v) => (
+                  <tr key={v.classroom.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-slate-900">{v.course.title}</div>
+                      <div className="text-[11px] font-mono text-brand-dark font-semibold">{v.course.code} • {v.course.credits} Credits</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="font-bold text-slate-800">{v.semester}</span>
+                      <div className="text-[11px] text-slate-500">{v.batch.name}</div>
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      <div>{v.classroom.room}</div>
+                      <div className="text-[11px] font-mono text-slate-400">{v.scheduleLabel}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-brand-dark h-full rounded-full" style={{ width: `${v.progress}%` }} />
                         </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <p className="font-semibold text-slate-800">{batch.name}</p>
-                        <p className="text-[10px] text-slate-500">{session.name}</p>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="font-semibold text-slate-800">{students.length}</span>
-                        <span className="text-slate-400 text-[10px] ml-1">enrolled</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <p className="font-medium text-slate-800 text-[11px]">
-                          {schedules.length > 0
-                            ? [...new Set(schedules.map((s) => s.day.slice(0, 3)))].join(", ")
-                            : "—"}
-                        </p>
-                        <p className="text-[10px] text-slate-500">{schedules[0]?.startTime ?? ""}</p>
-                      </td>
-                      <td className="px-5 py-3.5 w-44">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${
-                                cls.status === "completed" ? "bg-slate-400" : colors.color
-                              } rounded-full`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="text-[11px] font-bold text-slate-700">{progress}%</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {cls.classesCompleted}/{cls.totalClasses} classes
-                        </p>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            href={`/dashboard/teacher/sessions/start?classId=${cls.id}`}
-                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200/60"
-                            title="Start Live Class"
-                          >
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                          </Link>
-                          <Link
-                            href={`/dashboard/teacher/classrooms/${cls.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-dark text-white hover:bg-slate-800 transition-colors shadow-xs"
-                          >
-                            Enter <ArrowRight className="w-3 h-3" />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )}
+                        <span className="font-bold text-slate-700 text-[11px]">{v.progress}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-bold text-slate-700">
+                      {v.studentCount}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Link
+                        href={`/dashboard/teacher/classrooms/${v.classroom.id}`}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-brand-dark text-white rounded-lg font-bold text-[11px] hover:bg-slate-800 shadow-xs"
+                      >
+                        Enter
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {filtered.length === 0 && (
-        <div className="py-12 flex flex-col items-center justify-center text-center bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 text-slate-400">
-            <Search className="w-4 h-4" />
-          </div>
-          <h3 className="text-xs font-semibold text-slate-900 mb-0.5">No classrooms found</h3>
-          <p className="text-[11px] text-slate-500">
-            {searchTerm ? "Try adjusting your search terms or filters." : "Contact admin if you expect to see assigned courses here."}
-          </p>
+      {filteredClassrooms.length === 0 && (
+        <div className="py-16 text-center bg-white rounded-2xl border border-slate-200">
+          <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <h3 className="text-sm font-bold text-slate-800">No Classrooms Found</h3>
+          <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or select a different semester.</p>
         </div>
       )}
     </div>
