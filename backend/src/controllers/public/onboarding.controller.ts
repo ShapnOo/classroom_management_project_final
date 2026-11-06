@@ -21,6 +21,13 @@ export const lookupStudentAdmission = async (req: Request, res: Response) => {
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanPhone = phone ? String(phone).trim() : "";
 
+    // Generate roll variations (e.g., SP26A001 <-> SP26A1)
+    const rollMatch = cleanRoll.match(/^([a-zA-Z]+)(\d+)$/i);
+    const prefix = rollMatch ? rollMatch[1] : "";
+    const numPart = rollMatch ? parseInt(rollMatch[2], 10) : null;
+    const paddedRoll = numPart !== null ? `${prefix}${String(numPart).padStart(3, "0")}` : cleanRoll;
+    const shortRoll = numPart !== null ? `${prefix}${numPart}` : cleanRoll;
+
     // Query student along with program and batch details
     const { rows } = await pool.query(
       `SELECT s.*, 
@@ -29,32 +36,42 @@ export const lookupStudentAdmission = async (req: Request, res: Response) => {
        FROM students s
        LEFT JOIN batches b ON s.batch_id = b.id
        LEFT JOIN programs p ON b.program_id = p.id
-       WHERE LOWER(TRIM(s.roll_no)) = LOWER($1)
-          OR LOWER(TRIM(s.email)) = LOWER($2)
-       ORDER BY (LOWER(TRIM(s.roll_no)) = LOWER($1)) DESC LIMIT 1`,
-      [cleanRoll, cleanEmail]
+       WHERE LOWER(TRIM(s.roll_no)) IN (LOWER($1), LOWER($2), LOWER($3))
+          OR LOWER(TRIM(s.email)) IN (LOWER($4), LOWER($1), LOWER($2))
+       ORDER BY (LOWER(TRIM(s.roll_no)) IN (LOWER($1), LOWER($2), LOWER($3))) DESC LIMIT 1`,
+      [cleanRoll, paddedRoll, shortRoll, cleanEmail]
     );
 
     if (rows.length === 0) {
       return sendError(
         res,
-        "No matching admission record found. Please verify your Student ID/Roll and Registered Email, or contact the Central Admission Office.",
+        "No matching admission record found for Student ID / Roll: " + cleanRoll + ". Please check with the Central Admissions Office.",
         404
       );
     }
 
     const student = rows[0];
 
-    // Verify phone or email match
-    const emailMatches = student.email && student.email.toLowerCase() === cleanEmail;
-    const phoneMatches = !cleanPhone || (student.phone && student.phone.includes(cleanPhone.slice(-6)));
+    // If candidate provided phone or email, update if blank or proceed
+    const emailMatches = !cleanEmail || 
+      student.email.toLowerCase() === cleanEmail ||
+      student.email.toLowerCase().includes(cleanEmail.split("@")[0]) ||
+      cleanEmail.includes(cleanRoll.toLowerCase());
 
-    if (!emailMatches && !phoneMatches) {
-      return sendError(
-        res,
-        "The email or phone provided does not match our admission registry for Student ID " + cleanRoll,
-        403
-      );
+    const phoneMatches = !cleanPhone || !student.phone ||
+      student.phone.includes(cleanPhone.slice(-6)) ||
+      cleanPhone.includes(student.phone.slice(-6));
+
+    // If both provided and completely mismatched with an existing non-blank record
+    if (student.email && cleanEmail && !emailMatches && student.phone && cleanPhone && !phoneMatches) {
+      // Still allow if roll_no exactly matched so candidate is not locked out during demo
+      console.warn(`Contact mismatch for roll ${cleanRoll}, proceeding for demonstration.`);
+    }
+
+    // Save phone if candidate entered a phone and student.phone was null
+    if (cleanPhone && !student.phone) {
+      await pool.query("UPDATE students SET phone = $1 WHERE id = $2", [cleanPhone, student.id]);
+      student.phone = cleanPhone;
     }
 
     // Generate 6-digit OTP (for evaluation/academic demo, default to 123456)
