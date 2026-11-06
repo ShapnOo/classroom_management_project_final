@@ -363,6 +363,20 @@ export const api = {
       email: r.email,
       batchId: r.batchId || r.batch_id || "",
       phone: r.phone || "",
+      status: r.status || "Active",
+      verificationStatus: r.verificationStatus || r.verification_status || "Pending Verification",
+      fatherName: r.fatherName || r.father_name || "",
+      motherName: r.motherName || r.mother_name || "",
+      dob: r.dob ? (typeof r.dob === "string" ? r.dob.split("T")[0] : "") : "",
+      bloodGroup: r.bloodGroup || r.blood_group || "",
+      address: r.address || "",
+      emergencyContact: r.emergencyContact || r.emergency_contact || "",
+      nidBirthCert: r.nidBirthCert || r.nid_birth_cert || "",
+      onboardedAt: r.onboardedAt || r.onboarded_at || "",
+      batchName: r.batchName || "",
+      batchCode: r.batchCode || "",
+      programName: r.programName || "",
+      profileInfo: r.profileInfo || r.profile_info || {},
       documents: Array.isArray(r.documents)
         ? r.documents
         : typeof r.documents === "string"
@@ -376,6 +390,10 @@ export const api = {
     request<Student>(`/admin/users/students/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteStudent: (id: string) =>
     request<{ message: string }>(`/admin/users/students/${id}`, { method: "DELETE" }),
+  approveStudent: (id: string) =>
+    request<{ message: string; student: any }>(`/admin/users/students/${id}/approve`, { method: "POST" }),
+  rejectStudent: (id: string, reason?: string) =>
+    request<{ message: string; student: any }>(`/admin/users/students/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
 
   // ── Classrooms ──
   getClassrooms: async (): Promise<Classroom[]> => {

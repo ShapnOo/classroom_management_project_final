@@ -93,6 +93,8 @@ type AppActions = {
   addStudent: (s: Omit<Student, "id">) => Promise<void>;
   updateStudent: (id: string, s: Partial<Student>) => Promise<void>;
   deleteStudent: (id: string) => Promise<void>;
+  approveStudent: (id: string) => Promise<void>;
+  rejectStudent: (id: string, reason?: string) => Promise<void>;
   // Teachers
   addTeacher: (t: Omit<Teacher, "id">) => Promise<void>;
   updateTeacher: (id: string, t: Partial<Teacher>) => Promise<void>;
@@ -591,6 +593,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     update("students", prev => prev.filter(x => x.id !== id));
     api.deleteStudent(id).catch(console.error);
   };
+  const approveStudent = async (id: string) => {
+    update("students", prev => prev.map(x => x.id === id ? { ...x, verificationStatus: "Approved", status: "Active" } : x));
+    try {
+      await api.approveStudent(id);
+    } catch (e) {
+      console.error("Failed to approve student on backend:", e);
+    }
+  };
+  const rejectStudent = async (id: string, reason?: string) => {
+    update("students", prev => prev.map(x => x.id === id ? { ...x, verificationStatus: "Rejected", status: "Inactive" } : x));
+    try {
+      await api.rejectStudent(id, reason);
+    } catch (e) {
+      console.error("Failed to reject student on backend:", e);
+    }
+  };
 
   // ── Teacher CRUD ──
   const addTeacher = async (t: Omit<Teacher, "id">) => {
@@ -986,7 +1004,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     invalidateCache,
     addSession, updateSession, deleteSession,
     addBatch, updateBatch, deleteBatch,
-    addStudent, updateStudent, deleteStudent,
+    addStudent, updateStudent, deleteStudent, approveStudent, rejectStudent,
     addTeacher, updateTeacher, deleteTeacher,
     addAdmin, updateAdmin, deleteAdmin,
     addCourse, updateCourse, deleteCourse,

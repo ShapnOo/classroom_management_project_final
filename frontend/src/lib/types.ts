@@ -45,10 +45,13 @@ export type Batch = {
 };
 
 export type StudentDocument = {
-  id: string;
+  id?: string;
   title: string;
   fileName: string;
-  fileData: string; // Base64
+  fileSize?: string;
+  fileData?: string; // Base64
+  fileUrl?: string;
+  uploadedAt?: string;
 };
 
 export type Student = {
@@ -60,6 +63,19 @@ export type Student = {
   status?: string;
   phone?: string;
   documents?: StudentDocument[];
+  verificationStatus?: string;
+  fatherName?: string;
+  motherName?: string;
+  dob?: string;
+  bloodGroup?: string;
+  address?: string;
+  emergencyContact?: string;
+  nidBirthCert?: string;
+  onboardedAt?: string;
+  batchName?: string;
+  batchCode?: string;
+  programName?: string;
+  profileInfo?: any;
 };
 
 export type Teacher = {
