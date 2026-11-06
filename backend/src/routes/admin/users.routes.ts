@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   getTeachers, createTeacher, updateTeacher, deleteTeacher,
   getStudents, createStudent, updateStudent, deleteStudent,
-  getAdmins, createAdmin, deleteAdmin
+  getAdmins, createAdmin, deleteAdmin,
+  approveStudent, rejectStudent
 } from "../../controllers/admin/users.controller.js";
 
 const router = Router();
@@ -17,6 +18,8 @@ router.delete("/teachers/:id", deleteTeacher);
 router.get("/students", getStudents);
 router.post("/students", createStudent);
 router.put("/students/:id", updateStudent);
+router.post("/students/:id/approve", approveStudent);
+router.post("/students/:id/reject", rejectStudent);
 router.delete("/students/:id", deleteStudent);
 
 // Admins

@@ -96,6 +96,13 @@ export const getStudents = async (req: Request, res: Response) => {
     let queryText = `
       SELECT s.id, s.roll_no as "rollNo", s.name, s.email, s.batch_id as "batchId", s.phone,
              COALESCE(s.documents, '[]'::jsonb) as documents, s.created_at,
+             COALESCE(s.verification_status, 'Pending Verification') as "verificationStatus",
+             COALESCE(s.status, 'Active') as status,
+             COALESCE(s.profile_info, '{}'::jsonb) as "profileInfo",
+             s.father_name as "fatherName", s.mother_name as "motherName",
+             s.dob, s.blood_group as "bloodGroup", s.address,
+             s.emergency_contact as "emergencyContact", s.nid_birth_cert as "nidBirthCert",
+             s.onboarded_at as "onboardedAt",
              b.name as "batchName", b.code as "batchCode", p.name as "programName"
       FROM students s
       LEFT JOIN batches b ON s.batch_id = b.id
@@ -246,6 +253,53 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     const { id } = req.params;
     await pool.query("DELETE FROM users WHERE id = $1", [id]);
     sendSuccess(res, { id }, "Admin deleted successfully");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const approveStudent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(
+      `UPDATE students
+       SET verification_status = 'Approved',
+           status = 'Active',
+           verified_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return sendError(res, "Student not found", 404);
+    }
+
+    sendSuccess(res, rows[0], "Student admission approved and account activated successfully.");
+  } catch (err: any) {
+    sendError(res, err.message);
+  }
+};
+
+export const rejectStudent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE students
+       SET verification_status = 'Rejected',
+           status = 'Inactive',
+           profile_info = COALESCE(profile_info, '{}'::jsonb) || jsonb_build_object('rejection_reason', $2::text)
+       WHERE id = $1
+       RETURNING *`,
+      [id, reason || "Documents need revision."]
+    );
+
+    if (rows.length === 0) {
+      return sendError(res, "Student not found", 404);
+    }
+
+    sendSuccess(res, rows[0], "Student admission rejected / requested resubmission.");
   } catch (err: any) {
     sendError(res, err.message);
   }

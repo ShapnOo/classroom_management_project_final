@@ -29,6 +29,7 @@ import {
   Lock,
   Download,
   Eye,
+  EyeOff,
   File,
   X
 } from "lucide-react";
@@ -66,6 +67,11 @@ export function StudentOnboardingPortal() {
   const [demoOtpHint, setDemoOtpHint] = useState("123456");
   const [maskedPhone, setMaskedPhone] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
+
+  // Step 4: Password Creation
+  const [password, setPassword] = useState("student123");
+  const [confirmPassword, setConfirmPassword] = useState("student123");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Student Profile Context
   const [studentData, setStudentData] = useState<any>({
@@ -286,6 +292,16 @@ export function StudentOnboardingPortal() {
       return;
     }
 
+    if (!password || password.length < 6) {
+      setErrorMsg("Please create a password of at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Password and confirm password do not match.");
+      return;
+    }
+
     setErrorMsg("");
     setLoading(true);
 
@@ -293,6 +309,7 @@ export function StudentOnboardingPortal() {
       const payload = {
         studentId: studentData.studentId || studentData.id,
         rollNo: studentData.rollNo,
+        password: password.trim(),
         ...bioData,
         documents: documents.map((d) => ({
           title: d.title,

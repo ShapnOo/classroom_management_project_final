@@ -38,8 +38,26 @@ export const login = async (req: Request, res: Response) => {
       const { rows: tRows } = await pool.query("SELECT designation, department_id FROM teachers WHERE id = $1", [user.id]);
       if (tRows.length > 0) metadata = tRows[0];
     } else if (user.role === "student") {
-      const { rows: sRows } = await pool.query("SELECT roll_no, batch_id FROM students WHERE id = $1", [user.id]);
-      if (sRows.length > 0) metadata = sRows[0];
+      const { rows: sRows } = await pool.query(
+        "SELECT roll_no, batch_id, verification_status, status FROM students WHERE id = $1",
+        [user.id]
+      );
+      if (sRows.length > 0) {
+        metadata = sRows[0];
+        if (sRows[0].verification_status === "Pending Approval") {
+          return sendError(
+            res,
+            "Your registration documents are currently pending administrative review. You will be able to log in once approved by the university admission office.",
+            403
+          );
+        } else if (sRows[0].verification_status === "Rejected") {
+          return sendError(
+            res,
+            "Your admission registration was rejected by the admission office. Please contact the registrar desk.",
+            403
+          );
+        }
+      }
     }
 
     const token = generateToken({
