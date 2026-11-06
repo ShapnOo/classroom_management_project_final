@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS courses (
   title VARCHAR(255) NOT NULL,
   program_id VARCHAR(64) REFERENCES programs(id) ON DELETE CASCADE,
   credits NUMERIC(3,1) DEFAULT 3,
+  semester VARCHAR(50) DEFAULT 'Semester 1',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS classrooms (
   course_id VARCHAR(64) REFERENCES courses(id) ON DELETE CASCADE,
   batch_id VARCHAR(64) REFERENCES batches(id) ON DELETE CASCADE,
   teacher_id VARCHAR(64) REFERENCES teachers(id) ON DELETE CASCADE,
+  semester VARCHAR(50),
   room VARCHAR(100) NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,

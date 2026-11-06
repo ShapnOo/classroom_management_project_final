@@ -90,6 +90,7 @@ export type Course = {
   title: string;
   programId: string;
   credits: number;
+  semester?: string;
 };
 
 export type SyllabusTopic = {

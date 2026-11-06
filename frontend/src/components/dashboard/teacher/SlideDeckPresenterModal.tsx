@@ -206,9 +206,6 @@ export default function SlideDeckPresenterModal({
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
       return url;
     }
-    if (url.startsWith("/uploads/")) {
-      return `${backendBase}${url}`;
-    }
     return url;
   };
 
@@ -217,7 +214,7 @@ export default function SlideDeckPresenterModal({
     (fileNameLower.includes("uml") || titleLower.includes("uml")
       ? "/UML Diagram - Library System.pdf"
       : fileNameLower.endsWith(".pdf") && material?.fileName
-      ? `${backendBase}/uploads/${material.fileName}`
+      ? `/uploads/${material.fileName}`
       : "/assignment_mockup.pdf");
 
   const [dynamicSlides, setDynamicSlides] = useState<SlideData[] | null>(material?.parsedSlides || null);
@@ -445,7 +442,7 @@ export default function SlideDeckPresenterModal({
     if (!isPdf && !isPres1 && !isInc && isPpt) {
       let targetUrl = resolveTargetUrl(material.fileUrl || material.fileData) || "";
       if (!targetUrl && material.fileName) {
-        targetUrl = `${backendBase}/uploads/${material.fileName}`;
+        targetUrl = `/uploads/${material.fileName}`;
       }
       if (titleLower.includes("পর্যটন") || fileNameLower.includes("পর্যটন") || material.id === "mat-1792208593170") {
         targetUrl = `${backendBase}/uploads/bangladesh_tourism_deck-1792208593157.pptx`;
