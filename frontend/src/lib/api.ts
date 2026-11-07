@@ -109,6 +109,8 @@ export const api = {
   logout: async () => {
     try {
       await request("/auth/logout", { method: "POST" });
+    } catch (err: any) {
+      console.warn("[API] Logout network warning (clearing local session):", err?.message);
     } finally {
       authStorage.clear();
     }

@@ -204,8 +204,11 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={async () => {
-            await api.logout();
-            window.location.href = "/auth/login";
+            try {
+              await api.logout();
+            } finally {
+              window.location.href = "/auth/login";
+            }
           }}
           className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
         >
